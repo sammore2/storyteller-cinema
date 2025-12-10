@@ -27,9 +27,32 @@ Hooks.once('init', async function () {
  * Adds the Cinematic Mode toggle button to the Token Layer controls.
  */
 Hooks.on('getSceneControlButtons', (controls) => {
-  const tokenControls = controls.find(c => c.name === 'token');
-  if (tokenControls) {
-    tokenControls.tools.push({
+  let tokenLayer = null;
+
+  // Lógica Híbrida (Camaleão): Adapta-se ao formato recebido (Array ou Objeto)
+  if (Array.isArray(controls)) {
+    tokenLayer = controls.find(c => c.name === 'token');
+    if (tokenLayer) console.log("Storyteller Cinema | ✅ Detectado formato Array.");
+  } else if (typeof controls === 'object' && controls !== null) {
+    // Tenta acesso direto por propriedade (comum em estruturas de chave-valor/Map)
+    if (controls.token) {
+      tokenLayer = controls.token;
+      console.log("Storyteller Cinema | ✅ Detectado formato Objeto (Propriedade Direta).");
+    } else if (controls['token']) {
+      tokenLayer = controls['token'];
+      console.log("Storyteller Cinema | ✅ Detectado formato Objeto (Chave).");
+    }
+  }
+
+  // Validação: Se encontrou a layer e ela possui ferramentas (tools)
+  if (tokenLayer && Array.isArray(tokenLayer.tools)) {
+    // Verificação de duplicatas antes de injetar
+    if (tokenLayer.tools.find(t => t.name === 'cinematic')) {
+      // Botão já existe, nada a fazer
+      return;
+    }
+
+    tokenLayer.tools.push({
       name: 'cinematic',
       title: 'Modo Cinema',
       icon: 'fas fa-film',
@@ -40,6 +63,10 @@ Hooks.on('getSceneControlButtons', (controls) => {
         else document.body.classList.remove('cinematic-mode');
       }
     });
+    console.log("Storyteller Cinema | ✅ Botão injetado via " + (Array.isArray(controls) ? "Array" : "Objeto"));
+  } else {
+    // Log silencioso ou warning dependendo da severidade desejada, aqui mantemos informativo
+    console.warn("Storyteller Cinema | ⚠️ Layer 'token' não encontrada ou inválida nos controles fornecidos.", controls);
   }
 });
 
@@ -81,17 +108,14 @@ Hooks.on('refreshToken', (token) => {
   token.mesh.scale.set(newScale);
 });
 
-
 /**
  * Injects the "Mood" selection into the Scene Configuration dialog logic.
- * Note: Since V13 API might change how ApplicationV2 works, sticking to standard JQuery injection for 'renderSceneConfig' is safest for now unless AppV2 is strictly required.
- * Assuming standard FormApplication behavior for SceneConfig.
  */
 Hooks.on('renderSceneConfig', (app, html, data) => {
   const mood = app.object.getFlag('storyteller-cinema', 'mood') || 'Normal';
 
   const formGroup = `
-  < div class="form-group" >
+  <div class="form-group">
       <label>Mood Cinemático</label>
       <div class="form-fields">
         <select name="flags.storyteller-cinema.mood">
@@ -101,7 +125,7 @@ Hooks.on('renderSceneConfig', (app, html, data) => {
         </select>
       </div>
       <p class="notes">Define um filtro visual global para esta cena.</p>
-    </div >
+    </div>
   `;
 
   // Inject into the "Basic" tab (usually the first tab)

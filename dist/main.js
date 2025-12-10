@@ -16,45 +16,50 @@ Hooks.once("init", async function() {
   });
 });
 Hooks.on("getSceneControlButtons", (e) => {
-  const o = e.find((n) => n.name === "token");
-  o && o.tools.push({
-    name: "cinematic",
-    title: "Modo Cinema",
-    icon: "fas fa-film",
-    toggle: !0,
-    active: document.body.classList.contains("cinematic-mode"),
-    onClick: (n) => {
-      n ? document.body.classList.add("cinematic-mode") : document.body.classList.remove("cinematic-mode");
-    }
-  });
+  let o = null;
+  if (Array.isArray(e) ? (o = e.find((t) => t.name === "token"), o && console.log("Storyteller Cinema | ✅ Detectado formato Array.")) : typeof e == "object" && e !== null && (e.token ? (o = e.token, console.log("Storyteller Cinema | ✅ Detectado formato Objeto (Propriedade Direta).")) : e.token && (o = e.token, console.log("Storyteller Cinema | ✅ Detectado formato Objeto (Chave)."))), o && Array.isArray(o.tools)) {
+    if (o.tools.find((t) => t.name === "cinematic"))
+      return;
+    o.tools.push({
+      name: "cinematic",
+      title: "Modo Cinema",
+      icon: "fas fa-film",
+      toggle: !0,
+      active: document.body.classList.contains("cinematic-mode"),
+      onClick: (t) => {
+        t ? document.body.classList.add("cinematic-mode") : document.body.classList.remove("cinematic-mode");
+      }
+    }), console.log("Storyteller Cinema | ✅ Botão injetado via " + (Array.isArray(e) ? "Array" : "Objeto"));
+  } else
+    console.warn("Storyteller Cinema | ⚠️ Layer 'token' não encontrada ou inválida nos controles fornecidos.", e);
 });
-Hooks.on("updateToken", (e, o, n, a) => {
+Hooks.on("updateToken", (e, o, t, n) => {
   if (!o.y && !o.x) return;
-  const t = e.object;
-  if (!t || !t.scene) return;
-  const s = t.scene.dimensions.height, c = t.y, l = Math.max(0, Math.min(1, c / s)), i = game.settings.get("storyteller-cinema", "minScale"), m = game.settings.get("storyteller-cinema", "maxScale"), r = i + l * (m - i);
-  t.mesh.scale.set(r);
+  const a = e.object;
+  if (!a || !a.scene) return;
+  const i = a.scene.dimensions.height, l = a.y, r = Math.max(0, Math.min(1, l / i)), s = game.settings.get("storyteller-cinema", "minScale"), c = game.settings.get("storyteller-cinema", "maxScale"), m = s + r * (c - s);
+  a.mesh.scale.set(m);
 });
 Hooks.on("refreshToken", (e) => {
   if (!e.scene) return;
-  const o = e.scene.dimensions.height, n = Math.max(0, Math.min(1, e.y / o)), a = game.settings.get("storyteller-cinema", "minScale"), t = game.settings.get("storyteller-cinema", "maxScale"), s = a + n * (t - a);
-  e.mesh.scale.set(s);
+  const o = e.scene.dimensions.height, t = Math.max(0, Math.min(1, e.y / o)), n = game.settings.get("storyteller-cinema", "minScale"), a = game.settings.get("storyteller-cinema", "maxScale"), i = n + t * (a - n);
+  e.mesh.scale.set(i);
 });
-Hooks.on("renderSceneConfig", (e, o, n) => {
-  const a = e.object.getFlag("storyteller-cinema", "mood") || "Normal", t = `
-  < div class="form-group" >
+Hooks.on("renderSceneConfig", (e, o, t) => {
+  const n = e.object.getFlag("storyteller-cinema", "mood") || "Normal", a = `
+  <div class="form-group">
       <label>Mood Cinemático</label>
       <div class="form-fields">
         <select name="flags.storyteller-cinema.mood">
-          <option value="Normal" ${a === "Normal" ? "selected" : ""}>Normal</option>
-          <option value="Noir" ${a === "Noir" ? "selected" : ""}>Noir</option>
-          <option value="Blood" ${a === "Blood" ? "selected" : ""}>Blood</option>
+          <option value="Normal" ${n === "Normal" ? "selected" : ""}>Normal</option>
+          <option value="Noir" ${n === "Noir" ? "selected" : ""}>Noir</option>
+          <option value="Blood" ${n === "Blood" ? "selected" : ""}>Blood</option>
         </select>
       </div>
       <p class="notes">Define um filtro visual global para esta cena.</p>
-    </div >
+    </div>
   `;
-  o.find('div[data-tab="basic"] .form-group').last().after(t);
+  o.find('div[data-tab="basic"] .form-group').last().after(a);
 });
 Hooks.on("canvasReady", (e) => {
   document.body.classList.remove("filter-noir", "filter-blood");
