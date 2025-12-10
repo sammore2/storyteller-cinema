@@ -1,0 +1,80 @@
+/* Estilos do Cinema */
+
+/* Cinematic Mode */
+body.cinematic-mode {
+
+    /* UI Elements Hiding */
+    #ui-left,
+    #ui-right,
+    #ui-top,
+    #ui-bottom,
+    #hotbar {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 1s ease-in-out;
+    }
+
+    /* Letterbox Effect */
+    &::before,
+    &::after {
+        content: "";
+        position: fixed;
+        left: 0;
+        width: 100vw;
+        height: 10vh;
+        background: black;
+        z-index: 9999;
+        pointer-events: none;
+        transition: height 1s ease-in-out;
+    }
+
+    &::before {
+        top: 0;
+    }
+
+    &::after {
+        bottom: 0;
+    }
+}
+
+/* Base transition for UI elements even when not in cinematic mode to ensure smooth fade out */
+#ui-left,
+#ui-right,
+#ui-top,
+#ui-bottom,
+#hotbar {
+    transition: opacity 1s ease-in-out;
+}
+
+/* Ensure letterbox bars retreat smoothly */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    width: 100vw;
+    height: 0;
+    /* Hidden by default */
+    background: black;
+    z-index: 9999;
+    pointer-events: none;
+    transition: height 1s ease-in-out;
+}
+
+body::before {
+    top: 0;
+}
+
+body::after {
+    bottom: 0;
+}
+
+
+/* Filters */
+.filter-noir {
+    filter: grayscale(100%) contrast(120%);
+}
+
+.filter-blood {
+    filter: sepia(50%) hue-rotate(-50deg) saturate(300%);
+}

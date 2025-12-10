@@ -1,0 +1,30 @@
+{
+    "id": "storyteller-cinema",
+    "title": "Storyteller's Cinema",
+    "version": "1.0.0",
+    "compatibility": {
+        "minimum": "12",
+        "verified": "13"
+    },
+    "relationships": {
+        "requires": [
+            {
+                "id": "sequencer",
+                "type": "module"
+            },
+            {
+                "id": "monks-active-tile-triggers",
+                "type": "module"
+            }
+        ]
+    },
+    "esmodules": [
+        "main.js"
+    ],
+    "styles": [
+        "style.css"
+    ],
+    "url": "",
+    "manifest": "",
+    "download": ""
+}
