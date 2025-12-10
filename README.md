@@ -52,4 +52,4 @@ Testado no Foundry V12 e V13.
 
 ## 📝 Licença
 
-[MIT License](LICENSE)
+[GNU General Public License v3.0](LICENSE)
