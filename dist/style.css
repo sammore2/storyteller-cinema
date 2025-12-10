@@ -1,1 +1,43 @@
-@charset "UTF-8";body.cinematic-mode #ui-top,body.cinematic-mode #ui-bottom,body.cinematic-mode #hotbar{opacity:0;pointer-events:none;transition:opacity 1s ease-in-out}body.cinematic-mode:before,body.cinematic-mode:after{content:"";position:fixed;left:0;width:100vw;height:10vh;background:#000;z-index:1;pointer-events:none;transition:height 1s ease-in-out}body.cinematic-mode:before{top:0}body.cinematic-mode:after{bottom:0}#ui-left,#ui-right,#ui-top,#ui-bottom,#hotbar{transition:opacity 1s ease-in-out}body:before,body:after{content:"";position:fixed;left:0;width:100vw;height:0;background:#000;z-index:1;pointer-events:none;transition:height 1s ease-in-out}body:before{top:0}body:after{bottom:0}.filter-noir{filter:grayscale(100%) contrast(120%)}.filter-blood{filter:sepia(50%) hue-rotate(-50deg) saturate(300%)}
+@charset "UTF-8";
+/* =========================================
+   STORYTELLER CINEMA - STYLE.SCSS (V10.2 WIDESCREEN FIX)
+   ========================================= */
+#storyteller-cinema-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* INTERATIVIDADE: 
+     Container é permeável (none) para permitir clicar no mapa no centro. */
+  pointer-events: none;
+  /* CAMADA (Z-INDEX):
+     0 = Canvas (Mapa/Tokens)
+     10 = Overlay (Cinematic Bars) - [REDUZIDO DE 50 PARA 10]
+     100 = Foundry UI (Sidebars, Hotbar)
+
+     Mantenha baixo para garantir que NUNCA cubra a interface. */
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+#storyteller-cinema-overlay.active {
+  opacity: 1;
+}
+#storyteller-cinema-overlay .cinematic-bar {
+  width: 100%;
+  height: 13vh;
+  /* Um pouco mais alto para garantir cobertura */
+  background: black;
+  /* BLOQUEIO DE CLIQUES NA BARRA:
+     Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
+     Se 'none', você clica através da barra preta.
+     Geralmente 'none' é melhor para evitar frustração de "não consigo clicar no token que está meio escondido". */
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+}
+
+/* Garante que nenhum estilo interfira na UI do Foundry */
