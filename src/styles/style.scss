@@ -3,9 +3,9 @@
 /* Cinematic Mode */
 body.cinematic-mode {
 
+
     /* UI Elements Hiding */
-    #ui-left,
-    #ui-right,
+    /* Mantemos #ui-left e #ui-right visíveis para permitir controle total */
     #ui-top,
     #ui-bottom,
     #hotbar {
@@ -23,7 +23,8 @@ body.cinematic-mode {
         width: 100vw;
         height: 10vh;
         background: black;
-        z-index: 9999;
+        z-index: 1;
+        /* Abaixo da UI (z-index 100), Acima do Canvas */
         pointer-events: none;
         transition: height 1s ease-in-out;
     }
@@ -56,7 +57,8 @@ body::after {
     height: 0;
     /* Hidden by default */
     background: black;
-    z-index: 9999;
+    z-index: 1;
+    /* Abaixo da UI */
     pointer-events: none;
     transition: height 1s ease-in-out;
 }

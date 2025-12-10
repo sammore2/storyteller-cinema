@@ -9,12 +9,14 @@
     "relationships": {
         "requires": [
             {
-                "id": "sequencer",
-                "type": "module"
+                "id": "monks-active-tiles",
+                "type": "module",
+                "compatibility": {}
             },
             {
-                "id": "monks-active-tile-triggers",
-                "type": "module"
+                "id": "sequencer",
+                "type": "module",
+                "compatibility": {}
             }
         ]
     },

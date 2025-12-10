@@ -1,7 +1,16 @@
 import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig({
   publicDir: 'static',
+  plugins: [
+    svelte({
+      /* plugin options */
+      compilerOptions: {
+        // Opções do compilador se necessário
+      }
+    })
+  ],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
