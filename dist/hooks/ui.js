@@ -134,6 +134,7 @@ function registerUIHooks() {
       new ViewModeSelect({ target: mountPoint, props: { scene } });
     }
   });
+  let saveTimeout = null;
   window.addEventListener("wheel", (event) => {
     var _a;
     if (!event.shiftKey || !document.body.classList.contains("cinematic-mode")) return;
@@ -143,11 +144,18 @@ function registerUIHooks() {
     event.stopPropagation();
     event.stopImmediatePropagation();
     const delta = event.deltaY > 0 ? -0.05 : 0.05;
-    const currentScale = hoverToken.document.getFlag("storyteller-cinema", "cinematicScale") || 1;
-    let newScale = currentScale + delta;
-    newScale = Math.max(0.1, Math.min(5, newScale));
+    let current = hoverToken._cinemaScalePreview ?? hoverToken.document.getFlag("storyteller-cinema", "cinematicScale") ?? 1;
+    let newScale = Math.max(0.1, Math.min(5, current + delta));
     newScale = Math.round(newScale * 100) / 100;
-    hoverToken.document.setFlag("storyteller-cinema", "cinematicScale", newScale);
+    hoverToken._cinemaScalePreview = newScale;
+    hoverToken.refresh();
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      hoverToken.document.setFlag("storyteller-cinema", "cinematicScale", newScale).then(() => {
+        hoverToken._cinemaScalePreview = null;
+      });
+      console.log("Storyteller Cinema | Salvo no Banco:", newScale.toFixed(2));
+    }, 600);
   }, { passive: false, capture: true });
 }
 export {

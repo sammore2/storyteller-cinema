@@ -1,5 +1,5 @@
 /**
- * Aplica escala visual híbrida (Auto Viewport + Manual Adjustment).
+ * Aplica escala visual híbrida (Auto Viewport + Manual Config + Quick Zoom).
  */
 export function applyVisualDepth(token) {
   if (!token.mesh || !token.scene) return;
@@ -22,12 +22,16 @@ export function applyVisualDepth(token) {
   // Grid Size: Tokens grandes (2x2) devem ser maiores
   const gridSizeMult = Math.max(token.document.width, token.document.height);
 
-  // Manual Scale: Respeita o slider "Scale" da ficha do token.
-  // Usamos Math.abs para pegar a magnitude do tamanho (ignorando flip por enquanto)
+  // Manual Scale: Respeita o slider "Scale" da ficha do token (Ajuste Permanente)
   const docScaleX = token.document.texture.scaleX;
   const manualTweak = Math.abs(docScaleX) || 1;
 
-  const manualMultiplier = gridSizeMult * manualTweak;
+  // --- NOVO: Cinematic Scale (Shift + Scroll - Ajuste Temporário/Rápido) ---
+  // Prioriza o preview local (instantâneo) sobre o dado do banco (lento)
+  const quickZoom = token._cinemaScalePreview ?? token.document.getFlag('storyteller-cinema', 'cinematicScale') ?? 1.0;
+
+  // Combina todos os multiplicadores manuais
+  const manualMultiplier = gridSizeMult * manualTweak * quickZoom;
 
   // --- 3. Depth Factor (Parallax) ---
   const sceneHeight = token.scene.dimensions.height;
@@ -40,6 +44,7 @@ export function applyVisualDepth(token) {
   const depthFactor = minDepth + (ratio * (maxDepth - minDepth));
 
   // --- 4. Final Calculation ---
+  // Agora inclui o quickZoom na conta!
   const finalScale = autoScale * manualMultiplier * depthFactor;
 
   // --- 5. Application with Flip Preservation ---

@@ -9,7 +9,8 @@ function applyVisualDepth(token) {
   const gridSizeMult = Math.max(token.document.width, token.document.height);
   const docScaleX = token.document.texture.scaleX;
   const manualTweak = Math.abs(docScaleX) || 1;
-  const manualMultiplier = gridSizeMult * manualTweak;
+  const quickZoom = token._cinemaScalePreview ?? token.document.getFlag("storyteller-cinema", "cinematicScale") ?? 1;
+  const manualMultiplier = gridSizeMult * manualTweak * quickZoom;
   const sceneHeight = token.scene.dimensions.height;
   let ratio = token.y / sceneHeight;
   ratio = Math.max(0, Math.min(1, ratio));

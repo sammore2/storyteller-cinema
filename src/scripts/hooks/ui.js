@@ -48,6 +48,9 @@ export function registerUIHooks() {
     });
 
     // --- Interaction: Shift+Wheel SCALING (Hijack Rotation) ---
+    // Variável de controle do Debounce (Escopo do Módulo)
+    let saveTimeout = null;
+
     window.addEventListener('wheel', (event) => {
         // Only active if Shift is held AND Cinematic Mode is ON
         if (!event.shiftKey || !document.body.classList.contains('cinematic-mode')) return;
@@ -63,21 +66,27 @@ export function registerUIHooks() {
         // Calculate Delta (+/- 0.05)
         const delta = event.deltaY > 0 ? -0.05 : 0.05;
 
-        // Get current flag (default 1.0)
-        const currentScale = hoverToken.document.getFlag('storyteller-cinema', 'cinematicScale') || 1.0;
+        // 1. Leitura: Tenta pegar do preview local, senão pega do banco, senão 1.0
+        let current = hoverToken._cinemaScalePreview ?? hoverToken.document.getFlag('storyteller-cinema', 'cinematicScale') ?? 1.0;
 
-        let newScale = currentScale + delta;
-        // Safety Limits (0.1x to 5.0x)
-        newScale = Math.max(0.1, Math.min(5.0, newScale));
-        // Round to 2 decimals
-        newScale = Math.round(newScale * 100) / 100;
+        // 2. Cálculo com Limites
+        let newScale = Math.max(0.1, Math.min(5.0, current + delta));
+        newScale = Math.round(newScale * 100) / 100; // Arredonda 2 casas
 
-        // Update Flag (Async)
-        hoverToken.document.setFlag('storyteller-cinema', 'cinematicScale', newScale);
+        // 3. ATUALIZAÇÃO VISUAL INSTANTÂNEA (Sem Banco de Dados)
+        hoverToken._cinemaScalePreview = newScale;
+        hoverToken.refresh(); // O depth.js vai ler o _cinemaScalePreview agora
 
-        // Immediate visual feedback (optional, but good)
-        // refresh() will allow depth.js to read the new flag (once promise resolves or optimistic)
-        // Since setFlag updates document, it triggers visual refresh automatically eventually.
+        // 4. GRAVAÇÃO NO BANCO (Debounced / Atrasada)
+        if (saveTimeout) clearTimeout(saveTimeout);
+
+        saveTimeout = setTimeout(() => {
+            // Salva e limpa o preview (pois o banco já terá o valor)
+            hoverToken.document.setFlag('storyteller-cinema', 'cinematicScale', newScale).then(() => {
+                hoverToken._cinemaScalePreview = null;
+            });
+            console.log("Storyteller Cinema | Salvo no Banco:", newScale.toFixed(2));
+        }, 600); // Espera 600ms de inatividade
 
     }, { passive: false, capture: true }); // Capture is key to running before Foundry
 }
