@@ -1,12 +1,12 @@
 import { r as registerInitHooks } from "./hooks/init.js";
 import { r as registerUIHooks } from "./hooks/ui.js";
+import { a as applyVisualDepth } from "./core/depth.js";
 import { t as toggleCinematicMode } from "./core/cinematic.js";
-import { P as ProxyManager } from "./core/proxy.js";
 registerInitHooks();
 registerUIHooks();
 Hooks.on("refreshToken", (token) => {
   if (document.body.classList.contains("cinematic-mode")) {
-    ProxyManager.update(token);
+    applyVisualDepth(token);
   }
 });
 Hooks.on("canvasReady", async (canvas2) => {
@@ -34,8 +34,8 @@ Hooks.on("updateScene", (scene, data) => {
 Hooks.on("createToken", (tokenDoc) => {
   if (document.body.classList.contains("cinematic-mode")) {
     setTimeout(() => {
-      if (tokenDoc.object) tokenDoc.object.refresh();
-    }, 100);
+      if (tokenDoc.object) applyVisualDepth(tokenDoc.object);
+    }, 50);
   }
 });
 //# sourceMappingURL=main.js.map

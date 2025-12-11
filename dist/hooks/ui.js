@@ -134,6 +134,21 @@ function registerUIHooks() {
       new ViewModeSelect({ target: mountPoint, props: { scene } });
     }
   });
+  window.addEventListener("wheel", (event) => {
+    var _a;
+    if (!event.shiftKey || !document.body.classList.contains("cinematic-mode")) return;
+    const hoverToken = (_a = canvas.tokens) == null ? void 0 : _a.hover;
+    if (!hoverToken) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    const delta = event.deltaY > 0 ? -0.05 : 0.05;
+    const currentScale = hoverToken.document.getFlag("storyteller-cinema", "cinematicScale") || 1;
+    let newScale = currentScale + delta;
+    newScale = Math.max(0.1, Math.min(5, newScale));
+    newScale = Math.round(newScale * 100) / 100;
+    hoverToken.document.setFlag("storyteller-cinema", "cinematicScale", newScale);
+  }, { passive: false, capture: true });
 }
 export {
   registerUIHooks as r
