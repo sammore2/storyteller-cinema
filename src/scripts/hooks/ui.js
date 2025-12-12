@@ -3,22 +3,19 @@ import ViewModeSelect from '../../components/ViewModeSelect.svelte';
 
 export function registerUIHooks() {
     Hooks.on('getSceneControlButtons', (controls) => {
-        // PROTEÇÃO: Normaliza controls
+        // PROTEÇÃO: Normaliza controls (pode vir como Objeto ou Array)
         const controlList = Array.isArray(controls) ? controls : Object.values(controls);
 
         const tokenLayer = controlList.find(c => c.name === 'token');
         if (tokenLayer && tokenLayer.tools) {
-            // Evita duplicatas
-            if (!tokenLayer.tools.some(t => t.name === 'cinematic')) {
-                tokenLayer.tools.push({
-                    name: 'cinematic',
-                    title: 'Modo Cinema 2.5D',
-                    icon: 'fas fa-film',
-                    toggle: true,
-                    active: document.body.classList.contains('cinematic-mode'),
-                    onClick: async (tog) => await toggleCinematicMode(tog)
-                });
-            }
+            tokenLayer.tools.push({
+                name: 'cinematic',
+                title: 'Modo Cinema 2.5D',
+                icon: 'fas fa-film',
+                toggle: true,
+                active: document.body.classList.contains('cinematic-mode'),
+                onClick: async (tog) => await toggleCinematicMode(tog)
+            });
         }
     });
 
