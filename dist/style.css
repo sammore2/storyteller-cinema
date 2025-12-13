@@ -44,3 +44,36 @@
 body.cinematic-mode {
   transition: background-color 1.5s ease-in-out;
 }
+
+#storyteller-cinema-toggle {
+  position: fixed;
+  top: 5px;
+  right: 310px;
+  /* Width of sidebar (~300px) + padding */
+  width: 35px;
+  height: 35px;
+  z-index: 95;
+  /* Must be > 10 (Overlay) but < 100 (Sidebar) */
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ff6400;
+  /* Always visible orange border */
+  border-radius: 5px;
+  color: #fff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 5px #000;
+  transition: all 0.2s;
+}
+#storyteller-cinema-toggle:hover {
+  background: #333;
+  text-shadow: 0 0 5px #ff6400;
+  border-color: #ff6400;
+}
+#storyteller-cinema-toggle.active {
+  color: #ff6400;
+  border-color: #ff6400;
+  background: rgba(20, 0, 0, 0.9);
+}

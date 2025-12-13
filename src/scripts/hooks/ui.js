@@ -87,3 +87,29 @@ export function registerUIHooks() {
 
     }, { passive: false, capture: true }); // Capture is key to running before Foundry
 }
+
+// === HUD BUTTON (Floating Top-Right) ===
+function createHUDButton() {
+    if (document.getElementById('storyteller-cinema-toggle')) return;
+
+    const btn = document.createElement('div');
+    btn.id = 'storyteller-cinema-toggle';
+    btn.innerHTML = '<i class="fas fa-film"></i>';
+    btn.title = "Alternar Modo Cinema";
+
+    // Initial State
+    if (document.body.classList.contains('cinematic-mode')) btn.classList.add('active');
+
+    btn.onclick = async () => {
+        const isActive = document.body.classList.contains('cinematic-mode');
+        await toggleCinematicMode(!isActive);
+        // Visual Feedback immediate
+        btn.classList.toggle('active', !isActive);
+    };
+
+    document.body.appendChild(btn);
+}
+
+// Ensure button exists on load
+Hooks.on('ready', createHUDButton);
+Hooks.on('canvasReady', createHUDButton);
