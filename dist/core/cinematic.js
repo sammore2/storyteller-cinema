@@ -49,7 +49,7 @@ async function silentTeleport(token, pos) {
 }
 let cinematicContainer = null;
 async function setCinematicBackground(active) {
-  var _a, _b, _c, _d;
+  var _a, _b, _c, _d, _e;
   if (active) {
     const bgPath = canvas.scene.getFlag("storyteller-cinema", "cinematicBg");
     if ((_a = canvas.primary) == null ? void 0 : _a.background) {
@@ -100,12 +100,18 @@ async function setCinematicBackground(active) {
       }
     }
   } else {
-    if ((_c = canvas.primary) == null ? void 0 : _c.background) canvas.primary.background.visible = true;
+    if ((_c = canvas.primary) == null ? void 0 : _c.background) {
+      const hasBgImage = (_d = canvas.scene.background) == null ? void 0 : _d.src;
+      const hasTexture = canvas.primary.background.texture;
+      if (hasBgImage && hasTexture) {
+        canvas.primary.background.visible = true;
+      }
+    }
     if (canvas.grid) canvas.grid.visible = true;
     if (canvas.walls) canvas.walls.visible = true;
     if (canvas.templates) canvas.templates.visible = true;
     if (canvas.foreground) canvas.foreground.visible = true;
-    if ((_d = canvas.controls) == null ? void 0 : _d.doors) canvas.controls.doors.visible = true;
+    if ((_e = canvas.controls) == null ? void 0 : _e.doors) canvas.controls.doors.visible = true;
     if (cinematicContainer) {
       cinematicContainer.destroy({ children: true, texture: false });
       cinematicContainer = null;

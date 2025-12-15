@@ -161,7 +161,18 @@ async function setCinematicBackground(active) {
         }
     } else {
         // Restore
-        if (canvas.primary?.background) canvas.primary.background.visible = true;
+        // SAFETY: Only enable visibility if there IS a background texture/image.
+        // Forcing visible=true on an empty background mesh crashes Foundry's collisionTest (#getTextureAlpha).
+        if (canvas.primary?.background) {
+            const hasBgImage = canvas.scene.background?.src;
+            const hasTexture = canvas.primary.background.texture;
+
+            // Only restore if valid. If no BG, Foundry keeps it handled/hidden naturally.
+            if (hasBgImage && hasTexture) {
+                canvas.primary.background.visible = true;
+            }
+        }
+
         if (canvas.grid) canvas.grid.visible = true;
 
         // --- RESTORE CLUTTER ---
