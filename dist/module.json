@@ -24,14 +24,12 @@
         "main.js"
     ],
     "styles": [
-        {
-            "src": "style.css"
-        }
+        "style.css"
     ],
     "url": "https://github.com/sammore2/storyteller-cinema",
     "manifest": "https://github.com/sammore2/storyteller-cinema/releases/latest/download/module.json",
     "download": "https://github.com/sammore2/storyteller-cinema/releases/download/v1.0.3/module.zip",
-    "description": "<p>🎬 Storyteller's Cinema v1.0.3</p><p>Transform your Foundry VTT sessions into an immersive Visual Novel experience! This update brings robust stability improvements, \"True Widescreen\" support, and smarter camera handling.</p><p>✨ Key Features &amp; Improvements</p><p>📺 True Widescreen \"Cover\" Mode: The cinematic camera now intelligently zooms to fill the entire screen, eliminating black bars on monitors of any aspect ratio.</p><p>👻 Smart Ghost Mode: Tokens now automatically gain unconstrained movement (Ghost Mode) when entering Cinematic Mode and return to physical wall constraints when switching back to Battlemap Mode.</p><p>🛡️ Robust Scene Handling: Fixed crashes when switching scenes or loading scenes without background images. The module now safely aborts cinematic activation if resources are missing.</p><p>🎨 Seamless Transition: Visual glitches during token texture swapping have been eliminated for a smooth, atomic transition between overhead tokens and cinematic portraits.</p><p>🖼️ Empty Scene Protection: Improved stability for scenes that do not have a background image configured.</p>",
+    "description": "Transform your Foundry VTT battlemaps into an immersive 2.5D Visual Novel experience. This module converts top-down tokens into upright 'Standees' (Paper Mario style) with automatic depth scaling and cinematic overlays.",
     "authors": [
         {
             "name": "Rob Sammore",
