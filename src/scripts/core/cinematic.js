@@ -365,3 +365,18 @@ export async function toggleCinematicMode(active, options = {}) {
         }
     }
 }
+
+// --- AUTO-REFRESH ON SETTINGS CHANGE ---
+Hooks.on('updateScene', (document, change, options, userId) => {
+    if (!document.isView) return; // Only if it's the current scene
+
+    // Check if cinematic mode is active on the BODY
+    if (!window.document.body.classList.contains('cinematic-mode')) return;
+
+    // Check if our flag changed
+    const flagChange = change.flags?.['storyteller-cinema']?.cinematicBg;
+    if (flagChange !== undefined) {
+        console.log("Storyteller Cinema | Background updated, refreshing...");
+        setCinematicBackground(true);
+    }
+});

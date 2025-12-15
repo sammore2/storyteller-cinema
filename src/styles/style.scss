@@ -59,7 +59,11 @@ body.cinematic-mode {
    left: 50%;
    transform: translateX(-50%);
    right: auto;
-   width: 35px;
+   right: auto;
+   width: auto;
+   min-width: 35px;
+   padding: 0 10px;
+   gap: 8px;
    height: 35px;
    z-index: 95;
    /* Must be > 10 (Overlay) but < 100 (Sidebar) */

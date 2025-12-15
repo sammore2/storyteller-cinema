@@ -35,7 +35,7 @@ function registerUIHooks() {
       const targetContainer = appearanceTab || submitBtn.closest(".form-footer").previousElementSibling;
       container.innerHTML = `
                 <hr>
-                <h3 class="form-header"><i class="fas fa-film"></i> Storyteller Cinema</h3>
+                <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
                 
                 <div class="form-group">
                     <label>Default View Mode</label>
@@ -151,7 +151,7 @@ function createHUDButton() {
   if (document.getElementById("storyteller-cinema-toggle")) return;
   const btn = document.createElement("div");
   btn.id = "storyteller-cinema-toggle";
-  btn.innerHTML = '<i class="fas fa-film"></i>';
+  btn.innerHTML = '<i class="fas fa-film"></i> <span>Storyteller Cinema</span>';
   btn.title = "Toggle Cinematic Mode";
   if (document.body.classList.contains("cinematic-mode")) btn.classList.add("active");
   btn.onclick = async () => {

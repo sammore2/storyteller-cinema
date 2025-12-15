@@ -58,7 +58,7 @@ export function registerUIHooks() {
             // RE-WRITE HTML FOR MANUAL BUTTON (Safer for Injection)
             container.innerHTML = `
                 <hr>
-                <h3 class="form-header"><i class="fas fa-film"></i> Storyteller Cinema</h3>
+                <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
                 
                 <div class="form-group">
                     <label>Default View Mode</label>
@@ -231,7 +231,7 @@ function createHUDButton() {
 
     const btn = document.createElement('div');
     btn.id = 'storyteller-cinema-toggle';
-    btn.innerHTML = '<i class="fas fa-film"></i>';
+    btn.innerHTML = '<i class="fas fa-film"></i> <span>Storyteller Cinema</span>';
     btn.title = "Toggle Cinematic Mode";
 
     // Initial State

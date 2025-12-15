@@ -238,6 +238,16 @@ async function toggleCinematicMode(active, options = {}) {
     }
   }
 }
+Hooks.on("updateScene", (document2, change, options, userId) => {
+  var _a, _b;
+  if (!document2.isView) return;
+  if (!window.document.body.classList.contains("cinematic-mode")) return;
+  const flagChange = (_b = (_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) == null ? void 0 : _b.cinematicBg;
+  if (flagChange !== void 0) {
+    console.log("Storyteller Cinema | Background updated, refreshing...");
+    setCinematicBackground(true);
+  }
+});
 export {
   createOverlay as c,
   toggleCinematicMode as t
