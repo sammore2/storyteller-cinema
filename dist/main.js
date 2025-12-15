@@ -46,7 +46,9 @@ Hooks.once("init", async function() {
   });
 });
 Hooks.on("canvasReady", () => {
-  toggleCinematicMode(false, {});
+  const viewMode = canvas.scene.getFlag("storyteller-cinema", "viewMode");
+  const shouldBeCinematic = viewMode === "cinematic";
+  toggleCinematicMode(shouldBeCinematic, {});
 });
 Hooks.on("updateToken", (tokenDocument, change, options) => {
   var _a;

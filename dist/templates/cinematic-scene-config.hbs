@@ -1,0 +1,27 @@
+<div class="cinematic-scene-config">
+    <div class="form-group">
+        <label>Modo de Visualização Padrão</label>
+        <div class="form-fields">
+            <select name="viewMode">
+                {{selectOptions viewModes selected=viewMode}}
+            </select>
+        </div>
+        <p class="notes">Define se a cena abre em modo Tático ou Cinemático.</p>
+    </div>
+
+    <div class="form-group">
+        <label>Imagem de Fundo Cinemático</label>
+        <div class="form-fields">
+            {{!-- V13/V12+ Standard: Custom Element acting as input --}}
+            <file-picker name="cinematicBg" type="image" value="{{cinematicBg}}"
+                placeholder="path/to/background.webp"></file-picker>
+        </div>
+        <p class="notes">Esta imagem substituirá o mapa quando o Modo Cinema estiver ativo.</p>
+    </div>
+
+    <div class="form-footer">
+        <button type="submit">
+            <i class="fas fa-save"></i> Salvar Configurações
+        </button>
+    </div>
+</div>

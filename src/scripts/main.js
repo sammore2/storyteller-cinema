@@ -64,7 +64,12 @@ Hooks.once('init', async function () {
 /* CANVAS READY                                                              */
 /* ------------------------------------------------------------------------- */
 Hooks.on('canvasReady', () => {
-  toggleCinematicMode(false, { init: true });
+  const viewMode = canvas.scene.getFlag('storyteller-cinema', 'viewMode');
+  const shouldBeCinematic = viewMode === 'cinematic';
+
+  // Use init: true to prevent transition animations if desired, or let it animate.
+  // Generally on load we might want instant switch, but toggleCinematicMode handles mechanics.
+  toggleCinematicMode(shouldBeCinematic, { init: true });
 });
 
 /* ------------------------------------------------------------------------- */

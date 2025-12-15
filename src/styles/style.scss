@@ -56,8 +56,9 @@ body.cinematic-mode {
 #storyteller-cinema-toggle {
    position: fixed;
    top: 5px;
-   right: 310px;
-   /* Width of sidebar (~300px) + padding */
+   left: 50%;
+   transform: translateX(-50%);
+   right: auto;
    width: 35px;
    height: 35px;
    z-index: 95;
@@ -85,5 +86,37 @@ body.cinematic-mode {
       color: #ff6400;
       border-color: #ff6400;
       background: rgba(20, 0, 0, 0.9);
+   }
+}
+
+/* === CONFIGURATION UI === */
+.storyteller-cinema-config {
+   margin-top: 0.5em;
+   padding-top: 0.5em;
+
+   .form-header {
+      margin-bottom: 0.5em;
+      border-bottom: 1px solid var(--color-border-light-primary, #7a7971);
+      color: var(--color-text-dark-primary, #191813);
+      font-family: var(--font-primary);
+      font-weight: bold;
+   }
+
+   // Ensure our form groups behave like Foundry's
+   .form-group {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      margin: 0 0 0.25em 0;
+
+      label {
+         flex: 2;
+      }
+
+      .form-fields {
+         flex: 3;
+         display: flex;
+         gap: 5px;
+      }
    }
 }

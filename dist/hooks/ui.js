@@ -1,107 +1,4 @@
 import { t as toggleCinematicMode } from "../core/cinematic.js";
-import { S as SvelteComponent, i as init, s as safe_not_equal, n as noop, d as detach, a as select_option, b as insert, c as append, l as listen, e as element, f as space, g as attr, h as set_input_value } from "../vendor.js";
-function create_fragment(ctx) {
-  let div1;
-  let label;
-  let t1;
-  let div0;
-  let select;
-  let option0;
-  let option1;
-  let t4;
-  let p;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      div1 = element("div");
-      label = element("label");
-      label.textContent = "Visualização Padrão";
-      t1 = space();
-      div0 = element("div");
-      select = element("select");
-      option0 = element("option");
-      option0.textContent = "📍 Battlemap (Tático)";
-      option1 = element("option");
-      option1.textContent = "🎬 Cinematic (Imersivo)";
-      t4 = space();
-      p = element("p");
-      p.textContent = "Define se esta cena deve abrir automaticamente no Modo Cinemático (Troca de\r\n    assets, Escala de Profundidade).";
-      attr(label, "for", "viewModeSelect");
-      option0.__value = "battlemap";
-      set_input_value(option0, option0.__value);
-      option1.__value = "cinematic";
-      set_input_value(option1, option1.__value);
-      attr(select, "id", "viewModeSelect");
-      attr(div0, "class", "form-fields");
-      attr(p, "class", "notes");
-      attr(div1, "class", "form-group");
-    },
-    m(target, anchor) {
-      insert(target, div1, anchor);
-      append(div1, label);
-      append(div1, t1);
-      append(div1, div0);
-      append(div0, select);
-      append(select, option0);
-      append(select, option1);
-      select_option(
-        select,
-        /*viewMode*/
-        ctx[0]
-      );
-      append(div1, t4);
-      append(div1, p);
-      if (!mounted) {
-        dispose = listen(
-          select,
-          "change",
-          /*updateViewMode*/
-          ctx[1]
-        );
-        mounted = true;
-      }
-    },
-    p(ctx2, [dirty]) {
-      if (dirty & /*viewMode*/
-      1) {
-        select_option(
-          select,
-          /*viewMode*/
-          ctx2[0]
-        );
-      }
-    },
-    i: noop,
-    o: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(div1);
-      }
-      mounted = false;
-      dispose();
-    }
-  };
-}
-function instance($$self, $$props, $$invalidate) {
-  let { scene } = $$props;
-  let viewMode = scene.getFlag("storyteller-cinema", "viewMode") || "battlemap";
-  async function updateViewMode(event) {
-    $$invalidate(0, viewMode = event.target.value);
-    await scene.setFlag("storyteller-cinema", "viewMode", viewMode);
-    console.log(`Storyteller Cinema | 🎬 View Mode set to: ${viewMode}`);
-  }
-  $$self.$$set = ($$props2) => {
-    if ("scene" in $$props2) $$invalidate(2, scene = $$props2.scene);
-  };
-  return [viewMode, updateViewMode, scene];
-}
-class ViewModeSelect extends SvelteComponent {
-  constructor(options) {
-    super();
-    init(this, options, instance, create_fragment, safe_not_equal, { scene: 2 });
-  }
-}
 function registerUIHooks() {
   Hooks.on("getSceneControlButtons", (controls) => {
     const controlList = Array.isArray(controls) ? controls : Object.values(controls);
@@ -125,11 +22,65 @@ function registerUIHooks() {
     if (!(root instanceof HTMLElement)) return;
     const submitBtn = root.querySelector('button[type="submit"]');
     if (submitBtn) {
-      if (root.querySelector(".storyteller-cinema-mount")) return;
-      const mountPoint = document.createElement("div");
-      mountPoint.className = "form-group storyteller-cinema-mount";
-      submitBtn.parentElement.insertBefore(mountPoint, submitBtn);
-      new ViewModeSelect({ target: mountPoint, props: { scene } });
+      if (root.querySelector(".storyteller-cinema-config")) return;
+      const flags = scene.flags["storyteller-cinema"] || {};
+      const bgValue = flags.cinematicBg || "";
+      const viewMode = flags.viewMode || "battlemap";
+      const container = document.createElement("div");
+      container.className = "storyteller-cinema-config";
+      container.style.borderTop = "1px solid var(--color-border-light-2)";
+      container.style.paddingTop = "10px";
+      container.style.marginTop = "10px";
+      const appearanceTab = root.querySelector('.tab[data-tab="appearance"]') || root.querySelector('.tab[data-tab="basic"]');
+      const targetContainer = appearanceTab || submitBtn.closest(".form-footer").previousElementSibling;
+      container.innerHTML = `
+                <hr>
+                <h3 class="form-header"><i class="fas fa-film"></i> Storyteller Cinema</h3>
+                
+                <div class="form-group">
+                    <label>Modo de Visualização Padrão</label>
+                    <div class="form-fields">
+                        <select name="flags.storyteller-cinema.viewMode">
+                            <option value="battlemap" ${viewMode === "battlemap" ? "selected" : ""}>📍 Battlemap (Tático)</option>
+                            <option value="cinematic" ${viewMode === "cinematic" ? "selected" : ""}>🎬 Cinematic (Imersivo)</option>
+                        </select>
+                    </div>
+                    <p class="notes">Define como esta cena deve ser iniciada.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Fundo Cinemático</label>
+                    <div class="form-fields">
+                        <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicBg" title="Browse Files" tabindex="-1">
+                            <i class="fas fa-file-import fa-fw"></i>
+                        </button>
+                        <input class="image" type="text" name="flags.storyteller-cinema.cinematicBg" placeholder="Caminho da imagem..." value="${bgValue}">
+                    </div>
+                    <p class="notes">Imagem exibida apenas no modo cinema (substitui o mapa).</p>
+                </div>
+            `;
+      targetContainer.appendChild(container);
+      const btn = container.querySelector("button.file-picker");
+      if (btn) {
+        btn.onclick = (event) => {
+          var _a, _b;
+          event.preventDefault();
+          const FilePickerClass = ((_b = (_a = foundry.applications) == null ? void 0 : _a.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
+          const fp = new FilePickerClass({
+            type: "image",
+            current: bgValue,
+            callback: (path) => {
+              const input = container.querySelector("input[name='flags.storyteller-cinema.cinematicBg']");
+              if (input) {
+                input.value = path;
+                input.dispatchEvent(new Event("change", { bubbles: true }));
+              }
+            }
+          });
+          return fp.browse();
+        };
+      }
+      app.setPosition({ height: "auto" });
     }
   });
   let saveTimeout = null;
@@ -155,6 +106,46 @@ function registerUIHooks() {
       console.log("Storyteller Cinema | Salvo no Banco:", newScale.toFixed(2));
     }, 600);
   }, { passive: false, capture: true });
+  Hooks.on("renderTokenConfig", (app, html, data) => {
+    var _a;
+    if (!(app == null ? void 0 : app.document) || !html) return;
+    const flags = ((_a = app.document.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
+    const cinematicTexture = flags.cinematicTexture || "";
+    let root = html instanceof HTMLElement ? html : html[0];
+    const appearanceTab = root.querySelector('.tab[data-tab="appearance"]');
+    if (!appearanceTab) return;
+    if (appearanceTab.querySelector('input[name="flags.storyteller-cinema.cinematicTexture"]')) return;
+    const formGroup = document.createElement("div");
+    formGroup.className = "form-group";
+    formGroup.innerHTML = `
+            <label>Imagem Cinemática <span class="units">(Opcional)</span></label>
+            <div class="form-fields">
+                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Navegar Arquivos" tabindex="-1">
+                    <i class="fas fa-file-import fa-fw"></i>
+                </button>
+                <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
+            </div>
+            <p class="notes">Se definido, o token mudará para esta imagem quando o Modo Cinema for ativado.</p>
+        `;
+    appearanceTab.appendChild(formGroup);
+    const btn = formGroup.querySelector("button.file-picker");
+    if (btn) {
+      btn.onclick = (event) => {
+        var _a2, _b;
+        event.preventDefault();
+        const FilePickerClass = ((_b = (_a2 = foundry.applications) == null ? void 0 : _a2.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
+        const fp = new FilePickerClass({
+          type: "imagevideo",
+          current: cinematicTexture,
+          callback: (path) => {
+            formGroup.querySelector("input").value = path;
+          }
+        });
+        return fp.browse();
+      };
+    }
+    app.setPosition({ height: "auto" });
+  });
 }
 function createHUDButton() {
   if (document.getElementById("storyteller-cinema-toggle")) return;
