@@ -78,31 +78,24 @@ async function setCinematicBackground(active) {
     if (active) {
         const bgPath = canvas.scene.getFlag('storyteller-cinema', 'cinematicBg');
 
+        // --- HIDE CLUTTER ---
         // CRITICAL FIX: DO NOT HIDE canvas.primary (It contains Tokens in V13!)
-        // Instead, we try to hide the map specifically.
-        // canvas.primary.background is the likely candidate.
-        // canvas.primary.background is the likely candidate.
         if (canvas.primary?.background) {
             canvas.primary.background.visible = false;
         }
 
-        // --- HIDE CLUTTER ---
         if (canvas.grid) canvas.grid.visible = false;
         if (canvas.walls) canvas.walls.visible = false;
         if (canvas.templates) canvas.templates.visible = false;
-        if (canvas.foreground) canvas.foreground.visible = false; // Foreground tiles?
+        if (canvas.foreground) canvas.foreground.visible = false;
 
-        // Hide Door Icons (Controls Layer)
         if (canvas.controls?.doors) canvas.controls.doors.visible = false;
 
         if (bgPath) {
             try {
                 const tex = await foundry.canvas.loadTexture(bgPath);
-                if (!tex) return;
 
                 // STALE CONTAINER CHECK
-                // If we changed scenes, cinematicContainer might be a leftover from the previous canvas.
-                // We must verify if it belongs to the CURRENT canvas.primary.
                 if (cinematicContainer) {
                     if (cinematicContainer.destroyed || cinematicContainer.parent !== canvas.primary) {
                         if (!cinematicContainer.destroyed) cinematicContainer.destroy({ children: true });
@@ -112,15 +105,13 @@ async function setCinematicBackground(active) {
 
                 if (!cinematicContainer) {
                     cinematicContainer = new PIXI.Container();
-
                     cinematicContainer.eventMode = 'none'; // Passive
 
                     const sprite = new PIXI.Sprite(tex);
                     sprite.anchor.set(0.5);
                     cinematicContainer.addChild(sprite);
 
-                    // Insert BEHIND tokens.
-                    // We attach to canvas.primary but send to bottom (index 0).
+                    // Insert BEHIND tokens (index 0 of primary)
                     canvas.primary.addChildAt(cinematicContainer, 0);
                 }
 
@@ -159,6 +150,7 @@ async function setCinematicBackground(active) {
                 console.error("Storyteller Cinema | BG Error:", err);
             }
         }
+
     } else {
         // Restore
         // SAFETY: Only enable visibility if there IS a background texture/image.
@@ -196,7 +188,10 @@ export async function toggleCinematicMode(active, options = {}) {
     const overlay = document.getElementById('storyteller-cinema-overlay');
 
     if (active) {
-        // --- 1. ATIVAR ---
+        // --- 1. ACTIVATE ---
+
+        // Attempt to convert to Cinematic Visuals
+        await setCinematicBackground(true);
 
         // SAVE BATTLE VIEW
         const battleView = {
@@ -204,13 +199,10 @@ export async function toggleCinematicMode(active, options = {}) {
             y: canvas.stage.pivot.y,
             scale: canvas.stage.scale.x
         };
-        // Store in a module-level variable or flag? Flag is safer for reload, but var is okay for temporary toggle.
-        // Let's use a temporary flag on the canvas object itself to avoid cluttering DB
         canvas.storytellerBattleView = battleView;
 
         // Cinematic Mode: Enable Ghost Mode (No Walls / Free Movement)
         await ensureGhostMode(true);
-        await setCinematicBackground(true);
 
         if (overlay) overlay.classList.add('active');
         document.body.classList.add('cinematic-mode');
@@ -220,13 +212,11 @@ export async function toggleCinematicMode(active, options = {}) {
         const rect = canvas.dimensions.sceneRect;
         const scaleW = window.innerWidth / rect.width;
         const scaleH = window.innerHeight / rect.height;
+
         // CHANGE: Use Math.max (COVER behavior) to ensure NO BLACK BARS.
-        // This means we might crop the top/bottom or sides of the scene, but the screen will be full.
-        // This respects the "Widescreen" request.
         let targetScale = Math.max(scaleW, scaleH);
 
         // CRITICAL FIX: Foundry clamps zoom options.
-        // We must calculate the sprite coverage based on the ACTUAL resulting zoom.
         const minZ = canvas.minScale || 0.1;
         const maxZ = canvas.maxScale || 3.0;
         targetScale = Math.max(minZ, Math.min(maxZ, targetScale));
@@ -313,7 +303,7 @@ export async function toggleCinematicMode(active, options = {}) {
         }
 
     } else {
-        // --- 2. DESATIVAR ---
+        // --- 2. DEACTIVATE ---
         // Battle Mode: Disable Ghost Mode (Walls Active / Constrained)
         await ensureGhostMode(false, true);
         await setCinematicBackground(false);

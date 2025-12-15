@@ -1,16 +1,17 @@
 import { toggleCinematicMode } from '../core/cinematic.js';
 
 
+// --- UI HOOKS REGISTRATION ---
 export function registerUIHooks() {
     Hooks.on('getSceneControlButtons', (controls) => {
-        // PROTEÇÃO: Normaliza controls (pode vir como Objeto ou Array)
+        // PROTECTION: Normalize controls (can be Object or Array)
         const controlList = Array.isArray(controls) ? controls : Object.values(controls);
 
         const tokenLayer = controlList.find(c => c.name === 'token');
         if (tokenLayer && tokenLayer.tools) {
             tokenLayer.tools.push({
                 name: 'cinematic',
-                title: 'Modo Cinema 2.5D',
+                title: 'Storyteller Cinema 2.5D',
                 icon: 'fas fa-film',
                 toggle: true,
                 active: document.body.classList.contains('cinematic-mode'),
@@ -23,17 +24,17 @@ export function registerUIHooks() {
         const scene = app.document ?? app.object;
         if (!scene) return;
 
-        // PROTEÇÃO: V12+ usa HTMLElement, V11- usava JQuery
+        // PROTECTION: V12+ uses HTMLElement, V11- used JQuery
         let root = html;
         if (html.jquery) root = html[0];
 
         if (!(root instanceof HTMLElement)) return;
 
-        // Procura botão submit de forma nativa e segura
+        // Find submit button safely/natively
         const submitBtn = root.querySelector('button[type="submit"]');
 
         if (submitBtn) {
-            // Evita injeção duplicada
+            // Prevent duplicate injection
             if (root.querySelector('.storyteller-cinema-config')) return;
 
             // Flags Update
@@ -60,25 +61,25 @@ export function registerUIHooks() {
                 <h3 class="form-header"><i class="fas fa-film"></i> Storyteller Cinema</h3>
                 
                 <div class="form-group">
-                    <label>Modo de Visualização Padrão</label>
+                    <label>Default View Mode</label>
                     <div class="form-fields">
                         <select name="flags.storyteller-cinema.viewMode">
-                            <option value="battlemap" ${viewMode === 'battlemap' ? 'selected' : ''}>📍 Battlemap (Tático)</option>
-                            <option value="cinematic" ${viewMode === 'cinematic' ? 'selected' : ''}>🎬 Cinematic (Imersivo)</option>
+                            <option value="battlemap" ${viewMode === 'battlemap' ? 'selected' : ''}>📍 Battlemap (Tactical)</option>
+                            <option value="cinematic" ${viewMode === 'cinematic' ? 'selected' : ''}>🎬 Cinematic (Immersive)</option>
                         </select>
                     </div>
-                    <p class="notes">Define como esta cena deve ser iniciada.</p>
+                    <p class="notes">Defines how this scene should start.</p>
                 </div>
 
                 <div class="form-group">
-                    <label>Fundo Cinemático</label>
+                    <label>Cinematic Background</label>
                     <div class="form-fields">
                         <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicBg" title="Browse Files" tabindex="-1">
                             <i class="fas fa-file-import fa-fw"></i>
                         </button>
-                        <input class="image" type="text" name="flags.storyteller-cinema.cinematicBg" placeholder="Caminho da imagem..." value="${bgValue}">
+                        <input class="image" type="text" name="flags.storyteller-cinema.cinematicBg" placeholder="Image path..." value="${bgValue}">
                     </div>
-                    <p class="notes">Imagem exibida apenas no modo cinema (substitui o mapa).</p>
+                    <p class="notes">Image displayed only in cinematic mode (replaces map).</p>
                 </div>
             `;
 
@@ -112,7 +113,7 @@ export function registerUIHooks() {
     });
 
     // --- Interaction: Shift+Wheel SCALING (Hijack Rotation) ---
-    // Variável de controle do Debounce (Escopo do Módulo)
+    // Debounce Control Variable (Module Scope)
     let saveTimeout = null;
 
     window.addEventListener('wheel', (event) => {
@@ -130,27 +131,27 @@ export function registerUIHooks() {
         // Calculate Delta (+/- 0.05)
         const delta = event.deltaY > 0 ? -0.05 : 0.05;
 
-        // 1. Leitura: Tenta pegar do preview local, senão pega do banco, senão 1.0
+        // 1. Read: Try local preview, else DB flag, else 1.0
         let current = hoverToken._cinemaScalePreview ?? hoverToken.document.getFlag('storyteller-cinema', 'cinematicScale') ?? 1.0;
 
-        // 2. Cálculo com Limites
+        // 2. Calc with Limits
         let newScale = Math.max(0.1, Math.min(5.0, current + delta));
-        newScale = Math.round(newScale * 100) / 100; // Arredonda 2 casas
+        newScale = Math.round(newScale * 100) / 100; // Round 2 decimal places
 
-        // 3. ATUALIZAÇÃO VISUAL INSTANTÂNEA (Sem Banco de Dados)
+        // 3. INSTANT VISUAL UPDATE (No DB yet)
         hoverToken._cinemaScalePreview = newScale;
-        hoverToken.refresh(); // O depth.js vai ler o _cinemaScalePreview agora
+        hoverToken.refresh(); // depth.js will read _cinemaScalePreview now
 
-        // 4. GRAVAÇÃO NO BANCO (Debounced / Atrasada)
+        // 4. DB SAVE (Debounced / Delayed)
         if (saveTimeout) clearTimeout(saveTimeout);
 
         saveTimeout = setTimeout(() => {
-            // Salva e limpa o preview (pois o banco já terá o valor)
+            // Save and clear preview (DB will have value)
             hoverToken.document.setFlag('storyteller-cinema', 'cinematicScale', newScale).then(() => {
                 hoverToken._cinemaScalePreview = null;
             });
-            console.log("Storyteller Cinema | Salvo no Banco:", newScale.toFixed(2));
-        }, 600); // Espera 600ms de inatividade
+            console.log("Storyteller Cinema | Saved to DB:", newScale.toFixed(2));
+        }, 600); // Wait 600ms inactivity
 
     }, { passive: false, capture: true }); // Capture is key to running before Foundry
 
@@ -180,14 +181,14 @@ export function registerUIHooks() {
         const formGroup = document.createElement("div");
         formGroup.className = "form-group";
         formGroup.innerHTML = `
-            <label>Imagem Cinemática <span class="units">(Opcional)</span></label>
+            <label>Cinematic Portrait <span class="units">(Optional)</span></label>
             <div class="form-fields">
-                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Navegar Arquivos" tabindex="-1">
+                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Browse Files" tabindex="-1">
                     <i class="fas fa-file-import fa-fw"></i>
                 </button>
                 <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
             </div>
-            <p class="notes">Se definido, o token mudará para esta imagem quando o Modo Cinema for ativado.</p>
+            <p class="notes">If set, Token swaps to this image when Cinematic Mode is active.</p>
         `;
 
         // Insert at the top of the appearance tab (or specific location)
@@ -231,7 +232,7 @@ function createHUDButton() {
     const btn = document.createElement('div');
     btn.id = 'storyteller-cinema-toggle';
     btn.innerHTML = '<i class="fas fa-film"></i>';
-    btn.title = "Alternar Modo Cinema";
+    btn.title = "Toggle Cinematic Mode";
 
     // Initial State
     if (document.body.classList.contains('cinematic-mode')) btn.classList.add('active');

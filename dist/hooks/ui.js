@@ -6,7 +6,7 @@ function registerUIHooks() {
     if (tokenLayer && tokenLayer.tools) {
       tokenLayer.tools.push({
         name: "cinematic",
-        title: "Modo Cinema 2.5D",
+        title: "Storyteller Cinema 2.5D",
         icon: "fas fa-film",
         toggle: true,
         active: document.body.classList.contains("cinematic-mode"),
@@ -38,25 +38,25 @@ function registerUIHooks() {
                 <h3 class="form-header"><i class="fas fa-film"></i> Storyteller Cinema</h3>
                 
                 <div class="form-group">
-                    <label>Modo de Visualização Padrão</label>
+                    <label>Default View Mode</label>
                     <div class="form-fields">
                         <select name="flags.storyteller-cinema.viewMode">
-                            <option value="battlemap" ${viewMode === "battlemap" ? "selected" : ""}>📍 Battlemap (Tático)</option>
-                            <option value="cinematic" ${viewMode === "cinematic" ? "selected" : ""}>🎬 Cinematic (Imersivo)</option>
+                            <option value="battlemap" ${viewMode === "battlemap" ? "selected" : ""}>📍 Battlemap (Tactical)</option>
+                            <option value="cinematic" ${viewMode === "cinematic" ? "selected" : ""}>🎬 Cinematic (Immersive)</option>
                         </select>
                     </div>
-                    <p class="notes">Define como esta cena deve ser iniciada.</p>
+                    <p class="notes">Defines how this scene should start.</p>
                 </div>
 
                 <div class="form-group">
-                    <label>Fundo Cinemático</label>
+                    <label>Cinematic Background</label>
                     <div class="form-fields">
                         <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicBg" title="Browse Files" tabindex="-1">
                             <i class="fas fa-file-import fa-fw"></i>
                         </button>
-                        <input class="image" type="text" name="flags.storyteller-cinema.cinematicBg" placeholder="Caminho da imagem..." value="${bgValue}">
+                        <input class="image" type="text" name="flags.storyteller-cinema.cinematicBg" placeholder="Image path..." value="${bgValue}">
                     </div>
-                    <p class="notes">Imagem exibida apenas no modo cinema (substitui o mapa).</p>
+                    <p class="notes">Image displayed only in cinematic mode (replaces map).</p>
                 </div>
             `;
       targetContainer.appendChild(container);
@@ -103,7 +103,7 @@ function registerUIHooks() {
       hoverToken.document.setFlag("storyteller-cinema", "cinematicScale", newScale).then(() => {
         hoverToken._cinemaScalePreview = null;
       });
-      console.log("Storyteller Cinema | Salvo no Banco:", newScale.toFixed(2));
+      console.log("Storyteller Cinema | Saved to DB:", newScale.toFixed(2));
     }, 600);
   }, { passive: false, capture: true });
   Hooks.on("renderTokenConfig", (app, html, data) => {
@@ -118,14 +118,14 @@ function registerUIHooks() {
     const formGroup = document.createElement("div");
     formGroup.className = "form-group";
     formGroup.innerHTML = `
-            <label>Imagem Cinemática <span class="units">(Opcional)</span></label>
+            <label>Cinematic Portrait <span class="units">(Optional)</span></label>
             <div class="form-fields">
-                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Navegar Arquivos" tabindex="-1">
+                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Browse Files" tabindex="-1">
                     <i class="fas fa-file-import fa-fw"></i>
                 </button>
                 <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
             </div>
-            <p class="notes">Se definido, o token mudará para esta imagem quando o Modo Cinema for ativado.</p>
+            <p class="notes">If set, Token swaps to this image when Cinematic Mode is active.</p>
         `;
     appearanceTab.appendChild(formGroup);
     const btn = formGroup.querySelector("button.file-picker");
@@ -152,7 +152,7 @@ function createHUDButton() {
   const btn = document.createElement("div");
   btn.id = "storyteller-cinema-toggle";
   btn.innerHTML = '<i class="fas fa-film"></i>';
-  btn.title = "Alternar Modo Cinema";
+  btn.title = "Toggle Cinematic Mode";
   if (document.body.classList.contains("cinematic-mode")) btn.classList.add("active");
   btn.onclick = async () => {
     const isActive = document.body.classList.contains("cinematic-mode");

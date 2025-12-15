@@ -63,7 +63,6 @@ async function setCinematicBackground(active) {
     if (bgPath) {
       try {
         const tex = await foundry.canvas.loadTexture(bgPath);
-        if (!tex) return;
         if (cinematicContainer) {
           if (cinematicContainer.destroyed || cinematicContainer.parent !== canvas.primary) {
             if (!cinematicContainer.destroyed) cinematicContainer.destroy({ children: true });
@@ -122,6 +121,7 @@ async function toggleCinematicMode(active, options = {}) {
   console.log("Storyteller Cinema | Toggle Called. Target:", active);
   const overlay = document.getElementById("storyteller-cinema-overlay");
   if (active) {
+    await setCinematicBackground(true);
     const battleView = {
       x: canvas.stage.pivot.x,
       y: canvas.stage.pivot.y,
@@ -129,7 +129,6 @@ async function toggleCinematicMode(active, options = {}) {
     };
     canvas.storytellerBattleView = battleView;
     await ensureGhostMode(true);
-    await setCinematicBackground(true);
     if (overlay) overlay.classList.add("active");
     document.body.classList.add("cinematic-mode");
     const rect = canvas.dimensions.sceneRect;
