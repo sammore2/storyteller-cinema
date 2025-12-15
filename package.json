@@ -1,6 +1,16 @@
 {
   "name": "storyteller-cinema",
   "version": "1.0.3",
+  "description": "Immersive 2.5D visual novel style scenes for Foundry VTT.",
+  "author": "Sammore",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sammore2/storyteller-cinema.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sammore2/storyteller-cinema/issues"
+  },
+  "homepage": "https://github.com/sammore2/storyteller-cinema#readme",
   "type": "module",
   "scripts": {
     "dev": "vite",
