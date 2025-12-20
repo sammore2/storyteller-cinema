@@ -36,7 +36,7 @@ Hooks.once("init", async function() {
   game.keybindings.register("storyteller-cinema", "toggle-mode", {
     name: "Toggle Cinematic Mode",
     hint: "Switch between Battle Map and Visual Novel views",
-    editable: [{ key: "KeyC", modifiers: ["Control"] }],
+    editable: [{ key: "KeyZ", modifiers: ["Shift"] }],
     onDown: () => {
       const isCinematic = document.body.classList.contains("cinematic-mode");
       toggleCinematicMode(!isCinematic);
