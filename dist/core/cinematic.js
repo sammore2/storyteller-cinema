@@ -60,6 +60,9 @@ async function setCinematicBackground(active) {
     if (canvas.templates) canvas.templates.visible = false;
     if (canvas.foreground) canvas.foreground.visible = false;
     if ((_b = canvas.controls) == null ? void 0 : _b.doors) canvas.controls.doors.visible = false;
+    if (canvas.lighting) canvas.lighting.visible = false;
+    if (canvas.effects) canvas.effects.visible = false;
+    if (canvas.fog) canvas.fog.visible = false;
     if (bgPath) {
       try {
         const tex = await foundry.canvas.loadTexture(bgPath);
@@ -111,6 +114,9 @@ async function setCinematicBackground(active) {
     if (canvas.templates) canvas.templates.visible = true;
     if (canvas.foreground) canvas.foreground.visible = true;
     if ((_e = canvas.controls) == null ? void 0 : _e.doors) canvas.controls.doors.visible = true;
+    if (canvas.lighting) canvas.lighting.visible = true;
+    if (canvas.effects) canvas.effects.visible = true;
+    if (canvas.fog) canvas.fog.visible = true;
     if (cinematicContainer) {
       cinematicContainer.destroy({ children: true, texture: false });
       cinematicContainer = null;
