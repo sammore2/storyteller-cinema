@@ -1,16 +1,18 @@
-import { t as toggleCinematicMode } from "../core/cinematic.js";
+import "../core/cinematic.js";
 function registerUIHooks() {
   Hooks.on("getSceneControlButtons", (controls) => {
     const controlList = Array.isArray(controls) ? controls : Object.values(controls);
     const tokenLayer = controlList.find((c) => c.name === "token");
-    if (tokenLayer && tokenLayer.tools) {
+    if (tokenLayer && tokenLayer.tools && game.user.isGM) {
       tokenLayer.tools.push({
         name: "cinematic",
         title: "Storyteller Cinema 2.5D",
         icon: "fas fa-film",
         toggle: true,
-        active: document.body.classList.contains("cinematic-mode"),
-        onClick: async (tog) => await toggleCinematicMode(tog)
+        onClick: async (tog) => {
+          const current = canvas.scene.getFlag("storyteller-cinema", "active") || false;
+          await canvas.scene.setFlag("storyteller-cinema", "active", !current);
+        }
       });
     }
   });
@@ -36,7 +38,7 @@ function registerUIHooks() {
       container.innerHTML = `
                 <hr>
                 <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
-                
+
                 <div class="form-group">
                     <label>Default View Mode</label>
                     <div class="form-fields">
@@ -155,10 +157,10 @@ function createHUDButton() {
   btn.title = "Toggle Cinematic Mode";
   if (document.body.classList.contains("cinematic-mode")) btn.classList.add("active");
   btn.onclick = async () => {
-    const isActive = document.body.classList.contains("cinematic-mode");
-    await toggleCinematicMode(!isActive);
-    btn.classList.toggle("active", !isActive);
+    const current = canvas.scene.getFlag("storyteller-cinema", "active") || false;
+    await canvas.scene.setFlag("storyteller-cinema", "active", !current);
   };
+  if (!game.user.isGM) return;
   document.body.appendChild(btn);
 }
 Hooks.on("ready", createHUDButton);

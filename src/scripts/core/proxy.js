@@ -12,6 +12,11 @@ export class CinematicProxy {
         this.sprite = new PIXI.Sprite();
         this.container = new PIXI.Container();
 
+        // Dynamic import workaround removed - switching to direct import if possible, 
+        // or ensure _executeVisuals handles it robustly.
+        // Actually, let's keep the dynamic import logic but make it cleaner,
+        // OR better yet, let's trust the static import at the top of the file since we fixed the cycle.
+
         // Settings with Safe Defaults
         const getSetting = (key, def) => {
             try { return game.settings.get('storyteller-cinema', key); }
@@ -155,6 +160,7 @@ export class CinematicProxy {
         }
     }
 }
+
 
 /**
  * Gerenciador Singleton dos Proxies

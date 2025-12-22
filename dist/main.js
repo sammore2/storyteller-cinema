@@ -5,6 +5,59 @@ Hooks.once("init", async function() {
   console.log("Storyteller Cinema | Initializing...");
   game.settings.register("storyteller-cinema", "referenceHeight", {
     name: "Reference Height (%)",
+    hint: "Token height relative to the screen height in cinematic mode.",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 35,
+    range: { min: 10, max: 80, step: 5 }
+  });
+  game.settings.register("storyteller-cinema", "scollSpeed", {
+    name: "Parallax Scroll Speed",
+    scope: "client",
+    config: true,
+    type: Number,
+    default: 0.1,
+    range: { min: 0, max: 1, step: 0.05 }
+  });
+  registerUIHooks();
+  createOverlay();
+});
+Hooks.on("canvasReady", () => {
+  const viewMode = canvas.scene.getFlag("storyteller-cinema", "viewMode");
+  const isActive = canvas.scene.getFlag("storyteller-cinema", "active") || false;
+  const shouldBeCinematic = isActive || viewMode === "cinematic";
+  toggleCinematicMode(shouldBeCinematic, { init: true });
+});
+Hooks.on("updateToken", (tokenDocument, change, options) => {
+  var _a;
+  if (!change.x && !change.y) return;
+  if ((_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) return;
+  if (options.skippingMemory) return;
+  try {
+    if (game.user.isGM || tokenDocument.isOwner) {
+      const isCinematic = document.body.classList.contains("cinematic-mode");
+      const targetFlag = isCinematic ? "cinematicPos" : "battlePos";
+      const newPos = { x: change.x ?? tokenDocument.x, y: change.y ?? tokenDocument.y };
+      tokenDocument.setFlag("storyteller-cinema", targetFlag, newPos);
+      if (isCinematic && tokenDocument.object) {
+        applyVisualDepth(tokenDocument.object);
+      }
+    }
+  } catch (err) {
+    console.error("Storyteller Cinema | Update Error:", err);
+  }
+});
+Hooks.on("refreshToken", (token) => {
+  if (document.body.classList.contains("cinematic-mode")) {
+    applyVisualDepth(token);
+  }
+});
+console.log("Storyteller Cinema | Main Loaded (Inlined)");
+Hooks.once("init", async function() {
+  console.log("Storyteller Cinema | Initializing...");
+  game.settings.register("storyteller-cinema", "referenceHeight", {
+    name: "Reference Height (%)",
     hint: "Percentage of the scene height that the token should occupy when at the front.",
     scope: "world",
     config: true,
@@ -48,31 +101,7 @@ Hooks.once("init", async function() {
 Hooks.on("canvasReady", () => {
   const viewMode = canvas.scene.getFlag("storyteller-cinema", "viewMode");
   const shouldBeCinematic = viewMode === "cinematic";
-  toggleCinematicMode(shouldBeCinematic, {});
-});
-Hooks.on("updateToken", (tokenDocument, change, options) => {
-  var _a;
-  if (!change.x && !change.y) return;
-  if ((_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) return;
-  if (options.skippingMemory) return;
-  try {
-    if (game.user.isGM || tokenDocument.isOwner) {
-      const isCinematic = document.body.classList.contains("cinematic-mode");
-      const targetFlag = isCinematic ? "cinematicPos" : "battlePos";
-      const newPos = { x: change.x ?? tokenDocument.x, y: change.y ?? tokenDocument.y };
-      tokenDocument.setFlag("storyteller-cinema", targetFlag, newPos);
-      if (isCinematic && tokenDocument.object) {
-        applyVisualDepth(tokenDocument.object);
-      }
-    }
-  } catch (err) {
-    console.error("Storyteller Cinema | Update Error:", err);
-  }
-});
-Hooks.on("refreshToken", (token) => {
-  if (document.body.classList.contains("cinematic-mode")) {
-    applyVisualDepth(token);
-  }
+  toggleCinematicMode(shouldBeCinematic, "default");
 });
 console.log("Storyteller Cinema | Main Loaded (Inlined)");
 //# sourceMappingURL=main.js.map

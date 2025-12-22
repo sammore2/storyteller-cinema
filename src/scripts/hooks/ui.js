@@ -1,4 +1,5 @@
 import { toggleCinematicMode } from '../core/cinematic.js';
+// import { proxy } from '../core/proxy.js'; 
 
 
 // --- UI HOOKS REGISTRATION ---
@@ -8,14 +9,18 @@ export function registerUIHooks() {
         const controlList = Array.isArray(controls) ? controls : Object.values(controls);
 
         const tokenLayer = controlList.find(c => c.name === 'token');
-        if (tokenLayer && tokenLayer.tools) {
+        if (tokenLayer && tokenLayer.tools && game.user.isGM) {
             tokenLayer.tools.push({
                 name: 'cinematic',
                 title: 'Storyteller Cinema 2.5D',
                 icon: 'fas fa-film',
                 toggle: true,
-                active: document.body.classList.contains('cinematic-mode'),
-                onClick: async (tog) => await toggleCinematicMode(tog)
+                onClick: async (tog) => {
+                    // DB SYNC LOGIC: Just update the flag. The hook handles the visual toggle for everyone.
+                    // tog is the button state, but safer to invert current flag
+                    const current = canvas.scene.getFlag('storyteller-cinema', 'active') || false;
+                    await canvas.scene.setFlag('storyteller-cinema', 'active', !current);
+                }
             });
         }
     });
@@ -59,7 +64,7 @@ export function registerUIHooks() {
             container.innerHTML = `
                 <hr>
                 <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
-                
+
                 <div class="form-group">
                     <label>Default View Mode</label>
                     <div class="form-fields">
@@ -192,7 +197,7 @@ export function registerUIHooks() {
         `;
 
         // Insert at the top of the appearance tab (or specific location)
-        // Let's try to append securely or find a good anchor. 
+        // Let's try to append securely or find a good anchor.
         // In Core V12/V13, there are usually specific sections.
         // We will prepend it to the appearance tab to be visible immediately or append it.
         // Appending usually puts it at the bottom.
@@ -238,12 +243,15 @@ function createHUDButton() {
     if (document.body.classList.contains('cinematic-mode')) btn.classList.add('active');
 
     btn.onclick = async () => {
-        const isActive = document.body.classList.contains('cinematic-mode');
-        await toggleCinematicMode(!isActive);
-        // Visual Feedback immediate
-        btn.classList.toggle('active', !isActive);
+        // DB SYNC LOGIC
+        const current = canvas.scene.getFlag('storyteller-cinema', 'active') || false;
+        await canvas.scene.setFlag('storyteller-cinema', 'active', !current);
+
+        // Visual Feedback immediate (Optional, but DB is fast enough)
+        // btn.classList.toggle('active', !isActive);
     };
 
+    if (!game.user.isGM) return; // SECURITY: GM ONLY
     document.body.appendChild(btn);
 }
 

@@ -1,4 +1,4 @@
-import { applyVisualDepth } from './depth.js';
+// import { applyVisualDepth } from './depth.js';
 
 export function createOverlay() {
     if (document.getElementById('storyteller-cinema-overlay')) return;
@@ -73,10 +73,24 @@ async function silentTeleport(token, pos) {
 // --- HELPER: CINEMATIC BACKGROUND ---
 let cinematicContainer = null;
 
+Hooks.on('canvasReady', () => {
+    const viewMode = canvas.scene.getFlag('storyteller-cinema', 'viewMode');
+    // PERSISTENCE: Check if it's currently active in DB
+    const isActive = canvas.scene.getFlag('storyteller-cinema', 'active') || false;
+
+    // Check if cinematic is mandated by flag or legacy viewMode
+    const shouldBeCinematic = isActive || viewMode === 'cinematic';
+
+    // Use 'default' skin or fetch from flag if we had one (simplified for now)
+    // The new signature is (active, skin). We won't pass object options anymore.
+    toggleCinematicMode(shouldBeCinematic, 'default');
+});
+
 // REAL IMPLEMENTATION OF `setCinematicBackground` with V13 Token Safety
 async function setCinematicBackground(active) {
     if (active) {
         const bgPath = canvas.scene.getFlag('storyteller-cinema', 'cinematicBg');
+        console.log("Storyteller Cinema | 🖼️ Setting Background. Path:", bgPath);
 
         // --- HIDE CLUTTER ---
         // CRITICAL FIX: DO NOT HIDE canvas.primary (It contains Tokens in V13!)
@@ -191,187 +205,39 @@ async function setCinematicBackground(active) {
 }
 
 
-// --- EXPORTED TOGGLE ---
+// Variável externa à função para guardar o estado anterior da visão
+let _visionCache = true;
 
-export async function toggleCinematicMode(active, options = {}) {
-    console.log("Storyteller Cinema | Toggle Called. Target:", active);
-    const overlay = document.getElementById('storyteller-cinema-overlay');
+export function toggleCinematicMode(active, skin = 'default') {
+    const body = document.body;
 
     if (active) {
-        // --- 1. ACTIVATE ---
-
-        // Attempt to convert to Cinematic Visuals
-        await setCinematicBackground(true);
-
-        // SAVE BATTLE VIEW
-        const battleView = {
-            x: canvas.stage.pivot.x,
-            y: canvas.stage.pivot.y,
-            scale: canvas.stage.scale.x
-        };
-        canvas.storytellerBattleView = battleView;
-
-        // Cinematic Mode: Enable Ghost Mode (No Walls / Free Movement)
-        await ensureGhostMode(true);
-
-        if (overlay) overlay.classList.add('active');
-        document.body.classList.add('cinematic-mode');
-
-        // PAN TO FIT SCREEN (Optimal Cinematic View)
-        // 1. Calculate Target Camera Scale (Fit Scene to Screen)
-        const rect = canvas.dimensions.sceneRect;
-        const scaleW = window.innerWidth / rect.width;
-        const scaleH = window.innerHeight / rect.height;
-
-        // CHANGE: Use Math.max (COVER behavior) to ensure NO BLACK BARS.
-        let targetScale = Math.max(scaleW, scaleH);
-
-        // CRITICAL FIX: Foundry clamps zoom options.
-        const minZ = canvas.minScale || 0.1;
-        const maxZ = canvas.maxScale || 3.0;
-        targetScale = Math.max(minZ, Math.min(maxZ, targetScale));
-
-        const cx = rect.x + rect.width / 2;
-        const cy = rect.y + rect.height / 2;
-
-        await canvas.animatePan({ x: cx, y: cy, scale: targetScale, duration: 800 });
-
-        // Update Background Sprite AFTER calculating the final scale logic
-        // We need to ensure it covers the visible area at THIS scale.
-        if (cinematicContainer && cinematicContainer.children[0]) {
-            const sprite = cinematicContainer.children[0];
-            const tex = sprite.texture;
-
-            // Re-calc visible area based on the CLAMPED scale
-            const visibleWorldWidth = window.innerWidth / targetScale;
-            const visibleWorldHeight = window.innerHeight / targetScale;
-
-            // Ensure position is correct
-            sprite.position.set(cx, cy);
-
-            const targetWidth = Math.max(rect.width, visibleWorldWidth);
-            const targetHeight = Math.max(rect.height, visibleWorldHeight);
-
-            const texScaleX = targetWidth / tex.width;
-            const texScaleY = targetHeight / tex.height;
-            const finalScale = Math.max(texScaleX, texScaleY);
-
-            sprite.scale.set(finalScale);
+        // 1. Aplica o CSS (Visual da Interface)
+        body.classList.add('cinematic-mode');
+        if (skin !== 'default') {
+            body.classList.add(`cinematic-skin-${skin}`);
         }
 
-
-        if (canvas.tokens) {
-            for (const token of canvas.tokens.placeables) {
-                // ... (Token Logic Stays Same)
-                // Read-Only Battle Save
-                const existingBattlePos = token.document.getFlag('storyteller-cinema', 'battlePos');
-                if (!existingBattlePos) {
-                    const currentPos = { x: token.document.x, y: token.document.y };
-                    await token.document.setFlag('storyteller-cinema', 'battlePos', currentPos);
-                }
-
-                // --- VISUAL CLEANUP: HIDE BEFORE OP ---
-                if (token.mesh) token.mesh.alpha = 0;
-
-                const updates = {};
-                const cinPos = token.document.getFlag('storyteller-cinema', 'cinematicPos');
-                if (cinPos) {
-                    updates.x = cinPos.x;
-                    updates.y = cinPos.y;
-                }
-
-                // --- CINEMATIC TEXTURE SWAP ---
-                const cinTexture = token.document.getFlag('storyteller-cinema', 'cinematicTexture');
-                if (cinTexture) {
-                    // SAFETY: Only save original if NOT already saved (prevents overwriting with cinematic texture if stuck)
-                    const existingOriginal = token.document.getFlag('storyteller-cinema', 'originalTexture');
-                    if (!existingOriginal) {
-                        await token.document.setFlag('storyteller-cinema', 'originalTexture', token.document.texture.src);
-                    }
-
-                    // Preload Texture
-                    try { await foundry.canvas.loadTexture(cinTexture); } catch (e) { }
-
-                    // Add to updates
-                    updates["texture.src"] = cinTexture;
-                }
-
-                // EXECUTE SINGLE ATOMIC UPDATE
-                if (Object.keys(updates).length > 0) {
-                    await silentTeleport(token, updates);
-                }
-
-                applyVisualDepth(token);
-
-                // --- REVEAL ---
-                if (token.mesh) {
-                    // Simple fade in using V13 API
-                    const CanvasAnimation = foundry.canvas.animation.CanvasAnimation;
-                    CanvasAnimation.animate([{ parent: token.mesh, attribute: "alpha", to: 1 }], { duration: 400, name: `FadeIn-${token.id}` });
-                }
-            }
+        // 2. Desliga a Névoa de Guerra (Visual do Canvas)
+        // Isso faz com que o mapa seja visível sem precisar de luzes ou tokens
+        if (canvas.ready) {
+            _visionCache = canvas.sight.tokenVision; // Salva como estava (geralmente true)
+            canvas.sight.tokenVision = false;        // Desliga a restrição
+            canvas.perception.refresh();             // Atualiza a renderização
         }
 
     } else {
-        // --- 2. DEACTIVATE ---
-        // Battle Mode: Disable Ghost Mode (Walls Active / Constrained)
-        await ensureGhostMode(false, true);
-        await setCinematicBackground(false);
+        // 1. Remove o CSS
+        body.classList.remove('cinematic-mode');
 
-        if (overlay) overlay.classList.remove('active');
-        document.body.classList.remove('cinematic-mode');
+        // Limpa classes de skins antigas
+        const skinClasses = Array.from(body.classList).filter(c => c.startsWith('cinematic-skin-'));
+        skinClasses.forEach(c => body.classList.remove(c));
 
-        // RESTORE BATTLE VIEW
-        if (canvas.storytellerBattleView) {
-            const v = canvas.storytellerBattleView;
-            await canvas.animatePan({ x: v.x, y: v.y, scale: v.scale, duration: 800 });
-            canvas.storytellerBattleView = null;
-        }
-
-        if (canvas.tokens) {
-            // ... (Token Logic Stays Same)
-            for (const token of canvas.tokens.placeables) {
-                if (token.document) {
-                    const currentPos = { x: token.document.x, y: token.document.y };
-                    await token.document.setFlag('storyteller-cinema', 'cinematicPos', currentPos);
-
-                    const battlePos = token.document.getFlag('storyteller-cinema', 'battlePos');
-
-                    if (token.mesh) {
-                        // Fade out before revert
-                        token.mesh.alpha = 0;
-                    }
-
-                    const updates = {};
-
-                    // --- CINEMATIC TEXTURE RESTORE ---
-                    const originalTexture = token.document.getFlag('storyteller-cinema', 'originalTexture');
-                    if (originalTexture) {
-                        try { await foundry.canvas.loadTexture(originalTexture); } catch (e) { }
-                        updates["texture.src"] = originalTexture;
-                        await token.document.unsetFlag('storyteller-cinema', 'originalTexture');
-                    }
-
-                    if (battlePos) {
-                        updates.x = battlePos.x;
-                        updates.y = battlePos.y;
-                    }
-
-                    // EXECUTE SINGLE ATOMIC UPDATE
-                    if (Object.keys(updates).length > 0) {
-                        await silentTeleport(token, updates);
-                    }
-
-                    if (token.mesh) {
-                        token.mesh.scale.set(token.document.texture.scaleX, token.document.texture.scaleY);
-                        // Restore visibility based on hidden state
-                        const targetAlpha = token.document.hidden ? 0.5 : 1;
-                        const CanvasAnimation = foundry.canvas.animation.CanvasAnimation;
-                        CanvasAnimation.animate([{ parent: token.mesh, attribute: "alpha", to: targetAlpha }], { duration: 400, name: `FadeOut-${token.id}` });
-                        token.refresh();
-                    }
-                }
-            }
+        // 2. Restaura a Névoa de Guerra
+        if (canvas.ready) {
+            canvas.sight.tokenVision = _visionCache; // Devolve o valor original
+            canvas.perception.refresh();             // Atualiza a renderização
         }
     }
 }
@@ -380,13 +246,18 @@ export async function toggleCinematicMode(active, options = {}) {
 Hooks.on('updateScene', (document, change, options, userId) => {
     if (!document.isView) return; // Only if it's the current scene
 
-    // Check if cinematic mode is active on the BODY
-    if (!window.document.body.classList.contains('cinematic-mode')) return;
+    // 1. Check for ACTIVATION Toggle
+    const activeChange = change.flags?.['storyteller-cinema']?.active;
+    if (activeChange !== undefined) {
+        toggleCinematicMode(activeChange);
+    }
 
-    // Check if our flag changed
-    const flagChange = change.flags?.['storyteller-cinema']?.cinematicBg;
-    if (flagChange !== undefined) {
-        console.log("Storyteller Cinema | Background updated, refreshing...");
-        setCinematicBackground(true);
+    // 2. Refresh Background if already active
+    if (window.document.body.classList.contains('cinematic-mode')) {
+        const flagChange = change.flags?.['storyteller-cinema']?.cinematicBg;
+        if (flagChange !== undefined) {
+            console.log("Storyteller Cinema | Background updated, refreshing...");
+            setCinematicBackground(true);
+        }
     }
 });
