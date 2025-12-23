@@ -1,4 +1,3 @@
-import "../core/cinematic.js";
 function registerUIHooks() {
   Hooks.on("getSceneControlButtons", (controls) => {
     const controlList = Array.isArray(controls) ? controls : Object.values(controls);

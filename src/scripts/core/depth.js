@@ -6,7 +6,14 @@ export function applyVisualDepth(token) {
 
   // --- 1. Math: Viewport Target (Auto Scale) ---
   const screenHeight = canvas.app.renderer.screen.height;
-  const refHeightPercent = game.settings.get('storyteller-cinema', 'referenceHeight') || 30;
+
+  // SAFE SETTINGS GETTER
+  const getSettingSafe = (key, def) => {
+    if (!game.settings.settings.has(`storyteller-cinema.${key}`)) return def;
+    return game.settings.get('storyteller-cinema', key);
+  };
+
+  const refHeightPercent = getSettingSafe('referenceHeight', 35);
 
   // Altura alvo na tela em pixels
   const targetPx = screenHeight * (refHeightPercent / 100);
@@ -38,8 +45,8 @@ export function applyVisualDepth(token) {
   let ratio = token.y / sceneHeight;
   ratio = Math.max(0, Math.min(1, ratio));
 
-  const minDepth = game.settings.get('storyteller-cinema', 'minScale') || 0.5;
-  const maxDepth = game.settings.get('storyteller-cinema', 'maxScale') || 1.0;
+  const minDepth = getSettingSafe('minScale', 0.5);
+  const maxDepth = getSettingSafe('maxScale', 1.2);
 
   const depthFactor = minDepth + (ratio * (maxDepth - minDepth));
 

@@ -1,42 +1,103 @@
-import { c as createOverlay, t as toggleCinematicMode } from "./core/cinematic.js";
+import { S as StorytellerAPI } from "./core/api.js";
 import { a as applyVisualDepth } from "./core/depth.js";
 import { r as registerUIHooks } from "./hooks/ui.js";
 Hooks.once("init", async function() {
   console.log("Storyteller Cinema | Initializing...");
   game.settings.register("storyteller-cinema", "referenceHeight", {
     name: "Reference Height (%)",
-    hint: "Token height relative to the screen height in cinematic mode.",
+    hint: "Token height relative to the screen height.",
     scope: "world",
     config: true,
     type: Number,
     default: 35,
     range: { min: 10, max: 80, step: 5 }
   });
-  game.settings.register("storyteller-cinema", "scollSpeed", {
-    name: "Parallax Scroll Speed",
-    scope: "client",
+  game.settings.register("storyteller-cinema", "minScale", {
+    name: "Min Depth Scale",
+    hint: "Scale multiplier at the top (background).",
+    scope: "world",
     config: true,
     type: Number,
-    default: 0.1,
-    range: { min: 0, max: 1, step: 0.05 }
+    default: 0.5,
+    range: { min: 0.1, max: 1, step: 0.1 }
   });
+  game.settings.register("storyteller-cinema", "maxScale", {
+    name: "Max Depth Scale",
+    hint: "Scale multiplier at the bottom (foreground).",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 1.2,
+    range: { min: 1, max: 3, step: 0.1 }
+  });
+  window.StorytellerCinema = new StorytellerAPI();
+  window.StorytellerCinema.init();
+  const visTarget = "foundry.canvas.groups.CanvasVisibility.prototype.tokenVision";
+  try {
+    libWrapper.register("storyteller-cinema", visTarget, function(wrapped, ...args) {
+      var _a;
+      if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) return false;
+      return wrapped(...args);
+    }, "MIXED");
+    console.log("Storyteller Cinema | Hook registered on", visTarget);
+  } catch (err) {
+    console.warn("Storyteller Cinema | Failed to register Visibility wrapper:", err);
+    try {
+      libWrapper.register("storyteller-cinema", "CanvasVisibility.prototype.tokenVision", function(wrapped, ...args) {
+        var _a;
+        if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) return false;
+        return wrapped(...args);
+      }, "MIXED");
+      console.log("Storyteller Cinema | Hook registered on Global CanvasVisibility");
+    } catch (e2) {
+      console.error("Storyteller Cinema | ALL wrapper attempts failed:", e2);
+    }
+  }
   registerUIHooks();
-  createOverlay();
+  game.keybindings.register("storyteller-cinema", "toggle-mode", {
+    name: "Toggle Cinematic Mode",
+    hint: "Switch view",
+    editable: [{ key: "KeyZ", modifiers: ["Shift"] }],
+    onDown: () => {
+      if (game.user.isGM) {
+        const current = canvas.scene.getFlag("storyteller-cinema", "active");
+        canvas.scene.setFlag("storyteller-cinema", "active", !current);
+      }
+    },
+    restricted: false
+  });
 });
 Hooks.on("canvasReady", () => {
   const viewMode = canvas.scene.getFlag("storyteller-cinema", "viewMode");
   const isActive = canvas.scene.getFlag("storyteller-cinema", "active") || false;
   const shouldBeCinematic = isActive || viewMode === "cinematic";
-  toggleCinematicMode(shouldBeCinematic, { init: true });
+  window.StorytellerCinema.toggle(shouldBeCinematic, { init: true });
+});
+Hooks.on("updateScene", async (document, change, options, userId) => {
+  var _a, _b, _c, _d;
+  if (!document.isView) return;
+  const activeChange = (_b = (_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) == null ? void 0 : _b.active;
+  if (activeChange !== void 0) {
+    setTimeout(() => {
+      window.StorytellerCinema.toggle(activeChange);
+    }, 50);
+  }
+  if (window.StorytellerCinema.active) {
+    const flagChange = (_d = (_c = change.flags) == null ? void 0 : _c["storyteller-cinema"]) == null ? void 0 : _d.cinematicBg;
+    if (flagChange !== void 0) {
+      window.StorytellerCinema.toggle(true);
+    }
+    window.StorytellerCinema.enforceVision();
+  }
 });
 Hooks.on("updateToken", (tokenDocument, change, options) => {
-  var _a;
+  var _a, _b;
   if (!change.x && !change.y) return;
   if ((_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) return;
   if (options.skippingMemory) return;
   try {
     if (game.user.isGM || tokenDocument.isOwner) {
-      const isCinematic = document.body.classList.contains("cinematic-mode");
+      const isCinematic = (_b = window.StorytellerCinema) == null ? void 0 : _b.active;
       const targetFlag = isCinematic ? "cinematicPos" : "battlePos";
       const newPos = { x: change.x ?? tokenDocument.x, y: change.y ?? tokenDocument.y };
       tokenDocument.setFlag("storyteller-cinema", targetFlag, newPos);
@@ -49,59 +110,9 @@ Hooks.on("updateToken", (tokenDocument, change, options) => {
   }
 });
 Hooks.on("refreshToken", (token) => {
-  if (document.body.classList.contains("cinematic-mode")) {
+  var _a;
+  if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) {
     applyVisualDepth(token);
   }
 });
-console.log("Storyteller Cinema | Main Loaded (Inlined)");
-Hooks.once("init", async function() {
-  console.log("Storyteller Cinema | Initializing...");
-  game.settings.register("storyteller-cinema", "referenceHeight", {
-    name: "Reference Height (%)",
-    hint: "Percentage of the scene height that the token should occupy when at the front.",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 30,
-    // 30% da tela
-    range: { min: 10, max: 100, step: 5 }
-  });
-  game.settings.register("storyteller-cinema", "minScale", {
-    name: "Min Depth Scale",
-    hint: "Scale multiplier at the top of the screen (background).",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 0.5,
-    range: { min: 0.1, max: 1, step: 0.1 }
-  });
-  game.settings.register("storyteller-cinema", "maxScale", {
-    name: "Max Depth Scale",
-    hint: "Scale multiplier at the bottom of the screen (foreground).",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 1.2,
-    range: { min: 1, max: 3, step: 0.1 }
-  });
-  createOverlay();
-  registerUIHooks();
-  game.keybindings.register("storyteller-cinema", "toggle-mode", {
-    name: "Toggle Cinematic Mode",
-    hint: "Switch between Battle Map and Visual Novel views",
-    editable: [{ key: "KeyZ", modifiers: ["Shift"] }],
-    onDown: () => {
-      const isCinematic = document.body.classList.contains("cinematic-mode");
-      toggleCinematicMode(!isCinematic);
-    },
-    restricted: false,
-    precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
-  });
-});
-Hooks.on("canvasReady", () => {
-  const viewMode = canvas.scene.getFlag("storyteller-cinema", "viewMode");
-  const shouldBeCinematic = viewMode === "cinematic";
-  toggleCinematicMode(shouldBeCinematic, "default");
-});
-console.log("Storyteller Cinema | Main Loaded (Inlined)");
 //# sourceMappingURL=main.js.map

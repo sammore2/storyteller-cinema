@@ -9,12 +9,11 @@
     "relationships": {
         "requires": [
             {
-                "id": "monks-active-tiles",
-                "type": "module",
-                "compatibility": {}
+                "id": "lib-wrapper",
+                "type": "module"
             },
             {
-                "id": "sequencer",
+                "id": "monks-active-tiles",
                 "type": "module",
                 "compatibility": {}
             }
