@@ -65,6 +65,27 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         this.render();
       });
     });
+    const deleteBtns = this.element.querySelectorAll(".delete-skin");
+    deleteBtns.forEach((btn) => {
+      btn.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        const id = btn.dataset.id;
+        const confirmed = await foundry.applications.api.DialogV2.confirm({
+          window: { title: "Delete Skin" },
+          content: `<p>Are you sure you want to delete this skin?</p>`,
+          rejectClose: false,
+          modal: true
+        });
+        if (confirmed) {
+          await window.StorytellerCinema.skins.delete(id);
+          if (this.selectedSkinId === id) {
+            this.selectedSkinId = "default";
+            this.tempSkinData = null;
+            this.render();
+          }
+        }
+      });
+    });
     const inputs = this.element.querySelectorAll("input");
     inputs.forEach((input) => {
       input.addEventListener("change", (ev) => this._onInputChange(ev));
@@ -108,12 +129,15 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     const filePickers = this.element.querySelectorAll(".file-picker");
     filePickers.forEach((btn) => {
       btn.addEventListener("click", (event) => {
+        var _a, _b;
         event.preventDefault();
         const target = btn.dataset.target;
         const currentVal = this._getValue(this.tempSkinData, target);
-        const filePicker = new FilePicker({
+        const startPath = currentVal || "storyteller-cinema/";
+        const FilePickerClass = ((_b = (_a = foundry.applications) == null ? void 0 : _a.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
+        const filePicker = new FilePickerClass({
           type: "image",
-          current: currentVal,
+          current: startPath,
           callback: (path) => {
             this._setValue(this.tempSkinData, target, path);
             this.render();

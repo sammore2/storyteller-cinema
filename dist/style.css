@@ -31,7 +31,11 @@
   width: 100%;
   height: 13vh;
   /* Um pouco mais alto para garantir cobertura */
-  background: var(--cinematic-bar-bg, black);
+  /* Um pouco mais alto para garantir cobertura */
+  background-color: var(--cinematic-bar-bg, black);
+  background-image: var(--cinematic-bg-texture, none);
+  background-size: cover;
+  background-repeat: repeat;
   border-bottom: var(--cinematic-bar-border, none);
   /* BLOQUEIO DE CLIQUES NA BARRA:
        Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
@@ -44,6 +48,28 @@
 #storyteller-cinema-overlay .cinematic-bar.bottom {
   border-bottom: none;
   border-top: var(--cinematic-bar-border, none);
+}
+#storyteller-cinema-overlay {
+  /* OVERLAY TEXTURE (Grain/Vignette) */
+}
+#storyteller-cinema-overlay::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  /* Above canvas, below bars (bars are z-10 children of this overlay context?) No, overlay is flex. */
+  /* Bars are children of overlay. Bars are on top? 
+     Overlay uses z-index 10.
+     If we put texture on ::after with absolute, valid.
+  */
+  background-image: var(--cinematic-overlay-texture, none);
+  background-size: cover;
+  opacity: 0.5;
+  /* Default opacity for overlays */
 }
 
 /* Garante que nenhum estilo interfira na UI do Foundry */

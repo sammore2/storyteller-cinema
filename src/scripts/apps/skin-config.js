@@ -81,6 +81,32 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
             });
         });
 
+        // 1.5 Delete Button
+        const deleteBtns = this.element.querySelectorAll('.delete-skin');
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', async (ev) => {
+                ev.stopPropagation(); // Stop selection
+                const id = btn.dataset.id;
+
+                const confirmed = await foundry.applications.api.DialogV2.confirm({
+                    window: { title: "Delete Skin" },
+                    content: `<p>Are you sure you want to delete this skin?</p>`,
+                    rejectClose: false,
+                    modal: true
+                });
+
+                if (confirmed) {
+                    await window.StorytellerCinema.skins.delete(id);
+                    // If we deleted the selected one, switch to default
+                    if (this.selectedSkinId === id) {
+                        this.selectedSkinId = 'default';
+                        this.tempSkinData = null;
+                        this.render();
+                    }
+                }
+            });
+        });
+
         // 2. Input Changes (Live Update or State Update)
         const inputs = this.element.querySelectorAll('input');
         inputs.forEach(input => {
@@ -141,12 +167,17 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         filePickers.forEach(btn => {
             btn.addEventListener('click', event => {
                 event.preventDefault();
-                const target = btn.dataset.target; // e.g., "options.barTexture"
+                const target = btn.dataset.target; // <--- RESTORED
                 const currentVal = this._getValue(this.tempSkinData, target);
 
-                const filePicker = new FilePicker({
+                // UX IMPROVEMENT: Default to User Data folder, NOT module folder (Permissions)
+                // This allows users to upload files without hitting "Read Only" errors.
+                const startPath = currentVal || 'storyteller-cinema/';
+
+                const FilePickerClass = foundry.applications?.apps?.FilePicker || FilePicker;
+                const filePicker = new FilePickerClass({
                     type: "image",
-                    current: currentVal,
+                    current: startPath,
                     callback: (path) => {
                         this._setValue(this.tempSkinData, target, path);
                         this.render(); // Re-render to show value

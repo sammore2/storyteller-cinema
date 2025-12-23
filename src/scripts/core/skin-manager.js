@@ -1,3 +1,6 @@
+// Shim for V13/V12 compatibility
+const FilePickerClass = foundry.applications?.apps?.FilePicker || FilePicker;
+
 export class SkinManager {
     constructor() {
         this.skins = new Map();
@@ -9,6 +12,10 @@ export class SkinManager {
         console.log("Storyteller Cinema | Initializing Skin Manager...");
         this._createStyleTag();
         this._registerDefaultSkins();
+
+        // Ensure User Data folder exists (for manual uploads/downloads)
+        this._ensureDirectory('storyteller-cinema').catch(err => console.warn("Storyteller Cinema | Could not create root folder:", err));
+
         this._loadCustomSkins(); // <--- FIX: Load saved skins
 
         // Load saved skin setting
@@ -68,6 +75,36 @@ export class SkinManager {
 
         await game.settings.set('storyteller-cinema', 'customSkins', others);
         console.log("Storyteller Cinema | Custom Skins Saved to DB.");
+        Hooks.call('storyteller-cinema-skins-updated');
+    }
+
+    /**
+     * Deletes a custom skin
+     * @param {string} skinId 
+     */
+    async delete(skinId) {
+        if (!this.skins.has(skinId)) return;
+
+        const skin = this.skins.get(skinId);
+        if (skin.author === 'System') {
+            ui.notifications.warn("Storyteller Cinema | Cannot delete system skins.");
+            return;
+        }
+
+        // 1. Remove from Map
+        this.skins.delete(skinId);
+
+        // 2. Remove from DB
+        const customSkins = game.settings.get('storyteller-cinema', 'customSkins') || [];
+        const filtered = customSkins.filter(s => s.id !== skinId);
+        await game.settings.set('storyteller-cinema', 'customSkins', filtered);
+
+        // 3. Reset if active
+        if (this.activeSkin === skinId) {
+            this.apply('default');
+        }
+
+        console.log(`Storyteller Cinema | Deleted Skin: ${skinId}`);
         Hooks.call('storyteller-cinema-skins-updated');
     }
 
@@ -144,9 +181,31 @@ export class SkinManager {
             return;
         }
 
-        // --- FUTURE AUTO-DOWNLOAD LOGIC HERE ---
-        if (skin.autoDownload) {
-            ui.notifications.info("Storyteller Cinema | Premium Skin detected. (Auto-Download coming in Phase 3)");
+        // --- AUTO-DOWNLOAD LOGIC ---
+        if (skin.autoDownload && skin.assets) {
+            ui.notifications.info("Storyteller Cinema | Downloading skin assets...");
+
+            // Prepare Target Directory
+            const targetDir = `storyteller-cinema/${skin.id}`;
+            await this._ensureDirectory(targetDir);
+
+            // Download Each Asset
+            for (const [key, url] of Object.entries(skin.assets)) {
+                if (!url || !url.startsWith('http')) continue;
+
+                // Extract filename
+                const filename = url.split('/').pop();
+
+                // Download
+                const savedPath = await this._downloadAndSave(url, targetDir, filename);
+
+                if (savedPath) {
+                    // Update Skin Definition with Local Path
+                    skin.options[key] = savedPath; // e.g. options.barTexture = "storyteller-cinema/gold/bg.png"
+                    // Also clear root assets key if desired, but keeping options sync is key
+                }
+            }
+            ui.notifications.info("Storyteller Cinema | Assets downloaded successfully.");
         }
         // ---------------------------------------
 
@@ -171,11 +230,11 @@ export class SkinManager {
             currentPath = currentPath ? `${currentPath}/${part}` : part;
             try {
                 // Check if exists
-                await FilePicker.browse(source, currentPath);
+                await FilePickerClass.browse(source, currentPath);
             } catch (e) {
                 // If not, try to create
                 try {
-                    await FilePicker.createDirectory(source, currentPath);
+                    await FilePickerClass.createDirectory(source, currentPath);
                     console.log(`Storyteller Cinema | Created directory: ${currentPath}`);
                 } catch (err) {
                     // Ignore if it already exists (race condition) or if root modules/ folder is protected
@@ -194,7 +253,7 @@ export class SkinManager {
             const blob = await response.blob();
             const file = new File([blob], filename, { type: blob.type });
 
-            const result = await FilePicker.upload('data', targetDir, file);
+            const result = await FilePickerClass.upload('data', targetDir, file);
             return result.path;
         } catch (err) {
             console.error(`Storyteller Cinema | Failed to fetch ${url}`, err);
@@ -231,11 +290,27 @@ export class SkinManager {
             css += `    --cinematic-filter: none;\n`;
         }
 
-        // Backgrounds
-        if (skin.options.backgroundTexture) {
-            css += `    --cinematic-bg-texture: url('${skin.options.backgroundTexture}');\n`;
+        // Helper to sanitize path (ensure / if not http)
+        const sanitize = (p) => {
+            if (!p) return null;
+            if (p.startsWith('http') || p.startsWith('/')) return p;
+            return `/${p}`;
+        };
+
+        // Bar Background Texture (Standard or Legacy)
+        const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
+        if (barTex) {
+            css += `    --cinematic-bg-texture: url('${barTex}');\n`;
         } else {
             css += `    --cinematic-bg-texture: none;\n`;
+        }
+
+        // Overlay Texture
+        const overlayTex = sanitize(skin.options.overlayTexture);
+        if (overlayTex) {
+            css += `    --cinematic-overlay-texture: url('${overlayTex}');\n`;
+        } else {
+            css += `    --cinematic-overlay-texture: none;\n`;
         }
 
         css += `}\n`;

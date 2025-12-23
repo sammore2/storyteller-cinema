@@ -1,3 +1,5 @@
+var _a, _b;
+const FilePickerClass = ((_b = (_a = foundry.applications) == null ? void 0 : _a.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
 class SkinManager {
   constructor() {
     this.skins = /* @__PURE__ */ new Map();
@@ -8,6 +10,7 @@ class SkinManager {
     console.log("Storyteller Cinema | Initializing Skin Manager...");
     this._createStyleTag();
     this._registerDefaultSkins();
+    this._ensureDirectory("storyteller-cinema").catch((err) => console.warn("Storyteller Cinema | Could not create root folder:", err));
     this._loadCustomSkins();
     const savedSkin = game.settings.get("storyteller-cinema", "activeSkin") || "default";
     this.apply(savedSkin);
@@ -48,6 +51,27 @@ class SkinManager {
     others.push(skinData);
     await game.settings.set("storyteller-cinema", "customSkins", others);
     console.log("Storyteller Cinema | Custom Skins Saved to DB.");
+    Hooks.call("storyteller-cinema-skins-updated");
+  }
+  /**
+   * Deletes a custom skin
+   * @param {string} skinId 
+   */
+  async delete(skinId) {
+    if (!this.skins.has(skinId)) return;
+    const skin = this.skins.get(skinId);
+    if (skin.author === "System") {
+      ui.notifications.warn("Storyteller Cinema | Cannot delete system skins.");
+      return;
+    }
+    this.skins.delete(skinId);
+    const customSkins = game.settings.get("storyteller-cinema", "customSkins") || [];
+    const filtered = customSkins.filter((s) => s.id !== skinId);
+    await game.settings.set("storyteller-cinema", "customSkins", filtered);
+    if (this.activeSkin === skinId) {
+      this.apply("default");
+    }
+    console.log(`Storyteller Cinema | Deleted Skin: ${skinId}`);
     Hooks.call("storyteller-cinema-skins-updated");
   }
   /**
@@ -107,8 +131,19 @@ class SkinManager {
       ui.notifications.error("Storyteller Cinema | Invalid Skin definition.");
       return;
     }
-    if (skin.autoDownload) {
-      ui.notifications.info("Storyteller Cinema | Premium Skin detected. (Auto-Download coming in Phase 3)");
+    if (skin.autoDownload && skin.assets) {
+      ui.notifications.info("Storyteller Cinema | Downloading skin assets...");
+      const targetDir = `storyteller-cinema/${skin.id}`;
+      await this._ensureDirectory(targetDir);
+      for (const [key, url] of Object.entries(skin.assets)) {
+        if (!url || !url.startsWith("http")) continue;
+        const filename = url.split("/").pop();
+        const savedPath = await this._downloadAndSave(url, targetDir, filename);
+        if (savedPath) {
+          skin.options[key] = savedPath;
+        }
+      }
+      ui.notifications.info("Storyteller Cinema | Assets downloaded successfully.");
     }
     await this.register(skin, true);
     await this.apply(skin.id);
@@ -125,10 +160,10 @@ class SkinManager {
     for (const part of parts) {
       currentPath = currentPath ? `${currentPath}/${part}` : part;
       try {
-        await FilePicker.browse(source, currentPath);
+        await FilePickerClass.browse(source, currentPath);
       } catch (e) {
         try {
-          await FilePicker.createDirectory(source, currentPath);
+          await FilePickerClass.createDirectory(source, currentPath);
           console.log(`Storyteller Cinema | Created directory: ${currentPath}`);
         } catch (err) {
           if (!err.message.includes("EEXIST")) {
@@ -144,7 +179,7 @@ class SkinManager {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
       const file = new File([blob], filename, { type: blob.type });
-      const result = await FilePicker.upload("data", targetDir, file);
+      const result = await FilePickerClass.upload("data", targetDir, file);
       return result.path;
     } catch (err) {
       console.error(`Storyteller Cinema | Failed to fetch ${url}`, err);
@@ -177,11 +212,25 @@ class SkinManager {
       css += `    --cinematic-filter: none;
 `;
     }
-    if (skin.options.backgroundTexture) {
-      css += `    --cinematic-bg-texture: url('${skin.options.backgroundTexture}');
+    const sanitize = (p) => {
+      if (!p) return null;
+      if (p.startsWith("http") || p.startsWith("/")) return p;
+      return `/${p}`;
+    };
+    const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
+    if (barTex) {
+      css += `    --cinematic-bg-texture: url('${barTex}');
 `;
     } else {
       css += `    --cinematic-bg-texture: none;
+`;
+    }
+    const overlayTex = sanitize(skin.options.overlayTexture);
+    if (overlayTex) {
+      css += `    --cinematic-overlay-texture: url('${overlayTex}');
+`;
+    } else {
+      css += `    --cinematic-overlay-texture: none;
 `;
     }
     css += `}
