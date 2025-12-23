@@ -1,5 +1,7 @@
 # Storyteller's Cinema
 
+
+
 **Storyteller's Cinema** transforms your Foundry VTT sessions into an immersive **visual novel experience**. It creates a seamless "Cinematic Mode" where the map is replaced by a scenic background, tokens become high-quality portraits, and the camera dynamically adapts to tell your story—all while keeping the tactical map just a click away.
 
 ![Foundry Version](https://img.shields.io/badge/Foundry-v13-orange)
@@ -23,11 +25,21 @@ Each scene can be customized individually.
 *   **Configuration:** Go to **Scene Configuration**.
 *   **Default View Mode:** Choose if the scene starts in "Battlemap" (Tactical) or "Cinematic" (Immersive) mode.
 *   **Cinematic Background:** Select the image that will be displayed when Cinematic Mode is active.
+*   **Cinematic Background:** Select the image that will be displayed when Cinematic Mode is active.
 
-### 4. 📏 Depth Scaling (2.5D Effect)
+### 4. 🎨 Skin Studio & Overlays
+Customize everything with the new **Skin Studio** (Cog icon in HUD).
+*   **Custom Themes:** Create skins with custom textures (wood, stone, sci-fi) for the cinematic bars.
+*   **Overlays:** Apply full-screen effects like **Film Grain**, **Vignettes**, or **Old Paper** filters.
+*   **Auto-Download:** Import community JSON skins and the module automatically downloads and installs the necessary assets for you.
+*   **Safe Storage:** Assets are saved locally to your User Data, ensuring offline compatibility.
+
+### 5. 📏 Depth Scaling (2.5D Effect)
 Tokens visually resize based on their vertical (Y) position, simulating depth.
 *   **Shift + Mouse Wheel:** Hover over a token while in Cinematic Mode to manually adjust its visual scale on the fly.
 *   **Automatic:** Characters "closer" to the camera (bottom of screen) appear larger.
+
+![Cinematic Demo](docs/demo.gif)
 
 ## 📦 Installation
 1.  Copy the Manifest Link from the latest Release.
