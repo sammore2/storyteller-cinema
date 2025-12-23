@@ -53,6 +53,17 @@ Hooks.once("init", async function() {
       console.error("Storyteller Cinema | ALL wrapper attempts failed:", e2);
     }
   }
+  const polygonTarget = "ClockwiseSweepPolygon.testCollision";
+  try {
+    libWrapper.register("storyteller-cinema", polygonTarget, function(wrapped, ...args) {
+      var _a;
+      if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) return false;
+      return wrapped(...args);
+    }, "MIXED");
+    console.log("Storyteller Cinema | Hook registered on", polygonTarget);
+  } catch (err) {
+    console.warn("Storyteller Cinema | Failed to register Polygon collision wrapper:", err);
+  }
   registerUIHooks();
   game.keybindings.register("storyteller-cinema", "toggle-mode", {
     name: "Toggle Cinematic Mode",

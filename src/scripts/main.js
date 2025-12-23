@@ -72,6 +72,21 @@ Hooks.once('init', async function () {
     }
   }
 
+  // REGISTER LIBWRAPPER HOOK (Collision Bypass - Geometry Engine)
+  // Target: 'ClockwiseSweepPolygon.testCollision'
+  // Logic: This is the deepest level check. If we return false here, NO collision is detected by ANY system layer.
+  // This solves the issue where WallsLayer or Token checks might be bypassed or implemented differently.
+  const polygonTarget = 'ClockwiseSweepPolygon.testCollision';
+  try {
+    libWrapper.register('storyteller-cinema', polygonTarget, function (wrapped, ...args) {
+      if (window.StorytellerCinema?.active) return false;
+      return wrapped(...args);
+    }, 'MIXED');
+    console.log("Storyteller Cinema | Hook registered on", polygonTarget);
+  } catch (err) {
+    console.warn("Storyteller Cinema | Failed to register Polygon collision wrapper:", err);
+  }
+
   // 2. SETUP UI HOOKS
   registerUIHooks();
 
