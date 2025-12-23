@@ -377,8 +377,15 @@ body.cinematic-mode {
 }
 
 /* CREATE BUTTON */
-.create-skin-btn {
+.sidebar-actions {
    margin-top: 15px;
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+}
+
+.create-skin-btn,
+.import-skin-btn {
    background: #27ae60;
    /* Distinct Green */
    color: #fff;
@@ -395,10 +402,21 @@ body.cinematic-mode {
    align-items: center;
    justify-content: center;
    gap: 8px;
+   cursor: pointer;
+}
+
+.import-skin-btn {
+   background: #e67e22;
 }
 
 .create-skin-btn:hover {
    background: #219150;
+   transform: translateY(-1px);
+   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.import-skin-btn:hover {
+   background: #d35400;
    transform: translateY(-1px);
    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
@@ -437,7 +455,8 @@ body.cinematic-mode {
 
 /* Action Buttons */
 .apply-skin-btn,
-.save-skin-btn {
+.save-skin-btn,
+.export-skin-btn {
    background: rgba(255, 255, 255, 0.1);
    border: 1px solid rgba(255, 255, 255, 0.2);
    color: #fff;
@@ -446,6 +465,10 @@ body.cinematic-mode {
    font-size: 0.9em;
    cursor: pointer;
    transition: all 0.2s;
+   white-space: nowrap;
+   height: 36px;
+   display: inline-flex;
+   align-items: center;
 }
 
 .apply-skin-btn:hover {
@@ -457,6 +480,11 @@ body.cinematic-mode {
 .save-skin-btn:hover {
    background: #2980b9;
    border-color: #2980b9;
+}
+
+.export-skin-btn:hover {
+   background: #8e44ad;
+   border-color: #8e44ad;
 }
 
 /* FORMS */

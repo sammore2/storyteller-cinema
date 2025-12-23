@@ -24,6 +24,13 @@ Hooks.once('init', async function () {
       }
     }
   });
+  game.settings.register('storyteller-cinema', 'customSkins', {
+    name: "Custom Skins",
+    scope: "client", // Stored locally per user (or world if shared needed)
+    config: false,
+    type: Array,
+    default: []
+  });
 
   game.settings.register('storyteller-cinema', 'referenceHeight', {
     name: "Reference Height (%)",

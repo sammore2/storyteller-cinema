@@ -51,6 +51,11 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /* EVENT HANDLERS                                                         */
   /* ---------------------------------------------------------------------- */
   _onRender(context, options) {
+    if (!this._hookId) {
+      this._hookId = Hooks.on("storyteller-cinema-skins-updated", () => {
+        if (this.rendered) this.render();
+      });
+    }
     const skinItems = this.element.querySelectorAll(".skin-item");
     skinItems.forEach((el) => {
       el.addEventListener("click", (ev) => {
@@ -68,14 +73,37 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     if (applyBtn) {
       applyBtn.addEventListener("click", () => {
         if (this.tempSkinData) {
-          window.StorytellerCinema.skins.register(this.tempSkinData);
+          window.StorytellerCinema.skins.register(this.tempSkinData, false);
           window.StorytellerCinema.skins.apply(this.tempSkinData.id);
+          ui.notifications.info("Storyteller Cinema | Skin Applied (Not Saved)");
+        }
+      });
+    }
+    const saveBtn = this.element.querySelector(".save-skin-btn");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => {
+        if (this.tempSkinData) {
+          window.StorytellerCinema.skins.register(this.tempSkinData, true);
+          window.StorytellerCinema.skins.apply(this.tempSkinData.id);
+          ui.notifications.info("Storyteller Cinema | Skin Saved & Applied");
         }
       });
     }
     const createBtn = this.element.querySelector(".create-skin-btn");
     if (createBtn) {
       createBtn.addEventListener("click", () => this._createNewSkin());
+    }
+    const exportBtn = this.element.querySelector(".export-skin-btn");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const id = exportBtn.dataset.id || this.selectedSkinId;
+        window.StorytellerCinema.skins.exportSkin(id);
+      });
+    }
+    const importBtn = this.element.querySelector(".import-skin-btn");
+    if (importBtn) {
+      importBtn.addEventListener("click", () => this._importSkinDialog());
     }
     const filePickers = this.element.querySelectorAll(".file-picker");
     filePickers.forEach((btn) => {
@@ -121,6 +149,27 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     this.tempSkinData = null;
     this.render();
   }
+  _importSkinDialog() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = (e) => this._processImportFile(e.target.files[0]);
+    input.click();
+  }
+  async _processImportFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const content = e.target.result;
+      const imported = await window.StorytellerCinema.skins.importSkin(content);
+      if (imported) {
+        this.selectedSkinId = imported.id;
+        this.tempSkinData = null;
+        this.render();
+      }
+    };
+    reader.readAsText(file);
+  }
   /* ---------------------------------------------------------------------- */
   /* HELPERS                                                                */
   /* ---------------------------------------------------------------------- */
@@ -133,6 +182,14 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       current = current[keys[i]];
     }
     current[keys[keys.length - 1]] = value;
+  }
+  /** @override */
+  async _close(options) {
+    if (this._hookId) {
+      Hooks.off("storyteller-cinema-skins-updated", this._hookId);
+      this._hookId = null;
+    }
+    return super._close(options);
   }
   // Dot notation getter
   _getValue(obj, path) {

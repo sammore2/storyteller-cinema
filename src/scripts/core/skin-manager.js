@@ -9,6 +9,7 @@ export class SkinManager {
         console.log("Storyteller Cinema | Initializing Skin Manager...");
         this._createStyleTag();
         this._registerDefaultSkins();
+        this._loadCustomSkins(); // <--- FIX: Load saved skins
 
         // Load saved skin setting
         const savedSkin = game.settings.get('storyteller-cinema', 'activeSkin') || 'default';
@@ -18,14 +19,56 @@ export class SkinManager {
     /**
      * Registers a new skin definition
      * @param {Object} skinData The skin definition object
+     * @param {boolean} persist Whether to save to database (default: false)
      */
-    register(skinData) {
+    async register(skinData, persist = false) {
         if (!skinData.id) {
             console.error("Storyteller Cinema | Skin missing ID:", skinData);
             return;
         }
+
+        // If checking out existing, merge to ensure refs don't break, or just overwrite.
+        // Overwrite is safer for full updates.
         this.skins.set(skinData.id, skinData);
+
         console.log(`Storyteller Cinema | Skin Registered: ${skinData.name} (${skinData.id})`);
+
+        if (persist) {
+            await this._saveCustomSkin(skinData);
+        }
+
+        // Notify UI to re-render names
+        Hooks.call('storyteller-cinema-skins-updated');
+    }
+
+    /**
+     * Loads custom skins from settings
+     */
+    _loadCustomSkins() {
+        const customSkins = game.settings.get('storyteller-cinema', 'customSkins') || [];
+        customSkins.forEach(skin => {
+            this.register(skin, false); // No need to re-save
+        });
+    }
+
+    /**
+     * Saves a skin to the customSkins setting
+     */
+    async _saveCustomSkin(skinData) {
+        // Validation: Don't save default/system skins
+        if (skinData.author === 'System' || !skinData.id) return;
+
+        const customSkins = game.settings.get('storyteller-cinema', 'customSkins') || [];
+
+        // Remove existing version of this skin if any
+        const others = customSkins.filter(s => s.id !== skinData.id);
+
+        // Add new version
+        others.push(skinData);
+
+        await game.settings.set('storyteller-cinema', 'customSkins', others);
+        console.log("Storyteller Cinema | Custom Skins Saved to DB.");
+        Hooks.call('storyteller-cinema-skins-updated');
     }
 
     /**
@@ -34,6 +77,7 @@ export class SkinManager {
      */
     async apply(skinId) {
         if (!this.skins.has(skinId)) {
+            // Wait a moment in case styles haven't populated? No, logical fallback.
             console.warn(`Storyteller Cinema | Skin '${skinId}' not found. Reverting to default.`);
             skinId = 'default';
         }
@@ -64,9 +108,99 @@ export class SkinManager {
         return Array.from(this.skins.values());
     }
 
+    /**
+     * Exports a skin to a JSON file
+     * @param {string} skinId 
+     */
+    exportSkin(skinId) {
+        const skin = this.skins.get(skinId);
+        if (!skin) {
+            ui.notifications.error("Storyteller Cinema | Skin not found.");
+            return;
+        }
+
+        const data = JSON.stringify(skin, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${skin.id}.json`;
+        a.click();
+    }
+    /**
+     * Imports a skin from a JSON string or object
+     * @param {string|object} jsonData 
+     */
+    async importSkin(jsonData) {
+        let skin;
+        try {
+            skin = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+        } catch (e) {
+            ui.notifications.error("Storyteller Cinema | Invalid JSON.");
+            return;
+        }
+
+        if (!skin.id || !skin.name) {
+            ui.notifications.error("Storyteller Cinema | Invalid Skin definition.");
+            return;
+        }
+
+        // --- FUTURE AUTO-DOWNLOAD LOGIC HERE ---
+        if (skin.autoDownload) {
+            ui.notifications.info("Storyteller Cinema | Premium Skin detected. (Auto-Download coming in Phase 3)");
+        }
+        // ---------------------------------------
+
+        // Register and Save to DB
+        await this.register(skin, true);
+        await this.apply(skin.id);
+
+        ui.notifications.info(`Storyteller Cinema | Imported skin: ${skin.name}`);
+        return skin;
+    }
+
     /* ---------------------------------------------------------------------- */
     /* INTERNALS                                                              */
     /* ---------------------------------------------------------------------- */
+
+    async _ensureDirectory(path) {
+        const source = 'data';
+        const parts = path.split('/');
+        let currentPath = "";
+
+        for (const part of parts) {
+            currentPath = currentPath ? `${currentPath}/${part}` : part;
+            try {
+                // Check if exists
+                await FilePicker.browse(source, currentPath);
+            } catch (e) {
+                // If not, try to create
+                try {
+                    await FilePicker.createDirectory(source, currentPath);
+                    console.log(`Storyteller Cinema | Created directory: ${currentPath}`);
+                } catch (err) {
+                    // Ignore if it already exists (race condition) or if root modules/ folder is protected
+                    if (!err.message.includes("EEXIST")) {
+                        console.warn(`Storyteller Cinema | Failed to create ${currentPath}`, err);
+                    }
+                }
+            }
+        }
+    }
+
+    async _downloadAndSave(url, targetDir, filename) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const blob = await response.blob();
+            const file = new File([blob], filename, { type: blob.type });
+
+            const result = await FilePicker.upload('data', targetDir, file);
+            return result.path;
+        } catch (err) {
+            console.error(`Storyteller Cinema | Failed to fetch ${url}`, err);
+            return null;
+        }
+    }
 
     _createStyleTag() {
         if (!document.getElementById('storyteller-cinema-skin-styles')) {

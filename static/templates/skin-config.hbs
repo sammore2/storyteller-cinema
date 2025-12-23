@@ -20,7 +20,10 @@
                 </li>
                 {{/each}}
             </ul>
-            <button class="create-skin-btn"><i class="fas fa-plus"></i> Create New Skin</button>
+            <div class="sidebar-actions">
+                <button class="create-skin-btn"><i class="fas fa-plus"></i> Create New Skin</button>
+                <button class="import-skin-btn"><i class="fas fa-file-import"></i> Import JSON</button>
+            </div>
         </aside>
 
         <!-- RIGHT: Editor -->
@@ -32,6 +35,7 @@
                     {{#unless (eq selectedSkin.author "System")}}
                     <button class="save-skin-btn"><i class="fas fa-save"></i> Save</button>
                     {{/unless}}
+                    <button class="export-skin-btn" title="Export JSON"><i class="fas fa-file-export"></i></button>
                     <button class="apply-skin-btn"><i class="fas fa-check"></i> Apply to Scene</button>
                 </div>
             </div>
