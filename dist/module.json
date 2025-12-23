@@ -27,7 +27,7 @@
     ],
     "url": "https://github.com/sammore2/storyteller-cinema",
     "manifest": "https://github.com/sammore2/storyteller-cinema/releases/latest/download/module.json",
-    "download": "https://github.com/sammore2/storyteller-cinema/releases/download/v1.0.3/module.zip",
+    "download": "https://github.com/sammore2/storyteller-cinema/releases/download/v1.0.4/module.zip",
     "description": "Transform your Foundry VTT battlemaps into an immersive 2.5D Visual Novel experience. This module converts top-down tokens into upright 'Standees' (Paper Mario style) with automatic depth scaling and cinematic overlays.",
     "authors": [
         {
