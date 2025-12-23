@@ -1,0 +1,106 @@
+<div class="skin-config-container">
+    <header class="skin-header">
+        <h1>Storyteller Cinema Studio</h1>
+        <p>Customize your cinematic experience.</p>
+    </header>
+
+    <div class="skin-layout">
+        <!-- LEFT: Skin List -->
+        <aside class="skin-sidebar">
+            <h3>Installed Skins</h3>
+            <ul class="skin-list">
+                {{#each skins}}
+                <li class="skin-item {{#if (eq this.id ../activeSkin)}}active{{/if}}" data-id="{{this.id}}">
+                    <span class="skin-name">{{this.name}}</span>
+                    {{#if (eq this.author "System")}}
+                    <i class="fas fa-lock" title="System Skin"></i>
+                    {{else}}
+                    <i class="fas fa-trash delete-skin" data-id="{{this.id}}" title="Delete Skin"></i>
+                    {{/if}}
+                </li>
+                {{/each}}
+            </ul>
+            <button class="create-skin-btn"><i class="fas fa-plus"></i> Create New Skin</button>
+        </aside>
+
+        <!-- RIGHT: Editor -->
+        <main class="skin-editor">
+            {{#if selectedSkin}}
+            <div class="editor-header">
+                <h2>{{selectedSkin.name}}</h2>
+                <div class="actions">
+                    {{#unless (eq selectedSkin.author "System")}}
+                    <button class="save-skin-btn"><i class="fas fa-save"></i> Save</button>
+                    {{/unless}}
+                    <button class="apply-skin-btn"><i class="fas fa-check"></i> Apply to Scene</button>
+                </div>
+            </div>
+
+            <div class="editor-form">
+                <!-- METADATA -->
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" name="name" value="{{selectedSkin.name}}" {{#if (eq selectedSkin.author "System"
+                        )}}disabled{{/if}} />
+                </div>
+
+                <!-- TEXTURES -->
+                <fieldset>
+                    <legend>Textures</legend>
+                    <div class="form-group">
+                        <label>Bar Texture (Leather/Wood)</label>
+                        <div class="file-picker-group">
+                            <input type="text" name="options.barTexture" value="{{selectedSkin.options.barTexture}}" />
+                            <button class="file-picker" data-target="options.barTexture"><i
+                                    class="fas fa-file-import"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Overlay (Grain/Vignette)</label>
+                        <div class="file-picker-group">
+                            <input type="text" name="options.overlayTexture"
+                                value="{{selectedSkin.options.overlayTexture}}" />
+                            <button class="file-picker" data-target="options.overlayTexture"><i
+                                    class="fas fa-file-image"></i></button>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- FILTERS -->
+                <fieldset>
+                    <legend>Global Filters</legend>
+                    <div class="form-group">
+                        <label>CSS Filter String</label>
+                        <input type="text" name="options.filter" value="{{selectedSkin.options.filter}}"
+                            placeholder="grayscale(100%) sepia(80%)" />
+                    </div>
+                    <p class="hint">Use standard CSS syntax: <code>grayscale(100%)</code>, <code>sepia(100%)</code>,
+                        <code>blur(2px)</code>, etc.
+                    </p>
+                </fieldset>
+
+                <!-- COLORS -->
+                <fieldset>
+                    <legend>Colors</legend>
+                    <div class="form-group">
+                        <label>Bar Background Logic</label>
+                        <input type="text" name="options.styles.--cinematic-bar-bg"
+                            value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}" />
+                    </div>
+                    <div class="form-group">
+                        <label>Border Style</label>
+                        <input type="text" name="options.styles.--cinematic-bar-border"
+                            value="{{lookup selectedSkin.options.styles '--cinematic-bar-border'}}" />
+                    </div>
+                </fieldset>
+            </div>
+
+            {{else}}
+            <div class="empty-state">
+                <i class="fas fa-film"></i>
+                <p>Select a skin to edit or create a new one.</p>
+            </div>
+            {{/if}}
+        </main>
+    </div>
+</div>

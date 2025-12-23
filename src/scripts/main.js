@@ -1,5 +1,6 @@
 import '../styles/style.scss';
 import { StorytellerAPI } from './core/api.js';
+import { SkinManager } from './core/skin-manager.js';
 import { applyVisualDepth } from './core/depth.js';
 import { registerUIHooks } from './hooks/ui.js';
 import './lib/shim.js'; // Import libWrapper Shim
@@ -11,6 +12,19 @@ Hooks.once('init', async function () {
   console.log('Storyteller Cinema | Initializing...');
 
   // 1. REGISTER SETTINGS (MUST BE FIRST)
+  game.settings.register('storyteller-cinema', 'activeSkin', {
+    name: "Active Skin",
+    scope: "client", // Client specific preference
+    config: false,   // Hidden from menu, managed by Skin UI
+    type: String,
+    default: 'default',
+    onChange: (value) => {
+      if (window.StorytellerCinema?.skins) {
+        window.StorytellerCinema.skins.apply(value);
+      }
+    }
+  });
+
   game.settings.register('storyteller-cinema', 'referenceHeight', {
     name: "Reference Height (%)",
     hint: "Token height relative to the screen height.",
@@ -43,7 +57,10 @@ Hooks.once('init', async function () {
 
   // 0. INITIALIZE API
   window.StorytellerCinema = new StorytellerAPI();
+  window.StorytellerCinema.skins = new SkinManager(); // Attach Manager
+
   window.StorytellerCinema.init();
+  window.StorytellerCinema.skins.init(); // Initialize Skins
 
   // REGISTER LIBWRAPPER HOOK (Canvas Visibility Override)
   // Target: 'foundry.canvas.groups.CanvasVisibility.prototype.tokenVision' (V13 Namespace)
@@ -73,10 +90,10 @@ Hooks.once('init', async function () {
   }
 
   // REGISTER LIBWRAPPER HOOK (Collision Bypass - Geometry Engine)
-  // Target: 'ClockwiseSweepPolygon.testCollision'
+  // Target: 'foundry.canvas.geometry.ClockwiseSweepPolygon.testCollision'
   // Logic: This is the deepest level check. If we return false here, NO collision is detected by ANY system layer.
   // This solves the issue where WallsLayer or Token checks might be bypassed or implemented differently.
-  const polygonTarget = 'ClockwiseSweepPolygon.testCollision';
+  const polygonTarget = 'foundry.canvas.geometry.ClockwiseSweepPolygon.testCollision';
   try {
     libWrapper.register('storyteller-cinema', polygonTarget, function (wrapped, ...args) {
       if (window.StorytellerCinema?.active) return false;

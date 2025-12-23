@@ -1,3 +1,4 @@
+import { S as SkinConfig } from "../apps/skin-config.js";
 function registerUIHooks() {
   Hooks.on("getSceneControlButtons", (controls) => {
     const controlList = Array.isArray(controls) ? controls : Object.values(controls);
@@ -149,18 +150,108 @@ function registerUIHooks() {
   });
 }
 function createHUDButton() {
+  var _a;
   if (document.getElementById("storyteller-cinema-toggle")) return;
-  const btn = document.createElement("div");
-  btn.id = "storyteller-cinema-toggle";
-  btn.innerHTML = '<i class="fas fa-film"></i> <span>Storyteller Cinema</span>';
-  btn.title = "Toggle Cinematic Mode";
-  if (document.body.classList.contains("cinematic-mode")) btn.classList.add("active");
-  btn.onclick = async () => {
+  if (!game.user.isGM) return;
+  const container = document.createElement("div");
+  container.id = "storyteller-cinema-toggle";
+  container.innerHTML = `
+        <div class="hud-toggle-action">
+            <i class="fas fa-film"></i> 
+            <span class="label">Storyteller Cinema</span>
+        </div>
+        <div class="hud-controls">
+            <span class="separator">|</span>
+            
+            <div class="custom-skin-select" title="Change Skin">
+                <span class="current-value">Loading...</span>
+                <i class="fas fa-chevron-down"></i>
+                <ul class="dropdown-options">
+                    <!-- Populated dynamically -->
+                </ul>
+            </div>
+
+            <i class="fas fa-cog open-config" title="Open Skin Studio"></i>
+        </div>
+    `;
+  container.title = "Toggle Cinematic Mode";
+  document.body.appendChild(container);
+  const toggleAction = container.querySelector(".hud-toggle-action");
+  const customSelect = container.querySelector(".custom-skin-select");
+  const currentValueSpan = customSelect.querySelector(".current-value");
+  const optionsList = customSelect.querySelector(".dropdown-options");
+  const configBtn = container.querySelector(".open-config");
+  const controls = container.querySelector(".hud-controls");
+  toggleAction.onclick = async (e) => {
+    e.stopPropagation();
+    customSelect.classList.remove("open");
     const current = canvas.scene.getFlag("storyteller-cinema", "active") || false;
     await canvas.scene.setFlag("storyteller-cinema", "active", !current);
   };
-  if (!game.user.isGM) return;
-  document.body.appendChild(btn);
+  if (document.body.classList.contains("cinematic-mode")) {
+    container.classList.add("active");
+    controls.style.display = "flex";
+  } else {
+    controls.style.display = "none";
+  }
+  const populateSkins = () => {
+    var _a2, _b, _c, _d;
+    const skins = ((_b = (_a2 = window.StorytellerCinema) == null ? void 0 : _a2.skins) == null ? void 0 : _b.getSkins()) || [];
+    const activeId = ((_d = (_c = window.StorytellerCinema) == null ? void 0 : _c.skins) == null ? void 0 : _d.activeSkin) || "default";
+    const activeSkin = skins.find((s) => s.id === activeId);
+    currentValueSpan.textContent = activeSkin ? activeSkin.name : "Select Skin";
+    optionsList.innerHTML = skins.map((s) => `
+            <li data-value="${s.id}" class="${s.id === activeId ? "selected" : ""}">
+                ${s.name}
+            </li>
+        `).join("");
+    optionsList.querySelectorAll("li").forEach((li) => {
+      li.onclick = (e) => {
+        var _a3;
+        e.stopPropagation();
+        const skinId = li.dataset.value;
+        customSelect.classList.remove("open");
+        currentValueSpan.textContent = li.textContent.trim();
+        if ((_a3 = window.StorytellerCinema) == null ? void 0 : _a3.skins) {
+          window.StorytellerCinema.skins.apply(skinId);
+        }
+      };
+    });
+  };
+  if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {
+    populateSkins();
+  } else {
+    setTimeout(populateSkins, 500);
+  }
+  customSelect.onclick = (e) => {
+    e.stopPropagation();
+    customSelect.classList.toggle("open");
+  };
+  document.addEventListener("click", (e) => {
+    if (!customSelect.contains(e.target)) {
+      customSelect.classList.remove("open");
+    }
+  });
+  configBtn.onclick = (e) => {
+    e.stopPropagation();
+    customSelect.classList.remove("open");
+    new SkinConfig().render(true, { focus: true });
+  };
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === "class") {
+        const isActive = document.body.classList.contains("cinematic-mode");
+        container.classList.toggle("active", isActive);
+        controls.style.display = isActive ? "flex" : "none";
+        if (!isActive) customSelect.classList.remove("open");
+      }
+    });
+  });
+  observer.observe(document.body, { attributes: true });
+  Hooks.on("storyteller-cinema-skin-changed", (skinId) => {
+    populateSkins();
+  });
+  Hooks.on("storyteller-cinema-skins-updated", populateSkins);
 }
 Hooks.on("ready", createHUDButton);
 Hooks.on("canvasReady", createHUDButton);

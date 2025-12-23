@@ -35,7 +35,9 @@
       width: 100%;
       height: 13vh;
       /* Um pouco mais alto para garantir cobertura */
-      background: black;
+
+      background: var(--cinematic-bar-bg, black);
+      border-bottom: var(--cinematic-bar-border, none);
 
       /* BLOQUEIO DE CLIQUES NA BARRA:
            Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
@@ -44,6 +46,12 @@
       pointer-events: none;
 
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+
+      /* Special handling for bottom bar if border exists */
+      &.bottom {
+         border-bottom: none;
+         border-top: var(--cinematic-bar-border, none);
+      }
    }
 }
 
@@ -51,6 +59,8 @@
 
 body.cinematic-mode {
    transition: background-color 1.5s ease-in-out;
+   /* FILM GRAIN / SEPIA / NOIR FILTER */
+   filter: var(--cinematic-filter, none);
 }
 
 #storyteller-cinema-toggle {
@@ -58,38 +68,170 @@ body.cinematic-mode {
    top: 5px;
    left: 50%;
    transform: translateX(-50%);
-   right: auto;
-   right: auto;
-   width: auto;
-   min-width: 35px;
-   padding: 0 10px;
-   gap: 8px;
-   height: 35px;
    z-index: 95;
-   /* Must be > 10 (Overlay) but < 100 (Sidebar) */
-   background: rgba(0, 0, 0, 0.9);
-   border: 2px solid #ff6400;
-   /* Always visible orange border */
-   border-radius: 5px;
-   color: #fff;
-   font-size: 16px;
+   /* Layout */
    display: flex;
    align-items: center;
-   justify-content: center;
-   cursor: pointer;
-   box-shadow: 0 0 5px #000;
-   transition: all 0.2s;
+   justify-content: space-between;
+   gap: 5px;
 
-   &:hover {
-      background: #333;
-      text-shadow: 0 0 5px #ff6400;
-      border-color: #ff6400;
+   /* Size & Shape */
+   height: 32px;
+   padding: 0 10px;
+   border-radius: 16px;
+   /* Pill shape */
+
+   /* Styling */
+   background: rgba(10, 10, 10, 0.95);
+   border: 1px solid #ff6400;
+   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+   color: #e0e0e0;
+   font-family: var(--font-primary);
+   font-size: 14px;
+   transition: all 0.3s ease;
+
+   /* Toggle Action Area */
+   .hud-toggle-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding-right: 8px;
+      /* More breathing room */
+      height: 100%;
+
+      &:hover {
+         color: #fff;
+         text-shadow: 0 0 8px #ff6400;
+      }
    }
 
+   /* Controls Area (Select + Cog) */
+   .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 1px solid rgba(255, 255, 255, 0.3);
+      padding-left: 12px;
+      height: 18px;
+      /* Slightly shorter separator */
+      margin-left: 2px;
+
+      /* Hide by default (JS handles display) */
+      display: none;
+   }
+
+   /* --- Custom Dropdown Implementation (Replaces Native Select) --- */
+   .custom-skin-select {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      color: #aaa;
+      font-size: 14px;
+      padding: 0 5px;
+      transition: color 0.2s;
+
+      &:hover {
+         color: #fff;
+      }
+
+      &.open {
+         color: #ff6400;
+
+         .dropdown-options {
+            display: block;
+            /* Show menu */
+            animation: fadeIn 0.1s ease-out;
+         }
+
+         .fa-chevron-down {
+            transform: rotate(180deg);
+         }
+      }
+
+      .fa-chevron-down {
+         font-size: 10px;
+         transition: transform 0.2s;
+      }
+
+      /* The Floating Menu */
+      .dropdown-options {
+         display: none;
+         /* Hidden by default */
+         position: absolute;
+         top: 30px;
+         /* Below the header */
+         left: 50%;
+         transform: translateX(-50%);
+         background: #111;
+         border: 1px solid #ff6400;
+         border-radius: 6px;
+         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+         list-style: none;
+         padding: 5px 0;
+         margin: 0;
+         min-width: 150px;
+         z-index: 200;
+
+         li {
+            padding: 10px 15px;
+            /* GENEROUS PADDING HERE! */
+            color: #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+            text-align: left;
+
+            &:hover {
+               background: #333;
+               color: #fff;
+            }
+
+            &.selected {
+               color: #ff6400;
+               font-weight: bold;
+               background: rgba(255, 100, 0, 0.1);
+            }
+         }
+      }
+   }
+
+   @keyframes fadeIn {
+      from {
+         opacity: 0;
+         transform: translateX(-50%) translateY(-5px);
+      }
+
+      to {
+         opacity: 1;
+         transform: translateX(-50%) translateY(0);
+      }
+   }
+
+   /* Config Cog Icon */
+   .open-config {
+      cursor: pointer;
+      color: #888;
+      font-size: 1.1em;
+      transition: all 0.2s;
+
+      &:hover {
+         color: #fff;
+         transform: rotate(90deg);
+      }
+   }
+
+   /* Active State (Cinematic Mode ON) */
    &.active {
-      color: #ff6400;
       border-color: #ff6400;
-      background: rgba(20, 0, 0, 0.9);
+      box-shadow: 0 0 15px rgba(255, 100, 0, 0.2);
+
+      .hud-toggle-action {
+         color: #ff6400;
+      }
    }
 }
 
@@ -123,4 +265,282 @@ body.cinematic-mode {
          gap: 5px;
       }
    }
+}
+
+/* === SKIN STUDIO (Modern Dark Theme) === */
+.skin-config-container {
+   display: flex;
+   flex-direction: column;
+   height: 100%;
+   /* Sleek Dark Gradient Background */
+   background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+   color: #e0e0e0;
+   font-family: "Signika", var(--font-primary);
+   box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+.skin-header {
+   background: rgba(255, 255, 255, 0.03);
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+   padding: 1.5rem;
+   text-align: center;
+   backdrop-filter: blur(5px);
+}
+
+.skin-header h1 {
+   font-family: "Amiri", serif;
+   /* Elegant Serif */
+   font-size: 2.8em;
+   margin: 0 0 5px 0;
+   color: #ff6400;
+   /* Foundry Orange Accent */
+   text-transform: uppercase;
+   letter-spacing: 2px;
+   text-shadow: 0 2px 10px rgba(255, 100, 0, 0.3);
+}
+
+.skin-header p {
+   margin: 0;
+   font-size: 0.9em;
+   color: #888;
+   font-weight: 300;
+}
+
+.skin-layout {
+   display: flex;
+   flex: 1;
+   overflow: hidden;
+}
+
+/* SIDEBAR */
+.skin-sidebar {
+   width: 260px;
+   background: rgba(0, 0, 0, 0.4);
+   border-right: 1px solid rgba(255, 255, 255, 0.05);
+   display: flex;
+   flex-direction: column;
+   padding: 15px;
+   box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.skin-sidebar h3 {
+   font-size: 0.85em;
+   text-transform: uppercase;
+   letter-spacing: 1px;
+   color: #666;
+   border-bottom: 1px solid #333;
+   padding-bottom: 10px;
+   margin-top: 0;
+   margin-bottom: 15px;
+}
+
+.skin-list {
+   flex: 1;
+   overflow-y: auto;
+   padding-right: 5px;
+   /* Space for scrollbar */
+}
+
+.skin-item {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 12px 15px;
+   margin-bottom: 8px;
+   background: rgba(255, 255, 255, 0.03);
+   border: 1px solid transparent;
+   border-radius: 6px;
+   cursor: pointer;
+   transition: all 0.2s ease;
+   font-size: 1em;
+}
+
+.skin-item:hover {
+   background: rgba(255, 255, 255, 0.08);
+   transform: translateX(2px);
+}
+
+.skin-item.active {
+   background: linear-gradient(90deg, rgba(255, 100, 0, 0.1) 0%, transparent 100%);
+   border-left: 3px solid #ff6400;
+   color: #fff;
+   font-weight: 600;
+}
+
+.skin-item i.delete-skin {
+   color: #666;
+   transition: color 0.2s;
+}
+
+.skin-item:hover i.delete-skin {
+   color: #e74c3c;
+}
+
+/* CREATE BUTTON */
+.create-skin-btn {
+   margin-top: 15px;
+   background: #27ae60;
+   /* Distinct Green */
+   color: #fff;
+   border: none;
+   padding: 10px;
+   border-radius: 6px;
+   font-weight: 600;
+   text-transform: uppercase;
+   font-size: 0.8em;
+   letter-spacing: 0.5px;
+   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+   transition: all 0.2s;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+}
+
+.create-skin-btn:hover {
+   background: #219150;
+   transform: translateY(-1px);
+   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* EDITOR MAIN AREA */
+.skin-editor {
+   flex: 1;
+   padding: 30px;
+   overflow-y: auto;
+   background: url('/modules/storyteller-cinema/assets/ui/noise.png');
+   /* Subtle texture if avail, else just dark */
+}
+
+.editor-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 30px;
+   padding-bottom: 15px;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.editor-header h2 {
+   font-size: 2em;
+   font-weight: 300;
+   color: #fff;
+   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+   margin: 0;
+   border: none;
+}
+
+.actions {
+   display: flex;
+   gap: 10px;
+}
+
+/* Action Buttons */
+.apply-skin-btn,
+.save-skin-btn {
+   background: rgba(255, 255, 255, 0.1);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   color: #fff;
+   border-radius: 4px;
+   padding: 8px 16px;
+   font-size: 0.9em;
+   cursor: pointer;
+   transition: all 0.2s;
+}
+
+.apply-skin-btn:hover {
+   background: #ff6400;
+   border-color: #ff6400;
+   color: #000;
+}
+
+.save-skin-btn:hover {
+   background: #2980b9;
+   border-color: #2980b9;
+}
+
+/* FORMS */
+.form-group {
+   margin-bottom: 20px;
+}
+
+.form-group label {
+   display: block;
+   margin-bottom: 8px;
+   color: #aaa;
+   font-size: 0.85em;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+}
+
+.skin-editor input[type="text"] {
+   width: 100%;
+   background: rgba(0, 0, 0, 0.3);
+   border: 1px solid #444;
+   color: #fff;
+   padding: 10px;
+   border-radius: 4px;
+   font-family: inherit;
+   transition: border-color 0.2s;
+}
+
+.skin-editor input[type="text"]:focus {
+   border-color: #ff6400;
+   outline: none;
+   box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.2);
+}
+
+fieldset {
+   border: 1px solid #333;
+   background: rgba(255, 255, 255, 0.02);
+   border-radius: 8px;
+   padding: 20px;
+   margin-bottom: 25px;
+}
+
+fieldset legend {
+   padding: 0 10px;
+   color: #ff6400;
+   font-weight: 600;
+   text-transform: uppercase;
+   font-size: 0.8em;
+}
+
+/* File Picker Fix */
+.file-picker-group {
+   display: flex;
+   gap: 8px;
+}
+
+.file-picker-group button {
+   flex: 0 0 40px;
+   background: #333;
+   border: 1px solid #444;
+   color: #ccc;
+   border-radius: 4px;
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.file-picker-group button:hover {
+   background: #444;
+   color: #fff;
+}
+
+/* Empty State */
+.empty-state {
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+   height: 100%;
+   color: #666;
+}
+
+.empty-state i {
+   font-size: 5em;
+   margin-bottom: 20px;
+   color: #444;
 }

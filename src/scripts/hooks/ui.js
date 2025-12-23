@@ -1,3 +1,4 @@
+import { SkinConfig } from '../apps/skin-config.js';
 // import { toggleCinematicMode } from '../core/cinematic.js'; // REMOVED: Now handled by Main Hook -> API
 // import { proxy } from '../core/proxy.js';
 // import { proxy } from '../core/proxy.js'; 
@@ -234,26 +235,142 @@ export function registerUIHooks() {
 // === HUD BUTTON (Floating Top-Right) ===
 function createHUDButton() {
     if (document.getElementById('storyteller-cinema-toggle')) return;
+    if (!game.user.isGM) return; // SECURITY: GM ONLY
 
-    const btn = document.createElement('div');
-    btn.id = 'storyteller-cinema-toggle';
-    btn.innerHTML = '<i class="fas fa-film"></i> <span>Storyteller Cinema</span>';
-    btn.title = "Toggle Cinematic Mode";
+    const container = document.createElement('div');
+    container.id = 'storyteller-cinema-toggle';
+    // Base layout: [Icon] [Text] [ | ] [Custom Select] [Cog]
+    container.innerHTML = `
+        <div class="hud-toggle-action">
+            <i class="fas fa-film"></i> 
+            <span class="label">Storyteller Cinema</span>
+        </div>
+        <div class="hud-controls">
+            <span class="separator">|</span>
+            
+            <div class="custom-skin-select" title="Change Skin">
+                <span class="current-value">Loading...</span>
+                <i class="fas fa-chevron-down"></i>
+                <ul class="dropdown-options">
+                    <!-- Populated dynamically -->
+                </ul>
+            </div>
 
-    // Initial State
-    if (document.body.classList.contains('cinematic-mode')) btn.classList.add('active');
+            <i class="fas fa-cog open-config" title="Open Skin Studio"></i>
+        </div>
+    `;
+    container.title = "Toggle Cinematic Mode";
 
-    btn.onclick = async () => {
-        // DB SYNC LOGIC
+    document.body.appendChild(container);
+
+    // --- LOGIC ---
+    const toggleAction = container.querySelector('.hud-toggle-action');
+    const customSelect = container.querySelector('.custom-skin-select');
+    const currentValueSpan = customSelect.querySelector('.current-value');
+    const optionsList = customSelect.querySelector('.dropdown-options');
+    const configBtn = container.querySelector('.open-config');
+    const controls = container.querySelector('.hud-controls');
+
+    // 1. Toggle Cinematic Mode
+    toggleAction.onclick = async (e) => {
+        e.stopPropagation();
+        // Close dropdown if open
+        customSelect.classList.remove('open');
+
         const current = canvas.scene.getFlag('storyteller-cinema', 'active') || false;
         await canvas.scene.setFlag('storyteller-cinema', 'active', !current);
-
-        // Visual Feedback immediate (Optional, but DB is fast enough)
-        // btn.classList.toggle('active', !isActive);
     };
 
-    if (!game.user.isGM) return; // SECURITY: GM ONLY
-    document.body.appendChild(btn);
+    // 2. Initial State Check
+    if (document.body.classList.contains('cinematic-mode')) {
+        container.classList.add('active');
+        controls.style.display = 'flex';
+    } else {
+        controls.style.display = 'none';
+    }
+
+    // 3. Populate Skins Function
+    const populateSkins = () => {
+        const skins = window.StorytellerCinema?.skins?.getSkins() || [];
+        const activeId = window.StorytellerCinema?.skins?.activeSkin || 'default';
+
+        // Update Current Value Text
+        const activeSkin = skins.find(s => s.id === activeId);
+        currentValueSpan.textContent = activeSkin ? activeSkin.name : 'Select Skin';
+
+        // Populate List
+        optionsList.innerHTML = skins.map(s => `
+            <li data-value="${s.id}" class="${s.id === activeId ? 'selected' : ''}">
+                ${s.name}
+            </li>
+        `).join('');
+
+        // Re-bind click events for options
+        optionsList.querySelectorAll('li').forEach(li => {
+            li.onclick = (e) => {
+                e.stopPropagation();
+                const skinId = li.dataset.value;
+
+                // Close Menu
+                customSelect.classList.remove('open');
+
+                // Update UI immediately (optimistic)
+                currentValueSpan.textContent = li.textContent.trim();
+
+                // Apply Skin
+                if (window.StorytellerCinema?.skins) {
+                    window.StorytellerCinema.skins.apply(skinId);
+                }
+            };
+        });
+    };
+
+    // Run populate immediately or wait
+    if (window.StorytellerCinema?.skins) {
+        populateSkins();
+    } else {
+        setTimeout(populateSkins, 500);
+    }
+
+    // 4. Custom Dropdown Toggle
+    customSelect.onclick = (e) => {
+        e.stopPropagation();
+        customSelect.classList.toggle('open');
+    };
+
+    // Close dropdown when clicking anywhere else
+    document.addEventListener('click', (e) => {
+        if (!customSelect.contains(e.target)) {
+            customSelect.classList.remove('open');
+        }
+    });
+
+    // 5. Config Button
+    configBtn.onclick = (e) => {
+        e.stopPropagation();
+        customSelect.classList.remove('open'); // Close dropdown
+        new SkinConfig().render(true, { focus: true });
+    };
+
+    // 6. Listen for Updates
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === "class") {
+                const isActive = document.body.classList.contains('cinematic-mode');
+                container.classList.toggle('active', isActive);
+                controls.style.display = isActive ? 'flex' : 'none';
+                if (!isActive) customSelect.classList.remove('open'); // Close if hidden
+            }
+        });
+    });
+    observer.observe(document.body, { attributes: true });
+
+    // Listen for skin changes via Hook
+    Hooks.on('storyteller-cinema-skin-changed', (skinId) => {
+        populateSkins(); // Re-render to update selected state and text
+    });
+
+    Hooks.on('storyteller-cinema-skins-updated', populateSkins);
 }
 
 // Ensure button exists on load

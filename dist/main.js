@@ -1,8 +1,24 @@
 import { S as StorytellerAPI } from "./core/api.js";
+import { S as SkinManager } from "./core/skin-manager.js";
 import { a as applyVisualDepth } from "./core/depth.js";
 import { r as registerUIHooks } from "./hooks/ui.js";
 Hooks.once("init", async function() {
   console.log("Storyteller Cinema | Initializing...");
+  game.settings.register("storyteller-cinema", "activeSkin", {
+    name: "Active Skin",
+    scope: "client",
+    // Client specific preference
+    config: false,
+    // Hidden from menu, managed by Skin UI
+    type: String,
+    default: "default",
+    onChange: (value) => {
+      var _a;
+      if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {
+        window.StorytellerCinema.skins.apply(value);
+      }
+    }
+  });
   game.settings.register("storyteller-cinema", "referenceHeight", {
     name: "Reference Height (%)",
     hint: "Token height relative to the screen height.",
@@ -31,7 +47,9 @@ Hooks.once("init", async function() {
     range: { min: 1, max: 3, step: 0.1 }
   });
   window.StorytellerCinema = new StorytellerAPI();
+  window.StorytellerCinema.skins = new SkinManager();
   window.StorytellerCinema.init();
+  window.StorytellerCinema.skins.init();
   const visTarget = "foundry.canvas.groups.CanvasVisibility.prototype.tokenVision";
   try {
     libWrapper.register("storyteller-cinema", visTarget, function(wrapped, ...args) {
@@ -53,7 +71,7 @@ Hooks.once("init", async function() {
       console.error("Storyteller Cinema | ALL wrapper attempts failed:", e2);
     }
   }
-  const polygonTarget = "ClockwiseSweepPolygon.testCollision";
+  const polygonTarget = "foundry.canvas.geometry.ClockwiseSweepPolygon.testCollision";
   try {
     libWrapper.register("storyteller-cinema", polygonTarget, function(wrapped, ...args) {
       var _a;
