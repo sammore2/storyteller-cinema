@@ -1,7 +1,8 @@
 {
     "id": "storyteller-cinema",
     "title": "Storyteller's Cinema",
-    "version": "1.0.4",
+    "version": "1.0.5",
+    "type": "module",
     "compatibility": {
         "minimum": "12",
         "verified": "13"
