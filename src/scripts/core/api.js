@@ -1,5 +1,3 @@
-import { applyVisualDepth } from './depth.js';
-
 export class StorytellerAPI {
     constructor() {
         this.active = false;
@@ -67,8 +65,8 @@ export class StorytellerAPI {
             // Camera Pan
             await this._panCameraToFit(options.init);
 
-            // Token Hiding & Depth
-            await this._processTokens(true);
+            // V13 Occlusion: Force refresh on all objects to trigger render hooks
+            this._refreshAllPlaceables();
 
         } else {
             // --- DEACTIVATE ---
@@ -92,8 +90,8 @@ export class StorytellerAPI {
                 canvas.storytellerBattleView = null;
             }
 
-            // Restore Tokens
-            await this._processTokens(false);
+            // V13 Occlusion: Restore visibility
+            this._refreshAllPlaceables();
         }
     }
 
@@ -160,81 +158,65 @@ export class StorytellerAPI {
     /* ---------------------------------------------------------------------- */
 
     async _setCinematicBackground(active) {
+        const overlay = document.getElementById('storyteller-cinema-overlay');
+        if (!overlay) return;
+
         if (active) {
             const bgPath = canvas.scene.getFlag('storyteller-cinema', 'cinematicBg');
 
-            // Hiding Clutter
+            // Hiding Clutter logic remains for UI components that aren't covered by CSS
             this._toggleLayerVisibility(false);
 
             if (bgPath) {
-                try {
-                    const tex = await foundry.canvas.loadTexture(bgPath);
-                    if (!this.cinematicContainer || this.cinematicContainer.destroyed) {
-                        this.cinematicContainer = new PIXI.Container();
-                        this.cinematicContainer.eventMode = 'none';
-                        const sprite = new PIXI.Sprite(tex);
-                        sprite.anchor.set(0.5);
-                        this.cinematicContainer.addChild(sprite);
-                        canvas.primary.addChildAt(this.cinematicContainer, 0);
-                    } else {
-                        // Ensure it's in the scene
-                        if (this.cinematicContainer.parent !== canvas.primary) {
-                            canvas.primary.addChildAt(this.cinematicContainer, 0);
-                        }
-                    }
-
-                    const sprite = this.cinematicContainer.children[0];
-                    sprite.texture = tex;
-
-                    // Fit Logic
-                    this._fitSpriteToScreen(sprite, tex);
-
-                } catch (err) {
-                    console.error("Storyteller Cinema | BG Error:", err);
-                }
+                // Apply background image via CSS to the HTML overlay
+                overlay.style.backgroundImage = `url('${bgPath}')`;
+                overlay.style.backgroundSize = 'cover';
+                overlay.style.backgroundPosition = 'center';
+                overlay.style.zIndex = '10'; // Acima do canvas, mas abaixo da UI do Foundry
+                overlay.style.pointerEvents = 'none'; // Permite clicar através, ou 'auto' se quiser bloquear
             }
-
         } else {
             this._toggleLayerVisibility(true);
-
-            if (this.cinematicContainer) {
-                this.cinematicContainer.destroy({ children: true, texture: false });
-                this.cinematicContainer = null;
-            }
+            overlay.style.backgroundImage = '';
+            overlay.style.zIndex = '';
         }
     }
 
     _fitSpriteToScreen(sprite, tex) {
-        const rect = canvas.dimensions.sceneRect;
-        const scaleW = window.innerWidth / rect.width;
-        const scaleH = window.innerHeight / rect.height;
-        const cameraScale = Math.min(scaleW, scaleH); // Mimic camera zoom
-
-        const visibleWorldW = window.innerWidth / cameraScale;
-        const visibleWorldH = window.innerHeight / cameraScale;
-
-        const cx = rect.x + rect.width / 2;
-        const cy = rect.y + rect.height / 2;
-        sprite.position.set(cx, cy);
-
-        const targetW = Math.max(rect.width, visibleWorldW);
-        const targetH = Math.max(rect.height, visibleWorldH);
-
-        const sX = targetW / tex.width;
-        const sY = targetH / tex.height;
-        sprite.scale.set(Math.max(sX, sY));
+        // Obsoleto - agora usado CSS background-size: cover
     }
 
     _toggleLayerVisibility(visible) {
-        if (canvas.primary?.background) canvas.primary.background.visible = visible;
+        // V13 - Grid and UI elements
         if (canvas.grid) canvas.grid.visible = visible;
-        if (canvas.walls) canvas.walls.visible = visible;
+        if (canvas.interface?.grid) canvas.interface.grid.visible = visible;
+        
+        // Interaction Layers (Legacy but safe to toggle)
+        if (canvas.tokens) canvas.tokens.visible = visible;
+        if (canvas.tiles) canvas.tiles.visible = visible;
+        if (canvas.drawings) canvas.drawings.visible = visible;
         if (canvas.templates) canvas.templates.visible = visible;
-        if (canvas.foreground) canvas.foreground.visible = visible;
-        if (canvas.controls?.doors) canvas.controls.doors.visible = visible;
-        if (canvas.lighting) canvas.lighting.visible = visible;
-        if (canvas.effects) canvas.effects.visible = visible;
-        if (canvas.fog) canvas.fog.visible = visible;
+    }
+
+    /**
+     * Triggers a refresh on all placeable objects to invoke the V13 render hooks.
+     */
+    _refreshAllPlaceables() {
+        if (!canvas.ready) return;
+        
+        const layers = [canvas.tokens, canvas.tiles, canvas.drawings, canvas.templates, canvas.lighting];
+        
+        for (const layer of layers) {
+            if (!layer?.placeables) continue;
+            for (const obj of layer.placeables) {
+                // V13 - Set refresh flag to trigger hooks
+                if (obj.renderFlags) {
+                    obj.renderFlags.set({refresh: true});
+                } else if (typeof obj.refresh === 'function') {
+                    obj.refresh();
+                }
+            }
+        }
     }
 
     /* ---------------------------------------------------------------------- */
@@ -262,100 +244,7 @@ export class StorytellerAPI {
         }
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* LOGIC: TOKENS                                                          */
-    /* ---------------------------------------------------------------------- */
-
-    async _processTokens(active) {
-        if (!canvas.tokens) return;
-
-        for (const token of canvas.tokens.placeables) {
-            if (active) {
-                // Battle Save (GM)
-                const existingBattlePos = token.document.getFlag('storyteller-cinema', 'battlePos');
-                if (game.user.isGM && !existingBattlePos) {
-                    await token.document.setFlag('storyteller-cinema', 'battlePos', { x: token.document.x, y: token.document.y });
-                }
-
-                // Hide Mesh temporarily
-                if (token.mesh) token.mesh.alpha = 0;
-
-                // Move to Cinematic Pos if exists
-                const cinPos = token.document.getFlag('storyteller-cinema', 'cinematicPos');
-                const updates = {};
-                if (cinPos) { updates.x = cinPos.x; updates.y = cinPos.y; }
-
-                // Swap Texture (GM)
-                if (game.user.isGM) {
-                    const cinTex = token.document.getFlag('storyteller-cinema', 'cinematicTexture');
-                    if (cinTex) {
-                        const orig = token.document.getFlag('storyteller-cinema', 'originalTexture');
-                        if (!orig) await token.document.setFlag('storyteller-cinema', 'originalTexture', token.document.texture.src);
-                        updates["texture.src"] = cinTex;
-                    }
-                    if (Object.keys(updates).length > 0) await this._silentTeleport(token, updates);
-                }
-
-                applyVisualDepth(token); // Apply Parallax
-
-                // Reveal
-                if (token.mesh) {
-                    const CanvasAnimation = foundry.canvas.animation.CanvasAnimation;
-                    CanvasAnimation.animate([{ parent: token.mesh, attribute: "alpha", to: 1 }], { duration: 400, name: `FadeIn-${token.id}` });
-                }
-
-            } else {
-                // Deactivate
-                if (token.document) {
-                    if (game.user.isGM) {
-                        await token.document.setFlag('storyteller-cinema', 'cinematicPos', { x: token.document.x, y: token.document.y });
-                    }
-
-                    if (token.mesh) token.mesh.alpha = 0;
-
-                    const updates = {};
-                    if (game.user.isGM) {
-                        const orig = token.document.getFlag('storyteller-cinema', 'originalTexture');
-                        if (orig) {
-                            updates["texture.src"] = orig;
-                            await token.document.unsetFlag('storyteller-cinema', 'originalTexture');
-                        }
-                        const bPos = token.document.getFlag('storyteller-cinema', 'battlePos');
-                        if (bPos) { updates.x = bPos.x; updates.y = bPos.y; }
-
-                        if (Object.keys(updates).length > 0) await this._silentTeleport(token, updates);
-                    }
-
-                    if (token.mesh) {
-                        token.mesh.scale.set(token.document.texture.scaleX, token.document.texture.scaleY);
-                        const targetAlpha = token.document.hidden ? 0.5 : 1;
-                        const CanvasAnimation = foundry.canvas.animation.CanvasAnimation;
-                        CanvasAnimation.animate([{ parent: token.mesh, attribute: "alpha", to: targetAlpha }], { duration: 400, name: `FadeOut-${token.id}` });
-                        token.refresh();
-                    }
-                }
-            }
-        }
-    }
-
-    async _silentTeleport(token, pos) {
-        // Suppress V13 Deprecation Warning logic
-        const originalWarn = console.warn;
-        const originalError = console.error;
-        const isPolluted = (...args) => args.some(a => (a?.toString() || '').includes('DatabaseUpdateOperation#teleport'));
-
-        console.warn = (...args) => { if (!isPolluted(...args)) originalWarn.apply(console, args); };
-        console.error = (...args) => { if (!isPolluted(...args)) originalError.apply(console, args); };
-
-        try {
-            await token.document.update(pos, { animate: false, animation: { duration: 0 }, teleport: true, skippingMemory: true });
-        } catch (e) {
-            originalError.apply(console, ["Teleport Error", e]);
-        } finally {
-            console.warn = originalWarn;
-            console.error = originalError;
-        }
-    }
+    // Token logic removed (handled via layer visibility)
 
     _ensureGhostMode(target, force = false) {
         const current = game.settings.get("core", "unconstrainedMovement");

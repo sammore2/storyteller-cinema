@@ -3,6 +3,7 @@ import { StorytellerAPI } from './core/api.js';
 import { SkinManager } from './core/skin-manager.js';
 import { applyVisualDepth } from './core/depth.js';
 import { registerUIHooks } from './hooks/ui.js';
+import { registerRenderHooks } from './hooks/render.js';
 import './lib/shim.js'; // Import libWrapper Shim
 
 /* ------------------------------------------------------------------------- */
@@ -113,6 +114,7 @@ Hooks.once('init', async function () {
 
   // 2. SETUP UI HOOKS
   registerUIHooks();
+  registerRenderHooks();
 
   // 3. KEYBINDINGS
   game.keybindings.register('storyteller-cinema', 'toggle-mode', {

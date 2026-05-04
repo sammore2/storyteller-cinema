@@ -2,6 +2,7 @@ import { S as StorytellerAPI } from "./core/api.js";
 import { S as SkinManager } from "./core/skin-manager.js";
 import { a as applyVisualDepth } from "./core/depth.js";
 import { r as registerUIHooks } from "./hooks/ui.js";
+import { r as registerRenderHooks } from "./hooks/render.js";
 Hooks.once("init", async function() {
   console.log("Storyteller Cinema | Initializing...");
   game.settings.register("storyteller-cinema", "activeSkin", {
@@ -91,6 +92,7 @@ Hooks.once("init", async function() {
     console.warn("Storyteller Cinema | Failed to register Polygon collision wrapper:", err);
   }
   registerUIHooks();
+  registerRenderHooks();
   game.keybindings.register("storyteller-cinema", "toggle-mode", {
     name: "Toggle Cinematic Mode",
     hint: "Switch view",
