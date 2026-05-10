@@ -2,27 +2,22 @@ function registerRenderHooks() {
   Hooks.on("refreshToken", (token) => {
     var _a;
     if (!((_a = window.StorytellerCinema) == null ? void 0 : _a.active)) {
-      token.renderable = true;
+      if (token.mesh) token.mesh.visible = true;
       return;
     }
-    const cinematicTexture = token.document.getFlag("storyteller-cinema", "cinematicTexture");
-    token.renderable = !!cinematicTexture;
+    if (token.mesh) {
+      token.mesh.visible = false;
+    }
   });
   Hooks.on("refreshTile", (tile) => {
     var _a;
-    tile.renderable = !((_a = window.StorytellerCinema) == null ? void 0 : _a.active);
-  });
-  Hooks.on("refreshDrawing", (drawing) => {
-    var _a;
-    drawing.renderable = !((_a = window.StorytellerCinema) == null ? void 0 : _a.active);
-  });
-  Hooks.on("refreshMeasuredTemplate", (template) => {
-    var _a;
-    template.renderable = !((_a = window.StorytellerCinema) == null ? void 0 : _a.active);
-  });
-  Hooks.on("refreshAmbientLight", (light) => {
-    var _a;
-    light.renderable = !((_a = window.StorytellerCinema) == null ? void 0 : _a.active);
+    if (!((_a = window.StorytellerCinema) == null ? void 0 : _a.active)) {
+      if (tile.mesh) tile.mesh.visible = true;
+      return;
+    }
+    if (tile.mesh) {
+      tile.mesh.visible = false;
+    }
   });
 }
 export {

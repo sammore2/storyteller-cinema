@@ -198,11 +198,4 @@ Hooks.on('updateToken', (tokenDocument, change, options) => {
   }
 });
 
-/* ------------------------------------------------------------------------- */
-/* REFRESH TOKEN (Visual Lock: Size & Rotation)                              */
-/* ------------------------------------------------------------------------- */
-Hooks.on('refreshToken', (token) => {
-  if (window.StorytellerCinema?.active) {
-    applyVisualDepth(token);
-  }
-});
+

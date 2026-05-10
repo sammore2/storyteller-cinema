@@ -2,6 +2,7 @@ export class StorytellerAPI {
     constructor() {
         this.active = false;
         this.cinematicContainer = null;
+        this.cinematicSprite = null;
 
         // Cache used for Vision Override
         this._visionCache = new Map();
@@ -158,28 +159,61 @@ export class StorytellerAPI {
     /* ---------------------------------------------------------------------- */
 
     async _setCinematicBackground(active) {
-        const overlay = document.getElementById('storyteller-cinema-overlay');
-        if (!overlay) return;
+        if (!canvas.ready) return;
 
         if (active) {
             const bgPath = canvas.scene.getFlag('storyteller-cinema', 'cinematicBg');
 
-            // Hiding Clutter logic remains for UI components that aren't covered by CSS
             this._toggleLayerVisibility(false);
 
             if (bgPath) {
-                // Apply background image via CSS to the HTML overlay
-                overlay.style.backgroundImage = `url('${bgPath}')`;
-                overlay.style.backgroundSize = 'cover';
-                overlay.style.backgroundPosition = 'center';
-                overlay.style.zIndex = '10'; // Acima do canvas, mas abaixo da UI do Foundry
-                overlay.style.pointerEvents = 'none'; // Permite clicar através, ou 'auto' se quiser bloquear
+                this._updateCanvasBackground(bgPath);
             }
         } else {
             this._toggleLayerVisibility(true);
-            overlay.style.backgroundImage = '';
-            overlay.style.zIndex = '';
+            if (this.cinematicSprite) this.cinematicSprite.visible = false;
+            this._lastBackgroundPath = null;
         }
+    }
+
+    _updateCanvasBackground(path) {
+        if (!path) {
+            if (this.cinematicSprite) this.cinematicSprite.visible = false;
+            this._lastBackgroundPath = null;
+            return;
+        }
+
+        // Evita flash: Se o fundo já é o mesmo, não faz nada
+        if (this._lastBackgroundPath === path) return;
+        this._lastBackgroundPath = path;
+
+        if (!canvas.ready) return;
+
+        // 1. Ensure Container exists in Primary Group
+        if (!this.cinematicContainer) {
+            this.cinematicContainer = new PIXI.Container();
+            this.cinematicContainer.sort = 1000; // Above Map/Tiles
+            this.cinematicContainer.elevation = 0; // Standard Elevation
+            canvas.primary.addChild(this.cinematicContainer);
+        }
+
+        // 2. Load Texture (Async in background, but immediate container setup)
+        foundry.canvas.loadTexture(path).then(tex => {
+            if (!tex) return;
+            if (!this.cinematicSprite) {
+                this.cinematicSprite = new PIXI.Sprite(tex);
+                this.cinematicContainer.addChild(this.cinematicSprite);
+            } else {
+                this.cinematicSprite.texture = tex;
+            }
+            this.cinematicSprite.visible = true;
+
+            // Fit logic
+            const rect = canvas.dimensions.sceneRect;
+            this.cinematicSprite.width = rect.width;
+            this.cinematicSprite.height = rect.height;
+            this.cinematicSprite.position.set(rect.x, rect.y);
+        });
     }
 
     _fitSpriteToScreen(sprite, tex) {
@@ -191,9 +225,7 @@ export class StorytellerAPI {
         if (canvas.grid) canvas.grid.visible = visible;
         if (canvas.interface?.grid) canvas.interface.grid.visible = visible;
         
-        // Interaction Layers (Legacy but safe to toggle)
-        if (canvas.tokens) canvas.tokens.visible = visible;
-        if (canvas.tiles) canvas.tiles.visible = visible;
+        // Interaction Layers (Individual control via hooks is better for selective visibility)
         if (canvas.drawings) canvas.drawings.visible = visible;
         if (canvas.templates) canvas.templates.visible = visible;
     }
@@ -204,12 +236,18 @@ export class StorytellerAPI {
     _refreshAllPlaceables() {
         if (!canvas.ready) return;
         
-        const layers = [canvas.tokens, canvas.tiles, canvas.drawings, canvas.templates, canvas.lighting];
+        // V14 Compatible Layer Iteration
+        const layerNames = ["tokens", "tiles", "drawings", "templates", "lighting"];
         
-        for (const layer of layers) {
+        for (const name of layerNames) {
+            // Avoid deprecated templates access in V14
+            if (name === "templates" && game.release.generation >= 14) continue;
+
+            const layer = canvas[name];
             if (!layer?.placeables) continue;
+
             for (const obj of layer.placeables) {
-                // V13 - Set refresh flag to trigger hooks
+                // V13/V14 - Set refresh flag to trigger hooks
                 if (obj.renderFlags) {
                     obj.renderFlags.set({refresh: true});
                 } else if (typeof obj.refresh === 'function') {

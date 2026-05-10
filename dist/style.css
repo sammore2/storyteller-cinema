@@ -32,8 +32,7 @@
   height: 13vh;
   /* Um pouco mais alto para garantir cobertura */
   /* Um pouco mais alto para garantir cobertura */
-  background-color: var(--cinematic-bar-bg, black);
-  background-image: var(--cinematic-bg-texture, none);
+  background-color: black;
   background-size: cover;
   background-repeat: repeat;
   border-bottom: var(--cinematic-bar-border, none);

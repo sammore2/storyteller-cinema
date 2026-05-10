@@ -230,6 +230,53 @@ export function registerUIHooks() {
         // Resize window to fit potentially new height
         app.setPosition({ height: "auto" });
     });
+
+    // --- Tile Configuration Injection ---
+    Hooks.on('renderTileConfig', (app, html, data) => {
+        if (!app?.document || !html) return;
+
+        const flags = app.document.flags?.["storyteller-cinema"] || {};
+        const cinematicTexture = flags.cinematicTexture || "";
+
+        let root = html instanceof HTMLElement ? html : html[0];
+        const basicTab = root.querySelector('.tab[data-tab="basic"]');
+        if (!basicTab) return;
+
+        if (basicTab.querySelector('input[name="flags.storyteller-cinema.cinematicTexture"]')) return;
+
+        const formGroup = document.createElement("div");
+        formGroup.className = "form-group";
+        formGroup.innerHTML = `
+            <label>Cinematic Portrait <span class="units">(Optional)</span></label>
+            <div class="form-fields">
+                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Browse Files" tabindex="-1">
+                    <i class="fas fa-file-import fa-fw"></i>
+                </button>
+                <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
+            </div>
+            <p class="notes">If set, this Tile (piece) stays visible and swaps to this image in Cinematic Mode.</p>
+        `;
+
+        basicTab.appendChild(formGroup);
+
+        const btn = formGroup.querySelector("button.file-picker");
+        if (btn) {
+            btn.onclick = (event) => {
+                event.preventDefault();
+                const FilePickerClass = foundry.applications?.apps?.FilePicker || FilePicker;
+                const fp = new FilePickerClass({
+                    type: "imagevideo",
+                    current: cinematicTexture,
+                    callback: (path) => {
+                        formGroup.querySelector("input").value = path;
+                    }
+                });
+                return fp.browse();
+            };
+        }
+
+        app.setPosition({ height: "auto" });
+    });
 }
 
 // === HUD BUTTON (Floating Top-Right) ===

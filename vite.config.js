@@ -1,11 +1,28 @@
 import { defineConfig } from 'vite';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
-import path from 'path';
+import fs from 'fs';
 
 export default defineConfig({
   publicDir: 'static',
   plugins: [
-    svelte()
+    {
+      name: 'copy-to-foundry',
+      apply: 'build',
+      closeBundle() {
+        const targetDir = 'D:\\FoundryVTT-WindowsPortable-14.359\\Data\\modules\\storyteller-cinema';
+        try {
+          // PROVISÓRIO: Copia recursivamente para o Foundry Portable
+          fs.cpSync('dist', targetDir, { recursive: true, force: true });
+          // Também copia a pasta static se necessário (o Vite já faz isso para o dist, mas garantimos aqui)
+          fs.cpSync('static', targetDir, { recursive: true, force: true });
+          // Copia o module.json (que está na pasta static) para a raiz do destino
+          fs.copyFileSync('static/module.json', `${targetDir}/module.json`);
+          
+          console.log(`\n\x1b[32m[Storyteller] Build copiado para: ${targetDir}\x1b[0m\n`);
+        } catch (err) {
+          console.error('\n\x1b[31m[Storyteller] Erro ao copiar para o Foundry:\x1b[0m', err.message);
+        }
+      }
+    }
   ],
   build: {
     outDir: 'dist',

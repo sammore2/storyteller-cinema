@@ -18,9 +18,9 @@ export function applyVisualDepth(token) {
   // Altura alvo na tela em pixels
   const targetPx = screenHeight * (refHeightPercent / 100);
 
-  // Altura da textura original
-  const texHeight = token.document.texture.src ? (token.texture?.height || 100) : 100;
-
+  // Altura da textura que está REALMENTE na mesh agora (Garante um mínimo de 100px)
+  const texHeight = Math.max(token.mesh?.texture?.height || 100, 100);
+  
   // Escala automática para atingir o targetPx
   const autoScale = targetPx / texHeight;
 

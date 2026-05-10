@@ -2,6 +2,7 @@ class StorytellerAPI {
   constructor() {
     this.active = false;
     this.cinematicContainer = null;
+    this.cinematicSprite = null;
     this._visionCache = /* @__PURE__ */ new Map();
     this._sceneLightCache = null;
     this._visionOverrideActive = false;
@@ -110,23 +111,48 @@ class StorytellerAPI {
   /* LOGIC: BACKGROUND                                                      */
   /* ---------------------------------------------------------------------- */
   async _setCinematicBackground(active) {
-    const overlay = document.getElementById("storyteller-cinema-overlay");
-    if (!overlay) return;
+    if (!canvas.ready) return;
     if (active) {
       const bgPath = canvas.scene.getFlag("storyteller-cinema", "cinematicBg");
       this._toggleLayerVisibility(false);
       if (bgPath) {
-        overlay.style.backgroundImage = `url('${bgPath}')`;
-        overlay.style.backgroundSize = "cover";
-        overlay.style.backgroundPosition = "center";
-        overlay.style.zIndex = "10";
-        overlay.style.pointerEvents = "none";
+        this._updateCanvasBackground(bgPath);
       }
     } else {
       this._toggleLayerVisibility(true);
-      overlay.style.backgroundImage = "";
-      overlay.style.zIndex = "";
+      if (this.cinematicSprite) this.cinematicSprite.visible = false;
+      this._lastBackgroundPath = null;
     }
+  }
+  _updateCanvasBackground(path) {
+    if (!path) {
+      if (this.cinematicSprite) this.cinematicSprite.visible = false;
+      this._lastBackgroundPath = null;
+      return;
+    }
+    if (this._lastBackgroundPath === path) return;
+    this._lastBackgroundPath = path;
+    if (!canvas.ready) return;
+    if (!this.cinematicContainer) {
+      this.cinematicContainer = new PIXI.Container();
+      this.cinematicContainer.sort = 1e3;
+      this.cinematicContainer.elevation = 0;
+      canvas.primary.addChild(this.cinematicContainer);
+    }
+    foundry.canvas.loadTexture(path).then((tex) => {
+      if (!tex) return;
+      if (!this.cinematicSprite) {
+        this.cinematicSprite = new PIXI.Sprite(tex);
+        this.cinematicContainer.addChild(this.cinematicSprite);
+      } else {
+        this.cinematicSprite.texture = tex;
+      }
+      this.cinematicSprite.visible = true;
+      const rect = canvas.dimensions.sceneRect;
+      this.cinematicSprite.width = rect.width;
+      this.cinematicSprite.height = rect.height;
+      this.cinematicSprite.position.set(rect.x, rect.y);
+    });
   }
   _fitSpriteToScreen(sprite, tex) {
   }
@@ -134,8 +160,6 @@ class StorytellerAPI {
     var _a;
     if (canvas.grid) canvas.grid.visible = visible;
     if ((_a = canvas.interface) == null ? void 0 : _a.grid) canvas.interface.grid.visible = visible;
-    if (canvas.tokens) canvas.tokens.visible = visible;
-    if (canvas.tiles) canvas.tiles.visible = visible;
     if (canvas.drawings) canvas.drawings.visible = visible;
     if (canvas.templates) canvas.templates.visible = visible;
   }
@@ -144,8 +168,10 @@ class StorytellerAPI {
    */
   _refreshAllPlaceables() {
     if (!canvas.ready) return;
-    const layers = [canvas.tokens, canvas.tiles, canvas.drawings, canvas.templates, canvas.lighting];
-    for (const layer of layers) {
+    const layerNames = ["tokens", "tiles", "drawings", "templates", "lighting"];
+    for (const name of layerNames) {
+      if (name === "templates" && game.release.generation >= 14) continue;
+      const layer = canvas[name];
       if (!(layer == null ? void 0 : layer.placeables)) continue;
       for (const obj of layer.placeables) {
         if (obj.renderFlags) {

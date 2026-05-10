@@ -1,5 +1,5 @@
 function applyVisualDepth(token) {
-  var _a;
+  var _a, _b;
   if (!token.mesh || !token.scene) return;
   const screenHeight = canvas.app.renderer.screen.height;
   const getSettingSafe = (key, def) => {
@@ -8,7 +8,7 @@ function applyVisualDepth(token) {
   };
   const refHeightPercent = getSettingSafe("referenceHeight", 35);
   const targetPx = screenHeight * (refHeightPercent / 100);
-  const texHeight = token.document.texture.src ? ((_a = token.texture) == null ? void 0 : _a.height) || 100 : 100;
+  const texHeight = Math.max(((_b = (_a = token.mesh) == null ? void 0 : _a.texture) == null ? void 0 : _b.height) || 100, 100);
   const autoScale = targetPx / texHeight;
   const gridSizeMult = Math.max(token.document.width, token.document.height);
   const docScaleX = token.document.texture.scaleX;

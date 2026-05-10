@@ -1,56 +1,39 @@
 /**
- * Storyteller Cinema | Rendering Hooks (Foundry V13)
- * Handles the "Kill Switch" for tactical elements and filtering tokens.
+ * Rendering Hooks for Storyteller Cinema
+ * Consolidates scale, position, and visibility management for tokens and tiles.
  */
+import { applyVisualDepth } from "../core/depth.js";
 
 export function registerRenderHooks() {
     /**
-     * Token Refresh Hook
-     * Sets renderable based on cinematic state and portrait availability.
+     * Refresh Token Hook
+     * Manages tactical token visibility when Cinematic Mode is active.
      */
     Hooks.on('refreshToken', (token) => {
-        // If mode is NOT active, ensure it's visible.
         if (!window.StorytellerCinema?.active) {
-            token.renderable = true;
+            if (token.mesh) token.mesh.visible = true;
             return;
         }
 
-        const cinematicTexture = token.document.getFlag('storyteller-cinema', 'cinematicTexture');
-        
-        // BUSINESS RULE: If no cinematic portrait is set, hide the token entirely.
-        // Otherwise, ensure it is renderable (since it might have been set to false before).
-        token.renderable = !!cinematicTexture;
+        // In Cinematic Mode, we hide tactical tokens because we will use the Stage (Fase 3)
+        if (token.mesh) {
+            token.mesh.visible = false;
+        }
     });
 
     /**
-     * Tile Refresh Hook
-     * Hides all tiles/objects in cinematic mode.
+     * Refresh Tile Hook
+     * Manages Tile visibility in Cinematic Mode.
      */
     Hooks.on('refreshTile', (tile) => {
-        tile.renderable = !window.StorytellerCinema?.active;
-    });
+        if (!window.StorytellerCinema?.active) {
+            if (tile.mesh) tile.mesh.visible = true;
+            return;
+        }
 
-    /**
-     * Drawing Refresh Hook
-     * Hides all drawings/annotations in cinematic mode.
-     */
-    Hooks.on('refreshDrawing', (drawing) => {
-        drawing.renderable = !window.StorytellerCinema?.active;
-    });
-
-    /**
-     * Measured Template Refresh Hook
-     * Hides all spell templates/areas in cinematic mode.
-     */
-    Hooks.on('refreshMeasuredTemplate', (template) => {
-        template.renderable = !window.StorytellerCinema?.active;
-    });
-
-    /**
-     * Ambient Light Refresh Hook
-     * (Optional: Hide lights if they leak through the cinematic background)
-     */
-    Hooks.on('refreshAmbientLight', (light) => {
-        light.renderable = !window.StorytellerCinema?.active;
+        // Hide tiles in cinematic mode for now
+        if (tile.mesh) {
+            tile.mesh.visible = false;
+        }
     });
 }

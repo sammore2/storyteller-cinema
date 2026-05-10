@@ -148,10 +148,4 @@ Hooks.on("updateToken", (tokenDocument, change, options) => {
     console.error("Storyteller Cinema | Update Error:", err);
   }
 });
-Hooks.on("refreshToken", (token) => {
-  var _a;
-  if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) {
-    applyVisualDepth(token);
-  }
-});
 //# sourceMappingURL=main.js.map
