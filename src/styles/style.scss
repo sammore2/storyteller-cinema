@@ -965,6 +965,12 @@ body.cinematic-mode .storyteller-cinema-tray-app {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     transition: all 0.3s ease;
     max-width: 90vw;
+    margin-bottom: 0;
+
+    // Shift up if Simple Requests is active
+    body:has(#simple-requests-chat-body) & {
+        margin-bottom: 50px !important;
+    }
 
     .tray-handle {
         padding: 4px 20px;

@@ -260,7 +260,7 @@ function createHUDButton() {
                 <i class="fas fa-chevron-down"></i>
                 <ul class="dropdown-options"></ul>
             </div>
-            <i class="fas fa-comment-dots open-dialogue" title="Open Dialogue Console"></i>
+            <!-- Obsolete: Director Console entry point removed -->
             <i class="fas fa-cog open-config" title="Open Skin Studio"></i>
         </div>
     `;
@@ -270,7 +270,6 @@ function createHUDButton() {
   const currentValueSpan = customSelect.querySelector(".current-value");
   const optionsList = customSelect.querySelector(".dropdown-options");
   const configBtn = container.querySelector(".open-config");
-  const dialogueBtn = container.querySelector(".open-dialogue");
   const controls = container.querySelector(".hud-controls");
   toggleAction.onclick = async (e) => {
     e.stopPropagation();
@@ -321,11 +320,6 @@ function createHUDButton() {
     e.stopPropagation();
     customSelect.classList.remove("open");
     new SkinConfig().render(true, { focus: true });
-  };
-  dialogueBtn.onclick = (e) => {
-    e.stopPropagation();
-    customSelect.classList.remove("open");
-    new DialogueConsole().render(true, { focus: true });
   };
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
