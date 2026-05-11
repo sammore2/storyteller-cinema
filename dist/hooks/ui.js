@@ -198,7 +198,7 @@ function registerUIHooks() {
     console.log(">>> STORYTELLER CINEMA V14 - CONTEXT MENU HOOK <<<", options);
     options.push({
       label: "Cinema: Stage Actor",
-      icon: '<i class="fas fa-users-plus"></i>',
+      icon: '<i class="fas fa-user-plus"></i>',
       visible: (target) => {
         var _a, _b;
         const actorId = ((_a = target.closest("[data-document-id]")) == null ? void 0 : _a.getAttribute("data-document-id")) || ((_b = target.closest("[data-entry-id]")) == null ? void 0 : _b.getAttribute("data-entry-id"));
@@ -221,7 +221,7 @@ function registerUIHooks() {
     });
     options.push({
       label: "Cinema: Unstage Actor",
-      icon: '<i class="fas fa-users-slash"></i>',
+      icon: '<i class="fas fa-user-minus"></i>',
       visible: (target) => {
         var _a, _b;
         const actorId = ((_a = target.closest("[data-document-id]")) == null ? void 0 : _a.getAttribute("data-document-id")) || ((_b = target.closest("[data-entry-id]")) == null ? void 0 : _b.getAttribute("data-entry-id"));

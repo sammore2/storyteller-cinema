@@ -163,7 +163,9 @@ export class StorytellerAPI {
         }
 
         // Update Subtitle
-        container.classList.remove('active');
+        container.classList.remove('active', 'left', 'right');
+        const side = options.side || 'left';
+        container.classList.add(side);
         
         // Wait for fade out if it was active
         setTimeout(() => {

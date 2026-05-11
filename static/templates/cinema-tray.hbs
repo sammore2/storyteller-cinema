@@ -10,7 +10,6 @@
         {{#each actors}}
         <div class="tray-item actor-btn {{#if (eq this.id ../speakingAsId)}}active{{/if}}" data-id="{{this.id}}" data-name="{{this.name}}" data-img="{{this.img}}" title="{{this.name}}">
             <img src="{{this.img}}" />
-            <div class="actor-label">{{this.name}}</div>
         </div>
         {{/each}}
         <div class="tray-item clear-btn" title="Clear Stage">

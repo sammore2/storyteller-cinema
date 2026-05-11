@@ -38,36 +38,11 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
    * Update the visual overlay on the chat input
    */
   updateChatOverlay() {
-    var _a;
-    let wrapper = document.querySelector(".storyteller-cinema-chat-cover-wrapper");
-    if (!wrapper) {
-      const chatMessage = document.getElementById("chat-message");
-      if (!chatMessage) return;
-      wrapper = document.createElement("div");
-      wrapper.className = "storyteller-cinema-chat-cover-wrapper";
-      wrapper.innerHTML = `
-                <div class="storyteller-cinema-chat-cover">
-                    <img src="" alt="">
-                    <span class="actor-name"></span>
-                </div>
-            `;
-      (_a = chatMessage.parentElement) == null ? void 0 : _a.insertBefore(wrapper, chatMessage);
-    }
-    const cover = wrapper.querySelector(".storyteller-cinema-chat-cover");
-    if (!cover) return;
-    if (this.speakingAs) {
-      cover.querySelector("img").src = this.speakingAs.img;
-      cover.querySelector(".actor-name").textContent = this.speakingAs.name;
-      cover.classList.add("active");
-    } else {
-      cover.classList.remove("active");
-    }
   }
   _onRender(context, options) {
     var _a, _b;
     super._onRender(context, options);
     const html = this.element;
-    this.updateChatOverlay();
     html.querySelectorAll(".actor-btn").forEach((btn) => {
       btn.addEventListener("click", (ev) => {
         var _a2;

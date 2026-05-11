@@ -123,7 +123,9 @@ class StorytellerAPI {
       clearTimeout(this._subtitleTimeout);
       this._subtitleTimeout = null;
     }
-    container.classList.remove("active");
+    container.classList.remove("active", "left", "right");
+    const side = options.side || "left";
+    container.classList.add(side);
     setTimeout(() => {
       container.innerHTML = `
                 <div class="actor-name">${actorName}</div>

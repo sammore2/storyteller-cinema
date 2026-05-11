@@ -60,38 +60,12 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
      * Update the visual overlay on the chat input
      */
     updateChatOverlay() {
-        let wrapper = document.querySelector('.storyteller-cinema-chat-cover-wrapper');
-        if (!wrapper) {
-            const chatMessage = document.getElementById("chat-message");
-            if (!chatMessage) return;
-            
-            wrapper = document.createElement('div');
-            wrapper.className = 'storyteller-cinema-chat-cover-wrapper';
-            wrapper.innerHTML = `
-                <div class="storyteller-cinema-chat-cover">
-                    <img src="" alt="">
-                    <span class="actor-name"></span>
-                </div>
-            `;
-            chatMessage.parentElement?.insertBefore(wrapper, chatMessage);
-        }
-
-        const cover = wrapper.querySelector('.storyteller-cinema-chat-cover');
-        if (!cover) return;
-
-        if (this.speakingAs) {
-            (cover.querySelector('img') as HTMLImageElement).src = this.speakingAs.img;
-            (cover.querySelector('.actor-name') as HTMLElement).textContent = this.speakingAs.name;
-            cover.classList.add('active');
-        } else {
-            cover.classList.remove('active');
-        }
+        // REMOVED: Redundant and overlapping with the new giant tray
     }
 
     _onRender(context: any, options: any) {
         super._onRender(context, options);
         const html = this.element;
-        this.updateChatOverlay();
 
         // Click on actor -> Toggle Speaking As & Open Dialogue Console
         html.querySelectorAll('.actor-btn').forEach((btn: any) => {
