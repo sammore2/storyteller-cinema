@@ -8,9 +8,7 @@ Hooks.once("init", async function() {
   game.settings.register("storyteller-cinema", "activeSkin", {
     name: "Active Skin",
     scope: "client",
-    // Client specific preference
     config: false,
-    // Hidden from menu, managed by Skin UI
     type: String,
     default: "default",
     onChange: (value) => {
@@ -23,7 +21,6 @@ Hooks.once("init", async function() {
   game.settings.register("storyteller-cinema", "customSkins", {
     name: "Custom Skins",
     scope: "client",
-    // Stored locally per user (or world if shared needed)
     config: false,
     type: Array,
     default: []
@@ -66,19 +63,8 @@ Hooks.once("init", async function() {
       if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) return false;
       return wrapped(...args);
     }, "MIXED");
-    console.log("Storyteller Cinema | Hook registered on", visTarget);
   } catch (err) {
-    console.warn("Storyteller Cinema | Failed to register Visibility wrapper:", err);
-    try {
-      libWrapper.register("storyteller-cinema", "CanvasVisibility.prototype.tokenVision", function(wrapped, ...args) {
-        var _a;
-        if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) return false;
-        return wrapped(...args);
-      }, "MIXED");
-      console.log("Storyteller Cinema | Hook registered on Global CanvasVisibility");
-    } catch (e2) {
-      console.error("Storyteller Cinema | ALL wrapper attempts failed:", e2);
-    }
+    console.warn("Storyteller Cinema | Visibility wrapper failed:", err);
   }
   const polygonTarget = "foundry.canvas.geometry.ClockwiseSweepPolygon.testCollision";
   try {
@@ -87,9 +73,8 @@ Hooks.once("init", async function() {
       if ((_a = window.StorytellerCinema) == null ? void 0 : _a.active) return false;
       return wrapped(...args);
     }, "MIXED");
-    console.log("Storyteller Cinema | Hook registered on", polygonTarget);
   } catch (err) {
-    console.warn("Storyteller Cinema | Failed to register Polygon collision wrapper:", err);
+    console.warn("Storyteller Cinema | Polygon wrapper failed:", err);
   }
   registerUIHooks();
   registerRenderHooks();
@@ -98,23 +83,25 @@ Hooks.once("init", async function() {
     hint: "Switch view",
     editable: [{ key: "KeyZ", modifiers: ["Shift"] }],
     onDown: () => {
-      if (game.user.isGM) {
-        const current = canvas.scene.getFlag("storyteller-cinema", "active");
-        canvas.scene.setFlag("storyteller-cinema", "active", !current);
+      var _a, _b, _c;
+      if ((_a = game.user) == null ? void 0 : _a.isGM) {
+        const current = (_b = canvas.scene) == null ? void 0 : _b.getFlag("storyteller-cinema", "active");
+        (_c = canvas.scene) == null ? void 0 : _c.setFlag("storyteller-cinema", "active", !current);
       }
     },
     restricted: false
   });
 });
 Hooks.on("canvasReady", () => {
+  if (!canvas.scene) return;
   const viewMode = canvas.scene.getFlag("storyteller-cinema", "viewMode");
   const isActive = canvas.scene.getFlag("storyteller-cinema", "active") || false;
-  const shouldBeCinematic = isActive || viewMode === "cinematic";
+  const shouldBeCinematic = !!(isActive || viewMode === "cinematic");
   window.StorytellerCinema.toggle(shouldBeCinematic, { init: true });
 });
-Hooks.on("updateScene", async (document, change, options, userId) => {
+Hooks.on("updateScene", async (doc, change) => {
   var _a, _b, _c, _d;
-  if (!document.isView) return;
+  if (!doc.isView) return;
   const activeChange = (_b = (_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) == null ? void 0 : _b.active;
   if (activeChange !== void 0) {
     setTimeout(() => {
@@ -130,22 +117,18 @@ Hooks.on("updateScene", async (document, change, options, userId) => {
   }
 });
 Hooks.on("updateToken", (tokenDocument, change, options) => {
-  var _a, _b;
+  var _a, _b, _c;
   if (!change.x && !change.y) return;
   if ((_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) return;
   if (options.skippingMemory) return;
-  try {
-    if (game.user.isGM || tokenDocument.isOwner) {
-      const isCinematic = (_b = window.StorytellerCinema) == null ? void 0 : _b.active;
-      const targetFlag = isCinematic ? "cinematicPos" : "battlePos";
-      const newPos = { x: change.x ?? tokenDocument.x, y: change.y ?? tokenDocument.y };
-      tokenDocument.setFlag("storyteller-cinema", targetFlag, newPos);
-      if (isCinematic && tokenDocument.object) {
-        applyVisualDepth(tokenDocument.object);
-      }
+  if (((_b = game.user) == null ? void 0 : _b.isGM) || tokenDocument.isOwner) {
+    const isCinematic = (_c = window.StorytellerCinema) == null ? void 0 : _c.active;
+    const targetFlag = isCinematic ? "cinematicPos" : "battlePos";
+    const newPos = { x: change.x ?? tokenDocument.x, y: change.y ?? tokenDocument.y };
+    tokenDocument.setFlag("storyteller-cinema", targetFlag, newPos);
+    if (isCinematic && tokenDocument.object) {
+      applyVisualDepth(tokenDocument.object);
     }
-  } catch (err) {
-    console.error("Storyteller Cinema | Update Error:", err);
   }
 });
 //# sourceMappingURL=main.js.map

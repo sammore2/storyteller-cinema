@@ -1,14 +1,23 @@
+var __defProp = Object.defineProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 class StorytellerAPI {
   constructor() {
+    __publicField(this, "active");
+    __publicField(this, "cinematicContainer");
+    __publicField(this, "cinematicSprite");
+    __publicField(this, "skins");
+    __publicField(this, "_sceneLightCache");
+    __publicField(this, "_visionOverrideActive");
+    __publicField(this, "_lastBackgroundPath", null);
     this.active = false;
     this.cinematicContainer = null;
     this.cinematicSprite = null;
-    this._visionCache = /* @__PURE__ */ new Map();
     this._sceneLightCache = null;
     this._visionOverrideActive = false;
   }
   /**
-   * Initializes the API (called from main.js)
+   * Initializes the API
    */
   init() {
     console.log("Storyteller Cinema | API Initialized");
@@ -16,30 +25,24 @@ class StorytellerAPI {
   }
   /**
    * Main Entry Point for Toggling Mode
-   * @param {boolean} active 
-   * @param {object} options { skin: 'default', init: boolean }
    */
   async toggle(active, options = {}) {
+    var _a, _b;
     const overlay = document.getElementById("storyteller-cinema-overlay");
     const skin = options.skin || "default";
     this.active = active;
-    if (active) {
-      await this._applyVisionOverride(true);
-    } else {
-      await this._applyVisionOverride(false);
-    }
+    this._applyVisionOverride(active);
     if (active) {
       await this._setCinematicBackground(true);
       if (canvas.ready) {
-        const battleView = {
+        canvas.storytellerBattleView = {
           x: canvas.stage.pivot.x,
           y: canvas.stage.pivot.y,
           scale: canvas.stage.scale.x
         };
-        canvas.storytellerBattleView = battleView;
       }
-      if (game.user.isGM) {
-        await this._ensureGhostMode(true);
+      if ((_a = game.user) == null ? void 0 : _a.isGM) {
+        this._ensureGhostMode(true);
       }
       if (overlay) overlay.classList.add("active");
       document.body.classList.add("cinematic-mode");
@@ -47,11 +50,11 @@ class StorytellerAPI {
         document.body.classList.add(`cinematic-skin-${skin}`);
         document.body.dataset.cinematicSkin = skin;
       }
-      await this._panCameraToFit(options.init);
+      await this._panCameraToFit(options.init || false);
       this._refreshAllPlaceables();
     } else {
-      if (game.user.isGM) {
-        await this._ensureGhostMode(false, true);
+      if ((_b = game.user) == null ? void 0 : _b.isGM) {
+        this._ensureGhostMode(false, true);
       }
       await this._setCinematicBackground(false);
       if (overlay) overlay.classList.remove("active");
@@ -59,24 +62,21 @@ class StorytellerAPI {
       const skins = Array.from(document.body.classList).filter((c) => c.startsWith("cinematic-skin-"));
       skins.forEach((c) => document.body.classList.remove(c));
       delete document.body.dataset.cinematicSkin;
-      if (canvas.storytellerBattleView) {
-        const v = canvas.storytellerBattleView;
-        await canvas.animatePan({ x: v.x, y: v.y, scale: v.scale, duration: 800 });
+      const battleView = canvas.storytellerBattleView;
+      if (battleView) {
+        await canvas.animatePan({ x: battleView.x, y: battleView.y, scale: battleView.scale, duration: 800 });
         canvas.storytellerBattleView = null;
       }
       this._refreshAllPlaceables();
     }
   }
-  /* ---------------------------------------------------------------------- */
-  /* LOGIC: VISION & LIGHTING (THE FIX)                                     */
-  /* ---------------------------------------------------------------------- */
   _applyVisionOverride(active) {
     if (!canvas.ready || !canvas.scene) return;
     const environment = canvas.scene.environment;
     if (active) {
       this._visionOverrideActive = true;
       if (this._sceneLightCache === null) {
-        if (environment && environment.globalLight) {
+        if (environment == null ? void 0 : environment.globalLight) {
           this._sceneLightCache = environment.globalLight.enabled;
           environment.globalLight.enabled = true;
           environment.globalLight.source = true;
@@ -88,7 +88,7 @@ class StorytellerAPI {
     } else {
       this._visionOverrideActive = false;
       if (this._sceneLightCache !== null) {
-        if (environment && environment.globalLight) {
+        if (environment == null ? void 0 : environment.globalLight) {
           environment.globalLight.enabled = this._sceneLightCache;
         } else {
           canvas.scene.globalLight = this._sceneLightCache;
@@ -101,17 +101,13 @@ class StorytellerAPI {
       refreshLighting: true
     }, true);
   }
-  // Called by Hook to enforce state after scene refresh
   enforceVision() {
     if (this._visionOverrideActive) {
       this._applyVisionOverride(true);
     }
   }
-  /* ---------------------------------------------------------------------- */
-  /* LOGIC: BACKGROUND                                                      */
-  /* ---------------------------------------------------------------------- */
   async _setCinematicBackground(active) {
-    if (!canvas.ready) return;
+    if (!canvas.ready || !canvas.scene) return;
     if (active) {
       const bgPath = canvas.scene.getFlag("storyteller-cinema", "cinematicBg");
       this._toggleLayerVisibility(false);
@@ -140,21 +136,22 @@ class StorytellerAPI {
       canvas.primary.addChild(this.cinematicContainer);
     }
     foundry.canvas.loadTexture(path).then((tex) => {
+      var _a;
       if (!tex) return;
       if (!this.cinematicSprite) {
         this.cinematicSprite = new PIXI.Sprite(tex);
-        this.cinematicContainer.addChild(this.cinematicSprite);
+        (_a = this.cinematicContainer) == null ? void 0 : _a.addChild(this.cinematicSprite);
       } else {
         this.cinematicSprite.texture = tex;
       }
-      this.cinematicSprite.visible = true;
-      const rect = canvas.dimensions.sceneRect;
-      this.cinematicSprite.width = rect.width;
-      this.cinematicSprite.height = rect.height;
-      this.cinematicSprite.position.set(rect.x, rect.y);
+      if (this.cinematicSprite) {
+        this.cinematicSprite.visible = true;
+        const rect = canvas.dimensions.sceneRect;
+        this.cinematicSprite.width = rect.width;
+        this.cinematicSprite.height = rect.height;
+        this.cinematicSprite.position.set(rect.x, rect.y);
+      }
     });
-  }
-  _fitSpriteToScreen(sprite, tex) {
   }
   _toggleLayerVisibility(visible) {
     var _a;
@@ -163,14 +160,10 @@ class StorytellerAPI {
     if (canvas.drawings) canvas.drawings.visible = visible;
     if (canvas.templates) canvas.templates.visible = visible;
   }
-  /**
-   * Triggers a refresh on all placeable objects to invoke the V13 render hooks.
-   */
   _refreshAllPlaceables() {
     if (!canvas.ready) return;
     const layerNames = ["tokens", "tiles", "drawings", "templates", "lighting"];
     for (const name of layerNames) {
-      if (name === "templates" && game.release.generation >= 14) continue;
       const layer = canvas[name];
       if (!(layer == null ? void 0 : layer.placeables)) continue;
       for (const obj of layer.placeables) {
@@ -182,10 +175,8 @@ class StorytellerAPI {
       }
     }
   }
-  /* ---------------------------------------------------------------------- */
-  /* LOGIC: CAMERA                                                          */
-  /* ---------------------------------------------------------------------- */
   async _panCameraToFit(isInit) {
+    if (!canvas.dimensions) return;
     const rect = canvas.dimensions.sceneRect;
     const scaleW = window.innerWidth / rect.width;
     const scaleH = window.innerHeight / rect.height;
@@ -202,7 +193,6 @@ class StorytellerAPI {
       canvas.stage.scale.set(targetScale);
     }
   }
-  // Token logic removed (handled via layer visibility)
   _ensureGhostMode(target, force = false) {
     const current = game.settings.get("core", "unconstrainedMovement");
     if (current === target && !force) return;

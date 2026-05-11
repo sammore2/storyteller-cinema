@@ -1,21 +1,16 @@
 /**
  * Rendering Hooks for Storyteller Cinema
- * Consolidates scale, position, and visibility management for tokens and tiles.
  */
-import { applyVisualDepth } from "../core/depth.js";
-
-export function registerRenderHooks() {
+export function registerRenderHooks(): void {
     /**
      * Refresh Token Hook
-     * Manages tactical token visibility when Cinematic Mode is active.
      */
-    Hooks.on('refreshToken', (token) => {
+    Hooks.on('refreshToken', (token: any) => {
         if (!window.StorytellerCinema?.active) {
             if (token.mesh) token.mesh.visible = true;
             return;
         }
 
-        // In Cinematic Mode, we hide tactical tokens because we will use the Stage (Fase 3)
         if (token.mesh) {
             token.mesh.visible = false;
         }
@@ -23,15 +18,13 @@ export function registerRenderHooks() {
 
     /**
      * Refresh Tile Hook
-     * Manages Tile visibility in Cinematic Mode.
      */
-    Hooks.on('refreshTile', (tile) => {
+    Hooks.on('refreshTile', (tile: any) => {
         if (!window.StorytellerCinema?.active) {
             if (tile.mesh) tile.mesh.visible = true;
             return;
         }
 
-        // Hide tiles in cinematic mode for now
         if (tile.mesh) {
             tile.mesh.visible = false;
         }

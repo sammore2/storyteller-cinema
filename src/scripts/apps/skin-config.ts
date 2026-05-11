@@ -1,11 +1,18 @@
+/**
+ * Skin Config Application
+ */
+// @ts-ignore
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
+export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as any) {
+    selectedSkinId: string;
+    tempSkinData: any | null;
+    private _hookId: number | null = null;
 
     constructor(options = {}) {
         super(options);
         this.selectedSkinId = 'default';
-        this.tempSkinData = null; // For editing before save
+        this.tempSkinData = null; 
     }
 
     static get DEFAULT_OPTIONS() {
@@ -34,20 +41,16 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         };
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* DATA PREPARATION                                                       */
-    /* ---------------------------------------------------------------------- */
-
-    async _prepareContext(options) {
+    async _prepareContext(_options: any): Promise<any> {
         const skinManager = window.StorytellerCinema.skins;
+        if (!skinManager) return {};
+
         const allSkins = skinManager.getSkins();
         const activeSkinId = skinManager.activeSkin;
 
-        // Determine which skin we are editing
         let currentSkin = this.tempSkinData;
         if (!currentSkin) {
             currentSkin = allSkins.find(s => s.id === this.selectedSkinId) || allSkins[0];
-            // Deep clone to avoid mutating live data directly
             this.tempSkinData = JSON.parse(JSON.stringify(currentSkin));
         }
 
@@ -58,36 +61,32 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         };
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* EVENT HANDLERS                                                         */
-    /* ---------------------------------------------------------------------- */
-
-    _onRender(context, options) {
-        // 0. Reactivity
+    _onRender(_context: any, _options: any): void {
         if (!this._hookId) {
             this._hookId = Hooks.on('storyteller-cinema-skins-updated', () => {
                 if (this.rendered) this.render();
             });
         }
 
-        // 1. Skin Selection
         const skinItems = this.element.querySelectorAll('.skin-item');
-        skinItems.forEach(el => {
-            el.addEventListener('click', (ev) => {
+        skinItems.forEach((el: any) => {
+            el.addEventListener('click', () => {
                 const id = el.dataset.id;
                 this.selectedSkinId = id;
-                this.tempSkinData = null; // Reset temp data on switch
+                this.tempSkinData = null;
                 this.render();
             });
         });
 
-        // 1.5 Delete Button
         const deleteBtns = this.element.querySelectorAll('.delete-skin');
-        deleteBtns.forEach(btn => {
-            btn.addEventListener('click', async (ev) => {
-                ev.stopPropagation(); // Stop selection
+        deleteBtns.forEach((btn: any) => {
+            btn.addEventListener('click', async (ev: Event) => {
+                ev.stopPropagation();
                 const id = btn.dataset.id;
+                const skins = window.StorytellerCinema.skins;
+                if (!skins) return;
 
+                // @ts-ignore
                 const confirmed = await foundry.applications.api.DialogV2.confirm({
                     window: { title: "Delete Skin" },
                     content: `<p>Are you sure you want to delete this skin?</p>`,
@@ -96,8 +95,7 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
 
                 if (confirmed) {
-                    await window.StorytellerCinema.skins.delete(id);
-                    // If we deleted the selected one, switch to default
+                    await skins.delete(id);
                     if (this.selectedSkinId === id) {
                         this.selectedSkinId = 'default';
                         this.tempSkinData = null;
@@ -107,80 +105,71 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
             });
         });
 
-        // 2. Input Changes (Live Update or State Update)
         const inputs = this.element.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('change', (ev) => this._onInputChange(ev));
+        inputs.forEach((input: any) => {
+            input.addEventListener('change', (ev: any) => this._onInputChange(ev));
         });
 
-        // 3. Apply Button
         const applyBtn = this.element.querySelector('.apply-skin-btn');
         if (applyBtn) {
             applyBtn.addEventListener('click', () => {
-                if (this.tempSkinData) {
-                    // Just update memory and apply (preview)
-                    window.StorytellerCinema.skins.register(this.tempSkinData, false);
-                    window.StorytellerCinema.skins.apply(this.tempSkinData.id);
-                    ui.notifications.info("Storyteller Cinema | Skin Applied (Not Saved)");
+                const skins = window.StorytellerCinema.skins;
+                if (this.tempSkinData && skins) {
+                    skins.register(this.tempSkinData, false);
+                    skins.apply(this.tempSkinData.id);
+                    ui.notifications?.info("Storyteller Cinema | Skin Applied (Not Saved)");
                 }
             });
         }
 
-        // 3.5 Save Button
         const saveBtn = this.element.querySelector('.save-skin-btn');
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
-                if (this.tempSkinData) {
-                    // Update memory AND save to DB
-                    window.StorytellerCinema.skins.register(this.tempSkinData, true);
-                    window.StorytellerCinema.skins.apply(this.tempSkinData.id);
-                    ui.notifications.info("Storyteller Cinema | Skin Saved & Applied");
+                const skins = window.StorytellerCinema.skins;
+                if (this.tempSkinData && skins) {
+                    skins.register(this.tempSkinData, true);
+                    skins.apply(this.tempSkinData.id);
+                    ui.notifications?.info("Storyteller Cinema | Skin Saved & Applied");
                 }
             });
         }
 
-        // 4. Create Button
         const createBtn = this.element.querySelector('.create-skin-btn');
         if (createBtn) {
             createBtn.addEventListener('click', () => this._createNewSkin());
         }
 
-        // 6. Export Button
         const exportBtn = this.element.querySelector('.export-skin-btn');
         if (exportBtn) {
-            exportBtn.addEventListener('click', (ev) => {
-                ev.stopPropagation(); // Avoid triggering parent clicks
-                // Get ID from the button itself (if in list) or use selected
-                const id = exportBtn.dataset.id || this.selectedSkinId;
-                window.StorytellerCinema.skins.exportSkin(id);
+            exportBtn.addEventListener('click', (ev: Event) => {
+                ev.stopPropagation();
+                const skins = window.StorytellerCinema.skins;
+                if (!skins) return;
+                const id = (exportBtn as any).dataset.id || this.selectedSkinId;
+                skins.exportSkin(id);
             });
         }
 
-        // 7. Import Button
         const importBtn = this.element.querySelector('.import-skin-btn');
         if (importBtn) {
             importBtn.addEventListener('click', () => this._importSkinDialog());
         }
 
-        // 5. File Pickers
         const filePickers = this.element.querySelectorAll('.file-picker');
-        filePickers.forEach(btn => {
-            btn.addEventListener('click', event => {
+        filePickers.forEach((btn: any) => {
+            btn.addEventListener('click', (event: Event) => {
                 event.preventDefault();
-                const target = btn.dataset.target; // <--- RESTORED
+                const target = btn.dataset.target;
                 const currentVal = this._getValue(this.tempSkinData, target);
-
-                // UX IMPROVEMENT: Default to User Data folder, NOT module folder (Permissions)
-                // This allows users to upload files without hitting "Read Only" errors.
                 const startPath = currentVal || 'storyteller-cinema/';
 
-                const FilePickerClass = foundry.applications?.apps?.FilePicker || FilePicker;
+                const FilePickerClass = (foundry as any).applications?.apps?.FilePicker || FilePicker;
                 const filePicker = new FilePickerClass({
                     type: "image",
                     current: startPath,
-                    callback: (path) => {
+                    callback: (path: string) => {
                         this._setValue(this.tempSkinData, target, path);
-                        this.render(); // Re-render to show value
+                        this.render();
                     }
                 });
                 return filePicker.browse();
@@ -188,25 +177,23 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         });
     }
 
-    _onInputChange(event) {
+    _onInputChange(event: any): void {
         event.preventDefault();
         const input = event.currentTarget;
         const field = input.name;
         const value = input.value;
-
-        // Update temp data
         this._setValue(this.tempSkinData, field, value);
-
-        // Optional: Live Preview logic hooks here
-        // window.StorytellerCinema.skins._preview(this.tempSkinData);
     }
 
-    _createNewSkin() {
+    _createNewSkin(): void {
+        const skins = window.StorytellerCinema.skins;
+        if (!skins) return;
+
         const newId = `custom-${Date.now()}`;
         const newSkin = {
             id: newId,
             name: "New Custom Skin",
-            author: game.user.name,
+            author: game.user?.name || "Unknown",
             version: "1.0.0",
             options: {
                 theme: "dark",
@@ -216,26 +203,28 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         };
 
-        window.StorytellerCinema.skins.register(newSkin);
+        skins.register(newSkin);
         this.selectedSkinId = newId;
         this.tempSkinData = null;
         this.render();
     }
 
-    _importSkinDialog() {
+    _importSkinDialog(): void {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
-        input.onchange = (e) => this._processImportFile(e.target.files[0]);
+        input.onchange = (e: any) => this._processImportFile(e.target.files[0]);
         input.click();
     }
 
-    async _processImportFile(file) {
+    async _processImportFile(file: any): Promise<void> {
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = async (e) => {
+        reader.onload = async (e: any) => {
+            const skins = window.StorytellerCinema.skins;
+            if (!skins) return;
             const content = e.target.result;
-            const imported = await window.StorytellerCinema.skins.importSkin(content);
+            const imported = await skins.importSkin(content);
             if (imported) {
                 this.selectedSkinId = imported.id;
                 this.tempSkinData = null;
@@ -245,12 +234,7 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         reader.readAsText(file);
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* HELPERS                                                                */
-    /* ---------------------------------------------------------------------- */
-
-    // Dot notation setter
-    _setValue(obj, path, value) {
+    _setValue(obj: any, path: string, value: any): void {
         const keys = path.split('.');
         let current = obj;
         for (let i = 0; i < keys.length - 1; i++) {
@@ -260,8 +244,7 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         current[keys[keys.length - 1]] = value;
     }
 
-    /** @override */
-    async _close(options) {
+    async _close(options: any): Promise<void> {
         if (this._hookId) {
             Hooks.off('storyteller-cinema-skins-updated', this._hookId);
             this._hookId = null;
@@ -269,8 +252,7 @@ export class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         return super._close(options);
     }
 
-    // Dot notation getter
-    _getValue(obj, path) {
+    _getValue(obj: any, path: string): any {
         return path.split('.').reduce((o, i) => o?.[i], obj);
     }
 }

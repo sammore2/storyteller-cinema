@@ -1,15 +1,16 @@
 import { S as SkinConfig } from "../apps/skin-config.js";
 function registerUIHooks() {
   Hooks.on("getSceneControlButtons", (controls) => {
-    const controlList = Array.isArray(controls) ? controls : Object.values(controls);
-    const tokenLayer = controlList.find((c) => c.name === "token");
-    if (tokenLayer && tokenLayer.tools && game.user.isGM) {
+    var _a;
+    const tokenLayer = controls.find((c) => c.name === "token");
+    if (tokenLayer && tokenLayer.tools && ((_a = game.user) == null ? void 0 : _a.isGM)) {
       tokenLayer.tools.push({
         name: "cinematic",
         title: "Storyteller Cinema 2.5D",
         icon: "fas fa-film",
         toggle: true,
-        onClick: async (tog) => {
+        onClick: async () => {
+          if (!canvas.scene) return;
           const current = canvas.scene.getFlag("storyteller-cinema", "active") || false;
           await canvas.scene.setFlag("storyteller-cinema", "active", !current);
         }
@@ -17,15 +18,15 @@ function registerUIHooks() {
     }
   });
   Hooks.on("renderSceneConfig", (app, html) => {
+    var _a, _b;
     const scene = app.document ?? app.object;
     if (!scene) return;
-    let root = html;
-    if (html.jquery) root = html[0];
+    let root = html instanceof HTMLElement ? html : html[0];
     if (!(root instanceof HTMLElement)) return;
     const submitBtn = root.querySelector('button[type="submit"]');
     if (submitBtn) {
       if (root.querySelector(".storyteller-cinema-config")) return;
-      const flags = scene.flags["storyteller-cinema"] || {};
+      const flags = ((_a = scene.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
       const bgValue = flags.cinematicBg || "";
       const viewMode = flags.viewMode || "battlemap";
       const container = document.createElement("div");
@@ -34,11 +35,11 @@ function registerUIHooks() {
       container.style.paddingTop = "10px";
       container.style.marginTop = "10px";
       const appearanceTab = root.querySelector('.tab[data-tab="appearance"]') || root.querySelector('.tab[data-tab="basic"]');
-      const targetContainer = appearanceTab || submitBtn.closest(".form-footer").previousElementSibling;
+      const targetContainer = appearanceTab || ((_b = submitBtn.closest(".form-footer")) == null ? void 0 : _b.previousElementSibling);
+      if (!targetContainer) return;
       container.innerHTML = `
                 <hr>
                 <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
-
                 <div class="form-group">
                     <label>Default View Mode</label>
                     <div class="form-fields">
@@ -47,9 +48,7 @@ function registerUIHooks() {
                             <option value="cinematic" ${viewMode === "cinematic" ? "selected" : ""}>🎬 Cinematic (Immersive)</option>
                         </select>
                     </div>
-                    <p class="notes">Defines how this scene should start.</p>
                 </div>
-
                 <div class="form-group">
                     <label>Cinematic Background</label>
                     <div class="form-fields">
@@ -58,16 +57,15 @@ function registerUIHooks() {
                         </button>
                         <input class="image" type="text" name="flags.storyteller-cinema.cinematicBg" placeholder="Image path..." value="${bgValue}">
                     </div>
-                    <p class="notes">Image displayed only in cinematic mode (replaces map).</p>
                 </div>
             `;
       targetContainer.appendChild(container);
       const btn = container.querySelector("button.file-picker");
       if (btn) {
         btn.onclick = (event) => {
-          var _a, _b;
+          var _a2, _b2;
           event.preventDefault();
-          const FilePickerClass = ((_b = (_a = foundry.applications) == null ? void 0 : _a.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
+          const FilePickerClass = ((_b2 = (_a2 = foundry.applications) == null ? void 0 : _a2.apps) == null ? void 0 : _b2.FilePicker) || FilePicker;
           const fp = new FilePickerClass({
             type: "image",
             current: bgValue,
@@ -105,10 +103,9 @@ function registerUIHooks() {
       hoverToken.document.setFlag("storyteller-cinema", "cinematicScale", newScale).then(() => {
         hoverToken._cinemaScalePreview = null;
       });
-      console.log("Storyteller Cinema | Saved to DB:", newScale.toFixed(2));
     }, 600);
   }, { passive: false, capture: true });
-  Hooks.on("renderTokenConfig", (app, html, data) => {
+  Hooks.on("renderTokenConfig", (app, html) => {
     var _a;
     if (!(app == null ? void 0 : app.document) || !html) return;
     const flags = ((_a = app.document.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
@@ -127,7 +124,6 @@ function registerUIHooks() {
                 </button>
                 <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
             </div>
-            <p class="notes">If set, Token swaps to this image when Cinematic Mode is active.</p>
         `;
     appearanceTab.appendChild(formGroup);
     const btn = formGroup.querySelector("button.file-picker");
@@ -148,7 +144,7 @@ function registerUIHooks() {
     }
     app.setPosition({ height: "auto" });
   });
-  Hooks.on("renderTileConfig", (app, html, data) => {
+  Hooks.on("renderTileConfig", (app, html) => {
     var _a;
     if (!(app == null ? void 0 : app.document) || !html) return;
     const flags = ((_a = app.document.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
@@ -167,7 +163,6 @@ function registerUIHooks() {
                 </button>
                 <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
             </div>
-            <p class="notes">If set, this Tile (piece) stays visible and swaps to this image in Cinematic Mode.</p>
         `;
     basicTab.appendChild(formGroup);
     const btn = formGroup.querySelector("button.file-picker");
@@ -190,9 +185,9 @@ function registerUIHooks() {
   });
 }
 function createHUDButton() {
-  var _a;
+  var _a, _b;
   if (document.getElementById("storyteller-cinema-toggle")) return;
-  if (!game.user.isGM) return;
+  if (!((_a = game.user) == null ? void 0 : _a.isGM)) return;
   const container = document.createElement("div");
   container.id = "storyteller-cinema-toggle";
   container.innerHTML = `
@@ -202,19 +197,14 @@ function createHUDButton() {
         </div>
         <div class="hud-controls">
             <span class="separator">|</span>
-            
             <div class="custom-skin-select" title="Change Skin">
                 <span class="current-value">Loading...</span>
                 <i class="fas fa-chevron-down"></i>
-                <ul class="dropdown-options">
-                    <!-- Populated dynamically -->
-                </ul>
+                <ul class="dropdown-options"></ul>
             </div>
-
             <i class="fas fa-cog open-config" title="Open Skin Studio"></i>
         </div>
     `;
-  container.title = "Toggle Cinematic Mode";
   document.body.appendChild(container);
   const toggleAction = container.querySelector(".hud-toggle-action");
   const customSelect = container.querySelector(".custom-skin-select");
@@ -225,25 +215,25 @@ function createHUDButton() {
   toggleAction.onclick = async (e) => {
     e.stopPropagation();
     customSelect.classList.remove("open");
+    if (!canvas.scene) return;
     const current = canvas.scene.getFlag("storyteller-cinema", "active") || false;
     await canvas.scene.setFlag("storyteller-cinema", "active", !current);
   };
-  if (document.body.classList.contains("cinematic-mode")) {
-    container.classList.add("active");
-    controls.style.display = "flex";
-  } else {
-    controls.style.display = "none";
-  }
+  const updateHUDVisibility = () => {
+    const isActive = document.body.classList.contains("cinematic-mode");
+    container.classList.toggle("active", isActive);
+    controls.style.display = isActive ? "flex" : "none";
+    if (!isActive) customSelect.classList.remove("open");
+  };
+  updateHUDVisibility();
   const populateSkins = () => {
-    var _a2, _b, _c, _d;
-    const skins = ((_b = (_a2 = window.StorytellerCinema) == null ? void 0 : _a2.skins) == null ? void 0 : _b.getSkins()) || [];
+    var _a2, _b2, _c, _d;
+    const skins = ((_b2 = (_a2 = window.StorytellerCinema) == null ? void 0 : _a2.skins) == null ? void 0 : _b2.getSkins()) || [];
     const activeId = ((_d = (_c = window.StorytellerCinema) == null ? void 0 : _c.skins) == null ? void 0 : _d.activeSkin) || "default";
     const activeSkin = skins.find((s) => s.id === activeId);
     currentValueSpan.textContent = activeSkin ? activeSkin.name : "Select Skin";
     optionsList.innerHTML = skins.map((s) => `
-            <li data-value="${s.id}" class="${s.id === activeId ? "selected" : ""}">
-                ${s.name}
-            </li>
+            <li data-value="${s.id}" class="${s.id === activeId ? "selected" : ""}">${s.name}</li>
         `).join("");
     optionsList.querySelectorAll("li").forEach((li) => {
       li.onclick = (e) => {
@@ -252,17 +242,12 @@ function createHUDButton() {
         const skinId = li.dataset.value;
         customSelect.classList.remove("open");
         currentValueSpan.textContent = li.textContent.trim();
-        if ((_a3 = window.StorytellerCinema) == null ? void 0 : _a3.skins) {
-          window.StorytellerCinema.skins.apply(skinId);
-        }
+        (_a3 = window.StorytellerCinema.skins) == null ? void 0 : _a3.apply(skinId);
       };
     });
   };
-  if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {
-    populateSkins();
-  } else {
-    setTimeout(populateSkins, 500);
-  }
+  if ((_b = window.StorytellerCinema) == null ? void 0 : _b.skins) populateSkins();
+  else setTimeout(populateSkins, 500);
   customSelect.onclick = (e) => {
     e.stopPropagation();
     customSelect.classList.toggle("open");
@@ -279,18 +264,10 @@ function createHUDButton() {
   };
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.attributeName === "class") {
-        const isActive = document.body.classList.contains("cinematic-mode");
-        container.classList.toggle("active", isActive);
-        controls.style.display = isActive ? "flex" : "none";
-        if (!isActive) customSelect.classList.remove("open");
-      }
+      if (mutation.attributeName === "class") updateHUDVisibility();
     });
   });
   observer.observe(document.body, { attributes: true });
-  Hooks.on("storyteller-cinema-skin-changed", (skinId) => {
-    populateSkins();
-  });
   Hooks.on("storyteller-cinema-skins-updated", populateSkins);
 }
 Hooks.on("ready", createHUDButton);

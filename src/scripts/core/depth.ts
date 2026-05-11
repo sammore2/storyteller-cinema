@@ -1,43 +1,42 @@
 /**
- * Aplica escala visual híbrida (Auto Viewport + Manual Config + Quick Zoom).
+ * Applies hybrid visual scale (Auto Viewport + Manual Config + Quick Zoom).
  */
-export function applyVisualDepth(token) {
-  if (!token.mesh || !token.scene) return;
+export function applyVisualDepth(token: any): void {
+  if (!token.mesh || !token.scene || !canvas.app) return;
 
   // --- 1. Math: Viewport Target (Auto Scale) ---
   const screenHeight = canvas.app.renderer.screen.height;
 
   // SAFE SETTINGS GETTER
-  const getSettingSafe = (key, def) => {
-    if (!game.settings.settings.has(`storyteller-cinema.${key}`)) return def;
-    return game.settings.get('storyteller-cinema', key);
+  const getSettingSafe = (key: string, def: number): number => {
+    if (!game.settings?.settings?.has(`storyteller-cinema.${key}`)) return def;
+    return game.settings.get('storyteller-cinema', key) as number;
   };
 
   const refHeightPercent = getSettingSafe('referenceHeight', 35);
 
-  // Altura alvo na tela em pixels
+  // Target height in pixels
   const targetPx = screenHeight * (refHeightPercent / 100);
 
-  // Altura da textura que está REALMENTE na mesh agora (Garante um mínimo de 100px)
+  // Texture height check
   const texHeight = Math.max(token.mesh?.texture?.height || 100, 100);
   
-  // Escala automática para atingir o targetPx
+  // Auto scale to reach targetPx
   const autoScale = targetPx / texHeight;
 
-  // --- 2. Manual Adjustments (User Control) ---
+  // --- 2. Manual Adjustments ---
 
-  // Grid Size: Tokens grandes (2x2) devem ser maiores
+  // Grid Size
   const gridSizeMult = Math.max(token.document.width, token.document.height);
 
-  // Manual Scale: Respeita o slider "Scale" da ficha do token (Ajuste Permanente)
-  const docScaleX = token.document.texture.scaleX;
+  // Manual Scale
+  const docScaleX = token.document.texture.scaleX || 1;
   const manualTweak = Math.abs(docScaleX) || 1;
 
-  // --- NOVO: Cinematic Scale (Shift + Scroll - Ajuste Temporário/Rápido) ---
-  // Prioriza o preview local (instantâneo) sobre o dado do banco (lento)
+  // Cinematic Scale (Shift + Scroll)
   const quickZoom = token._cinemaScalePreview ?? token.document.getFlag('storyteller-cinema', 'cinematicScale') ?? 1.0;
 
-  // Combina todos os multiplicadores manuais
+  // Combined multipliers
   const manualMultiplier = gridSizeMult * manualTweak * quickZoom;
 
   // --- 3. Depth Factor (Parallax) ---
@@ -51,17 +50,12 @@ export function applyVisualDepth(token) {
   const depthFactor = minDepth + (ratio * (maxDepth - minDepth));
 
   // --- 4. Final Calculation ---
-  // Agora inclui o quickZoom na conta!
   const finalScale = autoScale * manualMultiplier * depthFactor;
 
-  // --- 5. Application with Flip Preservation ---
+  // --- 5. Application ---
   if (Number.isFinite(finalScale)) {
-    // Detecta Flip Horizontal do Documento
     const sign = Math.sign(docScaleX) || 1;
-
     token.mesh.scale.set(finalScale * sign, finalScale);
-
-    // Trava Rotação Visual (Sempre em pé)
-    token.mesh.rotation = 0;
+    token.mesh.rotation = 0; // Always upright
   }
 }

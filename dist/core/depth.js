@@ -1,9 +1,10 @@
 function applyVisualDepth(token) {
   var _a, _b;
-  if (!token.mesh || !token.scene) return;
+  if (!token.mesh || !token.scene || !canvas.app) return;
   const screenHeight = canvas.app.renderer.screen.height;
   const getSettingSafe = (key, def) => {
-    if (!game.settings.settings.has(`storyteller-cinema.${key}`)) return def;
+    var _a2, _b2;
+    if (!((_b2 = (_a2 = game.settings) == null ? void 0 : _a2.settings) == null ? void 0 : _b2.has(`storyteller-cinema.${key}`))) return def;
     return game.settings.get("storyteller-cinema", key);
   };
   const refHeightPercent = getSettingSafe("referenceHeight", 35);
@@ -11,7 +12,7 @@ function applyVisualDepth(token) {
   const texHeight = Math.max(((_b = (_a = token.mesh) == null ? void 0 : _a.texture) == null ? void 0 : _b.height) || 100, 100);
   const autoScale = targetPx / texHeight;
   const gridSizeMult = Math.max(token.document.width, token.document.height);
-  const docScaleX = token.document.texture.scaleX;
+  const docScaleX = token.document.texture.scaleX || 1;
   const manualTweak = Math.abs(docScaleX) || 1;
   const quickZoom = token._cinemaScalePreview ?? token.document.getFlag("storyteller-cinema", "cinematicScale") ?? 1;
   const manualMultiplier = gridSizeMult * manualTweak * quickZoom;

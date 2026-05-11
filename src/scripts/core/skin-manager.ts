@@ -1,158 +1,144 @@
-// Shim for V13/V12 compatibility
+/**
+ * Skin Manager for Storyteller Cinema
+ */
+
+interface SkinData {
+    id: string;
+    name: string;
+    author?: string;
+    version?: string;
+    autoDownload?: boolean;
+    assets?: Record<string, string>;
+    options: {
+        theme?: string;
+        filter?: string;
+        styles?: Record<string, string>;
+        barTexture?: string;
+        backgroundTexture?: string;
+        overlayTexture?: string;
+    };
+}
+
+// @ts-ignore
 const FilePickerClass = foundry.applications?.apps?.FilePicker || FilePicker;
 
 export class SkinManager {
+    skins: Map<string, SkinData>;
+    activeSkin: string;
+    private _styleTag: HTMLStyleElement | null;
+
     constructor() {
         this.skins = new Map();
         this.activeSkin = 'default';
         this._styleTag = null;
     }
 
-    init() {
+    init(): void {
         console.log("Storyteller Cinema | Initializing Skin Manager...");
         this._createStyleTag();
         this._registerDefaultSkins();
 
-        // Ensure User Data folder exists (for manual uploads/downloads)
-        this._ensureDirectory('storyteller-cinema').catch(err => console.warn("Storyteller Cinema | Could not create root folder:", err));
+        // Ensure User Data folder exists
+        this._ensureDirectory('storyteller-cinema').catch(err => console.warn("Storyteller Cinema | Root folder error:", err));
 
-        this._loadCustomSkins(); // <--- FIX: Load saved skins
+        this._loadCustomSkins();
 
         // Load saved skin setting
-        const savedSkin = game.settings.get('storyteller-cinema', 'activeSkin') || 'default';
+        const savedSkin = game.settings?.get('storyteller-cinema', 'activeSkin') || 'default';
         this.apply(savedSkin);
     }
 
-    /**
-     * Registers a new skin definition
-     * @param {Object} skinData The skin definition object
-     * @param {boolean} persist Whether to save to database (default: false)
-     */
-    async register(skinData, persist = false) {
+    async register(skinData: SkinData, persist: boolean = false): Promise<void> {
         if (!skinData.id) {
             console.error("Storyteller Cinema | Skin missing ID:", skinData);
             return;
         }
 
-        // If checking out existing, merge to ensure refs don't break, or just overwrite.
-        // Overwrite is safer for full updates.
         this.skins.set(skinData.id, skinData);
-
         console.log(`Storyteller Cinema | Skin Registered: ${skinData.name} (${skinData.id})`);
 
         if (persist) {
             await this._saveCustomSkin(skinData);
         }
 
-        // Notify UI to re-render names
         Hooks.call('storyteller-cinema-skins-updated');
     }
 
-    /**
-     * Loads custom skins from settings
-     */
-    _loadCustomSkins() {
-        const customSkins = game.settings.get('storyteller-cinema', 'customSkins') || [];
+    private _loadCustomSkins(): void {
+        const customSkins = (game.settings?.get('storyteller-cinema', 'customSkins') as SkinData[]) || [];
         customSkins.forEach(skin => {
-            this.register(skin, false); // No need to re-save
+            this.register(skin, false);
         });
     }
 
-    /**
-     * Saves a skin to the customSkins setting
-     */
-    async _saveCustomSkin(skinData) {
-        // Validation: Don't save default/system skins
+    private async _saveCustomSkin(skinData: SkinData): Promise<void> {
         if (skinData.author === 'System' || !skinData.id) return;
 
-        const customSkins = game.settings.get('storyteller-cinema', 'customSkins') || [];
-
-        // Remove existing version of this skin if any
+        const customSkins = (game.settings?.get('storyteller-cinema', 'customSkins') as SkinData[]) || [];
         const others = customSkins.filter(s => s.id !== skinData.id);
-
-        // Add new version
         others.push(skinData);
 
-        await game.settings.set('storyteller-cinema', 'customSkins', others);
-        console.log("Storyteller Cinema | Custom Skins Saved to DB.");
+        await game.settings?.set('storyteller-cinema', 'customSkins', others);
         Hooks.call('storyteller-cinema-skins-updated');
     }
 
-    /**
-     * Deletes a custom skin
-     * @param {string} skinId 
-     */
-    async delete(skinId) {
-        if (!this.skins.has(skinId)) return;
-
+    async delete(skinId: string): Promise<void> {
         const skin = this.skins.get(skinId);
+        if (!skin) return;
+
         if (skin.author === 'System') {
-            ui.notifications.warn("Storyteller Cinema | Cannot delete system skins.");
+            ui.notifications?.warn("Storyteller Cinema | Cannot delete system skins.");
             return;
         }
 
-        // 1. Remove from Map
         this.skins.delete(skinId);
 
-        // 2. Remove from DB
-        const customSkins = game.settings.get('storyteller-cinema', 'customSkins') || [];
+        const customSkins = (game.settings?.get('storyteller-cinema', 'customSkins') as SkinData[]) || [];
         const filtered = customSkins.filter(s => s.id !== skinId);
-        await game.settings.set('storyteller-cinema', 'customSkins', filtered);
+        await game.settings?.set('storyteller-cinema', 'customSkins', filtered);
 
-        // 3. Reset if active
         if (this.activeSkin === skinId) {
             this.apply('default');
         }
 
-        console.log(`Storyteller Cinema | Deleted Skin: ${skinId}`);
         Hooks.call('storyteller-cinema-skins-updated');
     }
 
-    /**
-     * Applies a skin by ID
-     * @param {string} skinId 
-     */
-    async apply(skinId) {
-        if (!this.skins.has(skinId)) {
-            // Wait a moment in case styles haven't populated? No, logical fallback.
+    async apply(skinId: string): Promise<void> {
+        let skin = this.skins.get(skinId);
+        if (!skin) {
             console.warn(`Storyteller Cinema | Skin '${skinId}' not found. Reverting to default.`);
             skinId = 'default';
+            skin = this.skins.get('default')!;
         }
 
-        const skin = this.skins.get(skinId);
         this.activeSkin = skinId;
 
-        // 1. Update Body Class
-        // Remove old skin classes
+        // Update Body Class
         const classes = document.body.className.split(" ").filter(c => !c.startsWith("cinematic-skin-"));
         document.body.className = classes.join(" ");
-        // Add new class
         document.body.classList.add(`cinematic-skin-${skinId}`);
         document.body.dataset.cinematicSkin = skinId;
 
-        // 2. Inject CSS Variables
+        // Inject CSS Variables
         this._injectCSS(skin);
 
-        // 3. Save Setting
-        if (game.settings.get('storyteller-cinema', 'activeSkin') !== skinId) {
-            await game.settings.set('storyteller-cinema', 'activeSkin', skinId);
+        // Save Setting
+        if (game.settings?.get('storyteller-cinema', 'activeSkin') !== skinId) {
+            await game.settings?.set('storyteller-cinema', 'activeSkin', skinId);
         }
 
         console.log(`Storyteller Cinema | Applied Skin: ${skin.name}`);
     }
 
-    getSkins() {
+    getSkins(): SkinData[] {
         return Array.from(this.skins.values());
     }
 
-    /**
-     * Exports a skin to a JSON file
-     * @param {string} skinId 
-     */
-    exportSkin(skinId) {
+    exportSkin(skinId: string): void {
         const skin = this.skins.get(skinId);
         if (!skin) {
-            ui.notifications.error("Storyteller Cinema | Skin not found.");
+            ui.notifications?.error("Storyteller Cinema | Skin not found.");
             return;
         }
 
@@ -163,65 +149,46 @@ export class SkinManager {
         a.download = `${skin.id}.json`;
         a.click();
     }
-    /**
-     * Imports a skin from a JSON string or object
-     * @param {string|object} jsonData 
-     */
-    async importSkin(jsonData) {
-        let skin;
+
+    async importSkin(jsonData: string | object): Promise<SkinData | undefined> {
+        let skin: SkinData;
         try {
             skin = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
         } catch (e) {
-            ui.notifications.error("Storyteller Cinema | Invalid JSON.");
+            ui.notifications?.error("Storyteller Cinema | Invalid JSON.");
             return;
         }
 
         if (!skin.id || !skin.name) {
-            ui.notifications.error("Storyteller Cinema | Invalid Skin definition.");
+            ui.notifications?.error("Storyteller Cinema | Invalid Skin definition.");
             return;
         }
 
-        // --- AUTO-DOWNLOAD LOGIC ---
+        // AUTO-DOWNLOAD LOGIC
         if (skin.autoDownload && skin.assets) {
-            ui.notifications.info("Storyteller Cinema | Downloading skin assets...");
-
-            // Prepare Target Directory
+            ui.notifications?.info("Storyteller Cinema | Downloading skin assets...");
             const targetDir = `storyteller-cinema/${skin.id}`;
             await this._ensureDirectory(targetDir);
 
-            // Download Each Asset
             for (const [key, url] of Object.entries(skin.assets)) {
                 if (!url || !url.startsWith('http')) continue;
-
-                // Extract filename
-                const filename = url.split('/').pop();
-
-                // Download
+                const filename = url.split('/').pop()!;
                 const savedPath = await this._downloadAndSave(url, targetDir, filename);
-
                 if (savedPath) {
-                    // Update Skin Definition with Local Path
-                    skin.options[key] = savedPath; // e.g. options.barTexture = "storyteller-cinema/gold/bg.png"
-                    // Also clear root assets key if desired, but keeping options sync is key
+                    (skin.options as any)[key] = savedPath;
                 }
             }
-            ui.notifications.info("Storyteller Cinema | Assets downloaded successfully.");
+            ui.notifications?.info("Storyteller Cinema | Assets downloaded successfully.");
         }
-        // ---------------------------------------
 
-        // Register and Save to DB
         await this.register(skin, true);
         await this.apply(skin.id);
 
-        ui.notifications.info(`Storyteller Cinema | Imported skin: ${skin.name}`);
+        ui.notifications?.info(`Storyteller Cinema | Imported skin: ${skin.name}`);
         return skin;
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* INTERNALS                                                              */
-    /* ---------------------------------------------------------------------- */
-
-    async _ensureDirectory(path) {
+    private async _ensureDirectory(path: string): Promise<void> {
         const source = 'data';
         const parts = path.split('/');
         let currentPath = "";
@@ -229,15 +196,13 @@ export class SkinManager {
         for (const part of parts) {
             currentPath = currentPath ? `${currentPath}/${part}` : part;
             try {
-                // Check if exists
+                // @ts-ignore
                 await FilePickerClass.browse(source, currentPath);
             } catch (e) {
-                // If not, try to create
                 try {
+                    // @ts-ignore
                     await FilePickerClass.createDirectory(source, currentPath);
-                    console.log(`Storyteller Cinema | Created directory: ${currentPath}`);
-                } catch (err) {
-                    // Ignore if it already exists (race condition) or if root modules/ folder is protected
+                } catch (err: any) {
                     if (!err.message.includes("EEXIST")) {
                         console.warn(`Storyteller Cinema | Failed to create ${currentPath}`, err);
                     }
@@ -246,13 +211,14 @@ export class SkinManager {
         }
     }
 
-    async _downloadAndSave(url, targetDir, filename) {
+    private async _downloadAndSave(url: string, targetDir: string, filename: string): Promise<string | null> {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const blob = await response.blob();
             const file = new File([blob], filename, { type: blob.type });
 
+            // @ts-ignore
             const result = await FilePickerClass.upload('data', targetDir, file);
             return result.path;
         } catch (err) {
@@ -261,73 +227,51 @@ export class SkinManager {
         }
     }
 
-    _createStyleTag() {
-        if (!document.getElementById('storyteller-cinema-skin-styles')) {
+    private _createStyleTag(): void {
+        const existing = document.getElementById('storyteller-cinema-skin-styles');
+        if (!existing) {
             this._styleTag = document.createElement('style');
             this._styleTag.id = 'storyteller-cinema-skin-styles';
             document.head.appendChild(this._styleTag);
         } else {
-            this._styleTag = document.getElementById('storyteller-cinema-skin-styles');
+            this._styleTag = existing as HTMLStyleElement;
         }
     }
 
-    _injectCSS(skin) {
+    private _injectCSS(skin: SkinData): void {
         if (!this._styleTag) this._createStyleTag();
 
         let css = `:root { \n`;
 
-        // Styles
         if (skin.options.styles) {
             for (const [key, value] of Object.entries(skin.options.styles)) {
                 css += `    ${key}: ${value};\n`;
             }
         }
 
-        // Filters (Global)
-        if (skin.options.filter) {
-            css += `    --cinematic-filter: ${skin.options.filter};\n`;
-        } else {
-            css += `    --cinematic-filter: none;\n`;
-        }
+        css += `    --cinematic-filter: ${skin.options.filter || 'none'};\n`;
 
-        // Helper to sanitize path (ensure / if not http)
-        const sanitize = (p) => {
+        const sanitize = (p?: string): string | null => {
             if (!p) return null;
             if (p.startsWith('http') || p.startsWith('/')) return p;
             return `/${p}`;
         };
 
-        // Bar Background Texture (Standard or Legacy)
         const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
-        if (barTex) {
-            css += `    --cinematic-bg-texture: url('${barTex}');\n`;
-        } else {
-            css += `    --cinematic-bg-texture: none;\n`;
-        }
+        css += `    --cinematic-bg-texture: ${barTex ? `url('${barTex}')` : 'none'};\n`;
 
-        // Overlay Texture
         const overlayTex = sanitize(skin.options.overlayTexture);
-        if (overlayTex) {
-            css += `    --cinematic-overlay-texture: url('${overlayTex}');\n`;
-        } else {
-            css += `    --cinematic-overlay-texture: none;\n`;
-        }
+        css += `    --cinematic-overlay-texture: ${overlayTex ? `url('${overlayTex}')` : 'none'};\n`;
 
         css += `}\n`;
-
-        // Apply Filter specifically to the scene container or body if needed
-        // Assuming style.scss uses var(--cinematic-filter)
-
-        this._styleTag.innerHTML = css;
+        this._styleTag!.innerHTML = css;
     }
 
-    _registerDefaultSkins() {
-        // 1. DEFAULT
+    private _registerDefaultSkins(): void {
         this.register({
             id: 'default',
             name: 'Classic Black',
-            author: 'Storyteller',
-            version: '1.0.0',
+            author: 'System',
             options: {
                 theme: 'dark',
                 styles: {
@@ -338,12 +282,10 @@ export class SkinManager {
             }
         });
 
-        // 2. VIGNETTE
         this.register({
             id: 'vignette',
             name: 'Soft Vignette',
-            author: 'Storyteller',
-            version: '1.0.0',
+            author: 'System',
             options: {
                 theme: 'dark',
                 styles: {
@@ -354,12 +296,10 @@ export class SkinManager {
             }
         });
 
-        // 3. NOIR
         this.register({
             id: 'noir',
             name: 'Noir Detective',
-            author: 'Storyteller',
-            version: '1.0.0',
+            author: 'System',
             options: {
                 theme: 'dark',
                 filter: 'grayscale(100%) contrast(1.2)',
@@ -371,12 +311,10 @@ export class SkinManager {
             }
         });
 
-        // 4. SEPIA
         this.register({
             id: 'sepia',
             name: 'Old Photograph',
-            author: 'Storyteller',
-            version: '1.0.0',
+            author: 'System',
             options: {
                 theme: 'light',
                 filter: 'sepia(0.8) contrast(0.9)',
