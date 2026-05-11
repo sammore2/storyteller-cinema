@@ -857,7 +857,7 @@ fieldset legend {
 /* --- Cinema Tray (Bottom Bar) --- */
 .storyteller-cinema-tray-app {
   position: absolute !important;
-  display: none !important;
+  display: flex !important;
   z-index: 100 !important;
   pointer-events: all;
   background: transparent !important;
@@ -866,25 +866,18 @@ fieldset legend {
   padding: 0 !important;
   margin: 0 !important;
   height: auto !important;
-  width: auto !important;
-  bottom: 0px !important;
+  width: 100% !important;
+  /* FIX PARA APPLICATION V2: Ignorar o Top/Left injetado pelo JS do Foundry */
   top: auto !important;
-  /* Anchor to the side instead of projecting 100% outwards */
-}
-.storyteller-cinema-tray-app[data-side=right] {
-  right: 0 !important;
-  left: auto !important;
-}
-.storyteller-cinema-tray-app[data-side=left] {
   left: 0 !important;
-  right: auto !important;
-}
-.storyteller-cinema-tray-app.rendered {
-  display: flex !important;
+  right: 0 !important;
+  bottom: 0px !important;
+  transition: bottom 0.3s ease !important;
 }
 
-body.cinematic-mode .storyteller-cinema-tray-app {
-  display: block !important;
+/* Oclusão Dinâmica: Se o Simple Requests estiver na tela, subir a bandeja inteira 60px para não sobrepor */
+body:has(#simple-requests-chat-body) .storyteller-cinema-tray-app {
+  bottom: 60px !important;
 }
 
 .cinema-tray-container {
@@ -901,9 +894,6 @@ body.cinematic-mode .storyteller-cinema-tray-app {
   transition: all 0.3s ease;
   max-width: 90vw;
   margin-bottom: 0;
-}
-body:has(#simple-requests-chat-body) .cinema-tray-container {
-  margin-bottom: 50px !important;
 }
 .cinema-tray-container .tray-handle {
   padding: 4px 20px;
