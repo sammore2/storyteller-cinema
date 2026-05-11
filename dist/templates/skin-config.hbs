@@ -83,18 +83,35 @@
                     </p>
                 </fieldset>
 
-                <!-- COLORS -->
+                <!-- COLORS & BORDERS -->
                 <fieldset>
-                    <legend>Colors</legend>
+                    <legend>Colors & Borders</legend>
                     <div class="form-group">
-                        <label>Bar Background Logic</label>
-                        <input type="text" name="options.styles.--cinematic-bar-bg"
-                            value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}" />
+                        <label>Bar Background</label>
+                        <div class="color-picker-group">
+                            <input type="text" name="options.styles.--cinematic-bar-bg"
+                                value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}" />
+                            <input type="color" class="color-swatch" name="options.styles.--cinematic-bar-bg"
+                                value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}" />
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Border Style</label>
-                        <input type="text" name="options.styles.--cinematic-bar-border"
-                            value="{{lookup selectedSkin.options.styles '--cinematic-bar-border'}}" />
+                        <div class="modular-border-fields">
+                            <input type="number" class="border-input" name="border.width" value="{{border.width}}"
+                                title="Width (px)" />
+                            <select class="border-input" name="border.style">
+                                <option value="none" {{#if (eq border.style "none" )}}selected{{/if}}>None</option>
+                                <option value="solid" {{#if (eq border.style "solid" )}}selected{{/if}}>Solid</option>
+                                <option value="dashed" {{#if (eq border.style "dashed" )}}selected{{/if}}>Dashed</option>
+                                <option value="dotted" {{#if (eq border.style "dotted" )}}selected{{/if}}>Dotted</option>
+                                <option value="double" {{#if (eq border.style "double" )}}selected{{/if}}>Double</option>
+                                <option value="inset" {{#if (eq border.style "inset" )}}selected{{/if}}>Inset</option>
+                                <option value="outset" {{#if (eq border.style "outset" )}}selected{{/if}}>Outset</option>
+                            </select>
+                            <input type="color" class="border-input" name="border.color" value="{{border.color}}"
+                                title="Color" />
+                        </div>
                     </div>
                 </fieldset>
             </div>

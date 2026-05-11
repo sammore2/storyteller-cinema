@@ -1,12 +1,13 @@
 {
     "id": "storyteller-cinema",
     "title": "Storyteller's Cinema",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "type": "module",
     "compatibility": {
         "minimum": "12",
-        "verified": "13"
+        "verified": "14"
     },
+    "socket": true,
     "relationships": {
         "requires": [
             {
@@ -14,9 +15,8 @@
                 "type": "module"
             },
             {
-                "id": "monks-active-tiles",
-                "type": "module",
-                "compatibility": {}
+                "id": "socketlib",
+                "type": "module"
             }
         ]
     },
@@ -29,14 +29,24 @@
     "url": "https://github.com/sammore2/storyteller-cinema",
     "manifest": "https://github.com/sammore2/storyteller-cinema/releases/latest/download/module.json",
     "download": "https://github.com/sammore2/storyteller-cinema/releases/download/v1.0.5/module.zip",
-    "description": "Transform your Foundry VTT battlemaps into an immersive 2.5D Visual Novel experience. This module converts top-down tokens into upright 'Standees' (Paper Mario style) with automatic depth scaling and cinematic overlays.",
     "authors": [
         {
-            "name": "Rob Sammore",
-            "email": "robblackmore10@gmail.com",
-            "discord": "sammore",
-            "flags": {}
+            "name": "Sam",
+            "url": "https://github.com/sammore2",
+            "discord": "sammore"
         }
     ],
-    "flags": {}
+    "packs": [],
+    "languages": [
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "lang/en.json"
+        },
+        {
+            "lang": "pt-BR",
+            "name": "Português (Brasil)",
+            "path": "lang/pt-BR.json"
+        }
+    ]
 }

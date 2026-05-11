@@ -10,6 +10,7 @@ class StorytellerAPI {
     __publicField(this, "_sceneLightCache");
     __publicField(this, "_visionOverrideActive");
     __publicField(this, "_lastBackgroundPath", null);
+    __publicField(this, "_subtitleTimeout", null);
     this.active = false;
     this.cinematicContainer = null;
     this.cinematicSprite = null;
@@ -51,8 +52,12 @@ class StorytellerAPI {
         document.body.dataset.cinematicSkin = skin;
       }
       await this._panCameraToFit(options.init || false);
-      this._refreshAllPlaceables();
+      if (canvas.ready) {
+        this._refreshAllPlaceables();
+        this.enforceVision();
+      }
     } else {
+      this.clear();
       if ((_b = game.user) == null ? void 0 : _b.isGM) {
         this._ensureGhostMode(false, true);
       }
@@ -69,6 +74,88 @@ class StorytellerAPI {
       }
       this._refreshAllPlaceables();
     }
+    if (canvas.ready) {
+      canvas.tokens.interactiveChildren = !active;
+      canvas.tiles.interactiveChildren = !active;
+      canvas.drawings.interactiveChildren = !active;
+    }
+  }
+  /**
+   * Broadcast or show a cinematic message
+   */
+  async say(actorName, message, options = {}) {
+    var _a, _b;
+    const socket = (_a = game.modules.get("storyteller-cinema")) == null ? void 0 : _a.socket;
+    if (socket && ((_b = game.user) == null ? void 0 : _b.isGM)) {
+      socket.executeForEveryone("showSubtitle", actorName, message, options);
+    } else {
+      this._showSubtitleLocal(actorName, message, options);
+    }
+  }
+  /**
+   * Clear all active cinematic UI elements
+   */
+  clear() {
+    var _a, _b;
+    const socket = (_a = game.modules.get("storyteller-cinema")) == null ? void 0 : _a.socket;
+    if (socket && ((_b = game.user) == null ? void 0 : _b.isGM)) {
+      socket.executeForEveryone("clearSubtitle");
+    } else {
+      this._clearLocal();
+    }
+  }
+  /**
+   * Clear the entire scene cast (the tray)
+   */
+  async clearCast() {
+    var _a, _b;
+    if (!((_a = game.user) == null ? void 0 : _a.isGM)) return;
+    await game.settings.set("storyteller-cinema", "sceneCast", []);
+    (_b = window.StorytellerCinema.cinemaTray) == null ? void 0 : _b.render(true);
+    ui.notifications.info("Cinema Stage cleared.");
+  }
+  _showSubtitleLocal(actorName, message, options = {}) {
+    const overlay = document.getElementById("storyteller-cinema-overlay");
+    if (!overlay) return;
+    const container = overlay.querySelector(".subtitle-container");
+    if (!container) return;
+    if (this._subtitleTimeout) {
+      clearTimeout(this._subtitleTimeout);
+      this._subtitleTimeout = null;
+    }
+    container.classList.remove("active");
+    setTimeout(() => {
+      container.innerHTML = `
+                <div class="actor-name">${actorName}</div>
+                <div class="message-text">${message}</div>
+            `;
+      container.classList.add("active");
+      this._showPortraitLocal(options.portrait, options.side || "left");
+      if (options.duration) {
+        this._subtitleTimeout = setTimeout(() => {
+          this._clearLocal();
+        }, options.duration);
+      }
+    }, 100);
+  }
+  _showPortraitLocal(path, side) {
+    const overlay = document.getElementById("storyteller-cinema-overlay");
+    if (!overlay) return;
+    const container = overlay.querySelector(`.portrait-container.${side}`);
+    if (!container) return;
+    if (!path) {
+      container.classList.remove("active");
+      return;
+    }
+    container.style.backgroundImage = `url("${path}")`;
+    container.classList.add("active");
+  }
+  _clearLocal() {
+    var _a;
+    const overlay = document.getElementById("storyteller-cinema-overlay");
+    if (!overlay) return;
+    (_a = overlay.querySelector(".subtitle-container")) == null ? void 0 : _a.classList.remove("active");
+    overlay.querySelectorAll(".portrait-container").forEach((p) => p.classList.remove("active"));
   }
   _applyVisionOverride(active) {
     if (!canvas.ready || !canvas.scene) return;
@@ -158,11 +245,13 @@ class StorytellerAPI {
     if (canvas.grid) canvas.grid.visible = visible;
     if ((_a = canvas.interface) == null ? void 0 : _a.grid) canvas.interface.grid.visible = visible;
     if (canvas.drawings) canvas.drawings.visible = visible;
-    if (canvas.templates) canvas.templates.visible = visible;
+    if (canvas.measuredTemplates) canvas.measuredTemplates.visible = visible;
+    else if (canvas.templates) canvas.templates.visible = visible;
   }
   _refreshAllPlaceables() {
     if (!canvas.ready) return;
-    const layerNames = ["tokens", "tiles", "drawings", "templates", "lighting"];
+    const layerNames = ["tokens", "tiles", "drawings", "lighting"];
+    if (canvas.measuredTemplates) layerNames.push("measuredTemplates");
     for (const name of layerNames) {
       const layer = canvas[name];
       if (!(layer == null ? void 0 : layer.placeables)) continue;
@@ -203,7 +292,14 @@ class StorytellerAPI {
     if (document.getElementById("storyteller-cinema-overlay")) return;
     const overlay = document.createElement("div");
     overlay.id = "storyteller-cinema-overlay";
-    overlay.innerHTML = '<div class="cinematic-bar top"></div><div class="cinematic-bar bottom"></div>';
+    overlay.innerHTML = `
+            <div class="cinematic-bar top"></div>
+            <div class="cinematic-bar bottom">
+                <div class="subtitle-container"></div>
+            </div>
+            <div class="portrait-container left"></div>
+            <div class="portrait-container right"></div>
+        `;
     document.body.appendChild(overlay);
   }
 }

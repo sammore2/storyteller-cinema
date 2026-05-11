@@ -1,0 +1,46 @@
+<section class="dialogue-console storyteller-cinema-app">
+    <div class="cast-bar">
+        <div class="cast-item narrator-toggle" title="Speak as Narrator">
+            <i class="fas fa-book-open"></i>
+            <span>Narrator</span>
+        </div>
+        {{#each actors}}
+        <div class="cast-item actor-item" data-id="{{this.id}}" data-img="{{this.img}}" data-name="{{this.name}}" title="Select {{this.name}}">
+            <img src="{{this.img}}" />
+        </div>
+        {{/each}}
+    </div>
+
+    <div class="form-group">
+        <label>Actor Name</label>
+        <div class="form-fields">
+            <input type="text" name="actorName" placeholder="Who is speaking?" value="{{lastActor}}">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Portrait Path (Optional)</label>
+        <div class="form-fields">
+            <input type="text" name="portrait" placeholder="path/to/image.png" value="{{lastPortrait}}">
+            <button type="button" class="file-picker" data-type="image" data-target="portrait">
+                <i class="fas fa-file-import"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="form-group stacked">
+        <label>Message</label>
+        <div class="form-fields">
+            <textarea name="message" placeholder="Type your subtitle here..." rows="4"></textarea>
+        </div>
+    </div>
+
+    <div class="console-actions">
+        <button type="button" class="btn-clear" title="Clear Screen">
+            <i class="fas fa-eraser"></i> Clear
+        </button>
+        <button type="button" class="btn-send primary" title="Send Subtitle">
+            <i class="fas fa-comment-dots"></i> Speak
+        </button>
+    </div>
+</section>

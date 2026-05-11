@@ -38,9 +38,12 @@
 
       /* Um pouco mais alto para garantir cobertura */
 
-      background-color: black;
+      background-color: var(--cinematic-bar-bg, black);
+      background-image: var(--cinematic-bg-texture, none);
       background-size: cover;
-      background-repeat: repeat;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
 
       border-bottom: var(--cinematic-bar-border, none);
 
@@ -85,8 +88,21 @@
 
 body.cinematic-mode {
    transition: background-color 1.5s ease-in-out;
-   /* FILM GRAIN / SEPIA / NOIR FILTER */
-   filter: var(--cinematic-filter, none);
+   
+   /* Isolar o filtro apenas para o que é visual/cenográfico */
+   #board, #storyteller-cinema-overlay {
+      filter: var(--cinematic-filter, none);
+   }
+
+   /* --- Cinematic Mode UI Cleanup --- */
+   #hotbar, 
+   #players, 
+   #navigation, 
+   #controls, 
+   #logo,
+   #fps {
+      display: none !important;
+   }
 }
 
 #storyteller-cinema-toggle {
@@ -544,6 +560,26 @@ body.cinematic-mode {
    box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.2);
 }
 
+.skin-editor input[type="color"] {
+   width: 100%;
+   height: 40px;
+   padding: 2px;
+   background: #333;
+   border: 1px solid #444;
+   cursor: pointer;
+   border-radius: 4px;
+   appearance: none;
+}
+
+.skin-editor input[type="color"]::-webkit-color-swatch-wrapper {
+   padding: 0;
+}
+
+.skin-editor input[type="color"]::-webkit-color-swatch {
+   border: none;
+   border-radius: 3px;
+}
+
 fieldset {
    border: 1px solid #333;
    background: rgba(255, 255, 255, 0.02);
@@ -558,6 +594,50 @@ fieldset legend {
    font-weight: 600;
    text-transform: uppercase;
    font-size: 0.8em;
+}
+
+.color-picker-group {
+   display: flex;
+   gap: 8px;
+   align-items: center;
+   width: 100%;
+
+   input[type="color"] {
+      flex: 0 0 40px !important;
+      height: 32px !important;
+   }
+}
+
+.modular-border-fields {
+   display: flex;
+   gap: 8px;
+   align-items: center;
+   width: 100%;
+
+   input[type="number"] {
+      flex: 0 0 60px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #444;
+      color: #fff;
+      padding: 5px;
+      border-radius: 4px;
+      text-align: center;
+   }
+
+   select {
+      flex: 1;
+      background: #222;
+      border: 1px solid #444;
+      color: #fff;
+      height: 32px;
+      border-radius: 4px;
+      padding: 0 5px;
+   }
+
+   input[type="color"] {
+      flex: 0 0 40px !important;
+      height: 32px !important;
+   }
 }
 
 /* File Picker Fix */
@@ -598,3 +678,384 @@ fieldset legend {
    margin-bottom: 20px;
    color: #444;
 }
+
+/* --- Subtitles & Portraits --- */
+#storyteller-cinema-overlay {
+   .subtitle-container {
+      position: absolute;
+      bottom: 5vh; /* Centered in the 13vh bottom bar */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+      z-index: 1001;
+
+      &.active {
+         opacity: 1;
+      }
+
+      .actor-name {
+         color: #ff6400;
+         font-family: 'Modesto Condensed', 'Georgia', serif;
+         font-size: 1.4em;
+         font-weight: bold;
+         text-transform: uppercase;
+         letter-spacing: 1px;
+         margin-bottom: 4px;
+         text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.8);
+      }
+
+      .message-text {
+         color: #fff;
+         font-size: 1.8em;
+         font-family: 'Signika', sans-serif;
+         line-height: 1.2;
+         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+      }
+   }
+
+   .portrait-container {
+      position: absolute;
+      bottom: 13vh; /* Just above the bottom bar */
+      width: 500px;
+      height: 70vh;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom center;
+      opacity: 0;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 999; /* Below the bars but above the map */
+
+      &.left {
+         left: 2%;
+         transform: translateX(-50px);
+      }
+
+      &.right {
+         right: 2%;
+         transform: translateX(50px);
+      }
+
+      &.active {
+         opacity: 1;
+         transform: translateX(0);
+      }
+   }
+}
+
+/* --- Dialogue Console App --- */
+.dialogue-console-app {
+   .cast-bar {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid #333;
+      overflow-x: auto;
+      margin-bottom: 15px;
+
+      &::-webkit-scrollbar {
+         height: 4px;
+      }
+      &::-webkit-scrollbar-thumb {
+         background: #444;
+         border-radius: 2px;
+      }
+
+      .cast-item {
+         flex: 0 0 50px;
+         height: 50px;
+         border-radius: 50%;
+         border: 2px solid #333;
+         overflow: hidden;
+         cursor: pointer;
+         transition: all 0.2s;
+         position: relative;
+         background: #111;
+
+         img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+         }
+
+         &.narrator-toggle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #666;
+
+            i { font-size: 18px; margin-bottom: 2px; }
+         }
+
+         &:hover {
+            border-color: #ff6400;
+            transform: scale(1.1);
+         }
+
+         &.active {
+            border-color: #ff6400;
+            box-shadow: 0 0 10px rgba(255, 100, 0, 0.5);
+         }
+      }
+   }
+
+   .dialogue-console {
+      padding: 15px;
+
+      .form-group {
+         margin-bottom: 12px;
+         
+         label {
+            color: #ff6400;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 13px;
+         }
+      }
+
+      select.actor-picker {
+         width: 100%;
+         background: #222;
+         color: #ff6400;
+         border: 1px solid #444;
+         border-radius: 4px;
+         padding: 8px;
+         font-family: 'Signika', sans-serif;
+         font-size: 14px;
+         font-weight: bold;
+
+         &:focus {
+            border-color: #ff6400;
+            outline: none;
+         }
+      }
+
+      textarea {
+         width: 100%;
+         background: rgba(0, 0, 0, 0.4);
+         color: #fff;
+         border: 1px solid #444;
+         border-radius: 4px;
+         padding: 10px;
+         font-family: 'Signika', sans-serif;
+         font-size: 15px;
+         resize: vertical;
+
+         &:focus {
+            border-color: #ff6400;
+            outline: none;
+            background: rgba(0, 0, 0, 0.6);
+         }
+      }
+
+      .console-actions {
+         display: flex;
+         gap: 12px;
+         margin-top: 20px;
+
+         button {
+            flex: 1;
+            padding: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+
+            &.btn-send {
+               background: #ff6400;
+               color: #000;
+               border: none;
+
+               &:hover {
+                  background: #ff8533;
+                  transform: translateY(-1px);
+                  box-shadow: 0 4px 12px rgba(255, 100, 0, 0.3);
+               }
+            }
+
+            &.btn-clear {
+               background: #222;
+               color: #ccc;
+               border: 1px solid #444;
+
+               &:hover {
+                  background: #333;
+                  color: #fff;
+               }
+            }
+         }
+      }
+   }
+}
+
+/* --- Cinema Tray (Bottom Bar) --- */
+.storyteller-cinema-tray-app {
+    position: absolute !important;
+    display: none !important;
+    z-index: 100 !important;
+    pointer-events: all;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    width: auto !important;
+    bottom: 0px !important;
+    top: auto !important;
+
+    /* Anchor to the side instead of projecting 100% outwards */
+    &[data-side="right"] {
+        right: 0 !important;
+        left: auto !important;
+    }
+
+    &[data-side="left"] {
+        left: 0 !important;
+        right: auto !important;
+    }
+
+    &.rendered {
+        display: flex !important;
+    }
+}
+
+body.cinematic-mode .storyteller-cinema-tray-app {
+    display: block !important;
+}
+
+.cinema-tray-container {
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    padding: 5px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    transition: all 0.3s ease;
+    max-width: 90vw;
+
+    .tray-handle {
+        padding: 4px 20px;
+        color: #888;
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tray-content {
+        display: flex;
+        padding: 10px 15px;
+        gap: 15px;
+        overflow-x: auto;
+        
+        &::-webkit-scrollbar { height: 4px; }
+        &::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+        .tray-item {
+            flex: 0 0 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #444;
+            background: #000;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            i {
+                font-size: 24px;
+                color: #aaa;
+            }
+
+            &:hover {
+                border-color: #ff6400;
+                transform: scale(1.15) translateY(-5px);
+                z-index: 10;
+                i { color: #ff6400; }
+            }
+
+            &.active {
+                border-color: #ff6400;
+                box-shadow: 0 0 10px #ff6400;
+                transform: scale(1.1);
+            }
+
+            &.narrator-btn i { color: #ff6400; }
+            &.clear-btn:hover i { color: #ff3333; }
+        }
+    }
+}
+
+/* --- Chat Overlay --- */
+.storyteller-cinema-chat-cover-wrapper {
+    position: relative;
+    pointer-events: none;
+}
+
+.storyteller-cinema-chat-cover {
+    position: absolute;
+    bottom: 0px; 
+    left: 0;
+    height: 40px; /* Slimmer for V14 */
+    width: 100%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(90deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+    border-left: 3px solid #ff6400;
+    transition: all 0.3s ease;
+    padding: 2px 10px;
+    color: white;
+    font-family: var(--font-primary);
+    text-shadow: 1px 1px 2px black;
+    opacity: 0;
+    transform: translateY(100%);
+}
+
+.storyteller-cinema-chat-cover.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.storyteller-cinema-chat-cover img {
+    height: 32px;
+    width: 32px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.2);
+    margin-right: 10px;
+}
+
+.storyteller-cinema-chat-cover .actor-name {
+    font-size: 1rem;
+    font-weight: bold;
+}
+

@@ -258,10 +258,10 @@ export class SkinManager {
         };
 
         const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
-        css += `    --cinematic-bg-texture: ${barTex ? `url('${barTex}')` : 'none'};\n`;
+        css += `    --cinematic-bg-texture: ${barTex ? `url("${barTex}")` : 'none'};\n`;
 
         const overlayTex = sanitize(skin.options.overlayTexture);
-        css += `    --cinematic-overlay-texture: ${overlayTex ? `url('${overlayTex}')` : 'none'};\n`;
+        css += `    --cinematic-overlay-texture: ${overlayTex ? `url("${overlayTex}")` : 'none'};\n`;
 
         css += `}\n`;
         this._styleTag!.innerHTML = css;

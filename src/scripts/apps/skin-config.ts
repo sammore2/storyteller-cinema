@@ -54,10 +54,20 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
             this.tempSkinData = JSON.parse(JSON.stringify(currentSkin));
         }
 
+        // Parse Border String: "2px solid #8b7355"
+        const borderStr = this._getValue(this.tempSkinData, 'options.styles.--cinematic-bar-border') || '0px none #000000';
+        const borderParts = borderStr.split(' ');
+        const borderData = {
+            width: parseInt(borderParts[0]) || 0,
+            style: borderParts[1] || 'none',
+            color: borderParts[2] || '#000000'
+        };
+
         return {
             skins: allSkins,
             activeSkin: activeSkinId,
-            selectedSkin: this.tempSkinData
+            selectedSkin: this.tempSkinData,
+            border: borderData
         };
     }
 
@@ -68,6 +78,25 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
             });
         }
 
+        // General Inputs
+        const inputs = this.element.querySelectorAll('input:not(.border-input), select:not(.border-input)');
+        inputs.forEach((input: any) => {
+            input.addEventListener('change', (ev: any) => this._onInputChange(ev));
+        });
+
+        // Modular Border Inputs
+        const borderInputs = this.element.querySelectorAll('.border-input');
+        borderInputs.forEach((input: any) => {
+            input.addEventListener('change', () => {
+                const width = (this.element.querySelector('[name="border.width"]') as any).value;
+                const style = (this.element.querySelector('[name="border.style"]') as any).value;
+                const color = (this.element.querySelector('[name="border.color"]') as any).value;
+                const newBorder = `${width}px ${style} ${color}`;
+                this._setValue(this.tempSkinData, 'options.styles.--cinematic-bar-border', newBorder);
+            });
+        });
+
+        // Skin Selection
         const skinItems = this.element.querySelectorAll('.skin-item');
         skinItems.forEach((el: any) => {
             el.addEventListener('click', () => {
@@ -78,111 +107,98 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
             });
         });
 
-        const deleteBtns = this.element.querySelectorAll('.delete-skin');
-        deleteBtns.forEach((btn: any) => {
-            btn.addEventListener('click', async (ev: Event) => {
-                ev.stopPropagation();
-                const id = btn.dataset.id;
-                const skins = window.StorytellerCinema.skins;
-                if (!skins) return;
+        // Actions
+        this.element.querySelector('.delete-skin')?.addEventListener('click', (ev: any) => this._onDeleteSkin(ev));
+        this.element.querySelector('.apply-skin-btn')?.addEventListener('click', () => this._onApplySkin());
+        this.element.querySelector('.save-skin-btn')?.addEventListener('click', () => this._onSaveSkin());
+        this.element.querySelector('.create-skin-btn')?.addEventListener('click', () => this._createNewSkin());
+        this.element.querySelector('.export-skin-btn')?.addEventListener('click', () => this._onExportSkin());
+        this.element.querySelector('.import-skin-btn')?.addEventListener('click', () => this._importSkinDialog());
 
-                // @ts-ignore
-                const confirmed = await foundry.applications.api.DialogV2.confirm({
-                    window: { title: "Delete Skin" },
-                    content: `<p>Are you sure you want to delete this skin?</p>`,
-                    rejectClose: false,
-                    modal: true
-                });
-
-                if (confirmed) {
-                    await skins.delete(id);
-                    if (this.selectedSkinId === id) {
-                        this.selectedSkinId = 'default';
-                        this.tempSkinData = null;
-                        this.render();
-                    }
-                }
-            });
-        });
-
-        const inputs = this.element.querySelectorAll('input');
-        inputs.forEach((input: any) => {
-            input.addEventListener('change', (ev: any) => this._onInputChange(ev));
-        });
-
-        const applyBtn = this.element.querySelector('.apply-skin-btn');
-        if (applyBtn) {
-            applyBtn.addEventListener('click', () => {
-                const skins = window.StorytellerCinema.skins;
-                if (this.tempSkinData && skins) {
-                    skins.register(this.tempSkinData, false);
-                    skins.apply(this.tempSkinData.id);
-                    ui.notifications?.info("Storyteller Cinema | Skin Applied (Not Saved)");
-                }
-            });
-        }
-
-        const saveBtn = this.element.querySelector('.save-skin-btn');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                const skins = window.StorytellerCinema.skins;
-                if (this.tempSkinData && skins) {
-                    skins.register(this.tempSkinData, true);
-                    skins.apply(this.tempSkinData.id);
-                    ui.notifications?.info("Storyteller Cinema | Skin Saved & Applied");
-                }
-            });
-        }
-
-        const createBtn = this.element.querySelector('.create-skin-btn');
-        if (createBtn) {
-            createBtn.addEventListener('click', () => this._createNewSkin());
-        }
-
-        const exportBtn = this.element.querySelector('.export-skin-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', (ev: Event) => {
-                ev.stopPropagation();
-                const skins = window.StorytellerCinema.skins;
-                if (!skins) return;
-                const id = (exportBtn as any).dataset.id || this.selectedSkinId;
-                skins.exportSkin(id);
-            });
-        }
-
-        const importBtn = this.element.querySelector('.import-skin-btn');
-        if (importBtn) {
-            importBtn.addEventListener('click', () => this._importSkinDialog());
-        }
-
+        // File Pickers
         const filePickers = this.element.querySelectorAll('.file-picker');
         filePickers.forEach((btn: any) => {
-            btn.addEventListener('click', (event: Event) => {
-                event.preventDefault();
-                const target = btn.dataset.target;
-                const currentVal = this._getValue(this.tempSkinData, target);
-                const startPath = currentVal || 'storyteller-cinema/';
-
-                const FilePickerClass = (foundry as any).applications?.apps?.FilePicker || FilePicker;
-                const filePicker = new FilePickerClass({
-                    type: "image",
-                    current: startPath,
-                    callback: (path: string) => {
-                        this._setValue(this.tempSkinData, target, path);
-                        this.render();
-                    }
-                });
-                return filePicker.browse();
-            });
+            btn.addEventListener('click', () => this._onFilePicker(btn));
         });
     }
 
     _onInputChange(event: any): void {
-        event.preventDefault();
         const input = event.currentTarget;
         const field = input.name;
         const value = input.value;
         this._setValue(this.tempSkinData, field, value);
+
+        // Sync other inputs with same name (e.g., text <-> color picker)
+        const others = this.element.querySelectorAll(`[name="${field}"]`);
+        others.forEach((other: any) => {
+            if (other !== input) other.value = value;
+        });
+    }
+
+    async _onDeleteSkin(ev: any): Promise<void> {
+        ev.stopPropagation();
+        const id = ev.currentTarget.dataset.id;
+        const skins = window.StorytellerCinema.skins;
+        if (!skins) return;
+
+        // @ts-ignore
+        const confirmed = await foundry.applications.api.DialogV2.confirm({
+            window: { title: "Delete Skin" },
+            content: `<p>Are you sure you want to delete this skin?</p>`,
+            rejectClose: false,
+            modal: true
+        });
+
+        if (confirmed) {
+            await skins.delete(id);
+            if (this.selectedSkinId === id) {
+                this.selectedSkinId = 'default';
+                this.tempSkinData = null;
+                this.render();
+            }
+        }
+    }
+
+    _onApplySkin(): void {
+        const skins = window.StorytellerCinema.skins;
+        if (this.tempSkinData && skins) {
+            skins.register(this.tempSkinData, false);
+            skins.apply(this.tempSkinData.id);
+            ui.notifications?.info("Storyteller Cinema | Skin Applied (Not Saved)");
+        }
+    }
+
+    _onSaveSkin(): void {
+        const skins = window.StorytellerCinema.skins;
+        if (this.tempSkinData && skins) {
+            skins.register(this.tempSkinData, true);
+            skins.apply(this.tempSkinData.id);
+            ui.notifications?.info("Storyteller Cinema | Skin Saved & Applied");
+        }
+    }
+
+    _onExportSkin(): void {
+        const skins = window.StorytellerCinema.skins;
+        if (!skins) return;
+        const id = this.selectedSkinId;
+        skins.exportSkin(id);
+    }
+
+    _onFilePicker(btn: any): void {
+        const target = btn.dataset.target;
+        const currentVal = this._getValue(this.tempSkinData, target);
+        const startPath = currentVal || 'storyteller-cinema/';
+
+        const FilePickerClass = (foundry as any).applications?.apps?.FilePicker || FilePicker;
+        const filePicker = new FilePickerClass({
+            type: "image",
+            current: startPath,
+            callback: (path: string) => {
+                this._setValue(this.tempSkinData, target, path);
+                this.render();
+            }
+        });
+        filePicker.browse();
     }
 
     _createNewSkin(): void {
@@ -198,7 +214,8 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
             options: {
                 theme: "dark",
                 styles: {
-                    "--cinematic-bar-bg": "#000000"
+                    "--cinematic-bar-bg": "#000000",
+                    "--cinematic-bar-border": "2px solid #ff6400"
                 }
             }
         };

@@ -195,10 +195,10 @@ class SkinManager {
       return `/${p}`;
     };
     const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
-    css += `    --cinematic-bg-texture: ${barTex ? `url('${barTex}')` : "none"};
+    css += `    --cinematic-bg-texture: ${barTex ? `url("${barTex}")` : "none"};
 `;
     const overlayTex = sanitize(skin.options.overlayTexture);
-    css += `    --cinematic-overlay-texture: ${overlayTex ? `url('${overlayTex}')` : "none"};
+    css += `    --cinematic-overlay-texture: ${overlayTex ? `url("${overlayTex}")` : "none"};
 `;
     css += `}
 `;

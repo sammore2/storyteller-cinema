@@ -1,0 +1,20 @@
+<div id="storyteller-cinema-tray" class="cinema-tray-container {{#if active}}active{{/if}}">
+    <div class="tray-handle">
+        <i class="fas fa-users"></i>
+        <span>STAGE CAST</span>
+    </div>
+    <div class="tray-content">
+        <div class="tray-item narrator-btn" title="Narrator Mode">
+            <i class="fas fa-book-open"></i>
+        </div>
+        {{#each actors}}
+        <div class="tray-item actor-btn {{#if (eq this.id ../speakingAsId)}}active{{/if}}" data-id="{{this.id}}" data-name="{{this.name}}" data-img="{{this.img}}" title="{{this.name}}">
+            <img src="{{this.img}}" />
+            <div class="actor-label">{{this.name}}</div>
+        </div>
+        {{/each}}
+        <div class="tray-item clear-btn" title="Clear Stage">
+            <i class="fas fa-eraser"></i>
+        </div>
+    </div>
+</div>

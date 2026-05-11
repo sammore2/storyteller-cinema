@@ -1,10 +1,23 @@
 import { SkinConfig } from '../apps/skin-config.js';
+import { DialogueConsole } from '../apps/dialogue-console.js';
+import { CinemaTray } from '../apps/cinema-tray.js';
 
 /**
  * UI Hooks Registration for Storyteller Cinema
  */
 export function registerUIHooks(): void {
-    Hooks.on('getSceneControlButtons', (controls: any[]) => {
+    Hooks.once('ready', () => {
+        (window as any).StorytellerCinema.dialogueConsole = new DialogueConsole();
+        (window as any).StorytellerCinema.cinemaTray = new CinemaTray();
+        
+        // Render tray immediately (it's hidden by CSS until cinema-mode is active)
+        if (game.user?.isGM) {
+            (window as any).StorytellerCinema.cinemaTray.render(true);
+        }
+    });
+
+    Hooks.on('getSceneControlButtons', (controls: any) => {
+        if (!Array.isArray(controls)) return;
         const tokenLayer = controls.find(c => c.name === 'token');
         if (tokenLayer && tokenLayer.tools && game.user?.isGM) {
             tokenLayer.tools.push({
@@ -210,7 +223,74 @@ export function registerUIHooks(): void {
         }
         app.setPosition({ height: "auto" });
     });
+
+    // --- CONTEXT MENU: ACTOR DIRECTORY ---
+    Hooks.on('getActorContextOptions', (_app: any, options: any[]) => {
+        console.log(">>> STORYTELLER CINEMA V14 - CONTEXT MENU HOOK <<<", options);
+        
+        options.push({
+            label: "Cinema: Stage Actor",
+            icon: '<i class="fas fa-user-plus"></i>',
+            visible: (target: HTMLElement) => {
+                const actorId = target.closest('[data-document-id]')?.getAttribute('data-document-id') || target.closest('[data-entry-id]')?.getAttribute('data-entry-id');
+                if (!actorId) return false;
+                const cast = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
+                return !cast.includes(actorId);
+            },
+            onClick: async (_event: PointerEvent, target: HTMLElement) => {
+                const actorId = target.closest('[data-document-id]')?.getAttribute('data-document-id') || target.closest('[data-entry-id]')?.getAttribute('data-entry-id');
+                if (!actorId) return;
+                
+                const cast = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
+                if (!cast.includes(actorId)) {
+                    cast.push(actorId);
+                    await game.settings.set('storyteller-cinema', 'sceneCast', cast);
+                    (window as any).StorytellerCinema.cinemaTray?.render(true);
+                    ui.notifications.info(`Actor added to Stage.`);
+                }
+            }
+        });
+
+        options.push({
+            label: "Cinema: Unstage Actor",
+            icon: '<i class="fas fa-user-minus"></i>',
+            visible: (target: HTMLElement) => {
+                const actorId = target.closest('[data-document-id]')?.getAttribute('data-document-id') || target.closest('[data-entry-id]')?.getAttribute('data-entry-id');
+                if (!actorId) return false;
+                const cast = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
+                return cast.includes(actorId);
+            },
+            onClick: async (_event: PointerEvent, target: HTMLElement) => {
+                const actorId = target.closest('[data-document-id]')?.getAttribute('data-document-id') || target.closest('[data-entry-id]')?.getAttribute('data-entry-id');
+                if (!actorId) return;
+
+                const cast = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
+                const newCast = cast.filter(id => id !== actorId);
+                await game.settings.set('storyteller-cinema', 'sceneCast', newCast);
+                (window as any).StorytellerCinema.cinemaTray?.render(true);
+                ui.notifications.info(`Actor removed from Stage.`);
+            }
+        });
+    });
+
+    // --- CHAT INTEGRATION: SPEAKING AS ---
+    Hooks.on('preCreateChatMessage', (document: any, data: any, _options: any, _userId: string) => {
+        const tray = (window as any).StorytellerCinema.cinemaTray;
+        if (tray?.speakingAs && !data.content.startsWith('/') && !data.rolls?.length) {
+            const speaker = {
+                actor: tray.speakingAs.id,
+                alias: tray.speakingAs.name
+            };
+            document.updateSource({ speaker });
+        }
+    });
+
+    // --- SIDEBAR AWARENESS (Handled natively by injection into #chat-notifications) ---
+
+
 }
+
+
 
 /**
  * HUD BUTTON
@@ -233,6 +313,7 @@ function createHUDButton(): void {
                 <i class="fas fa-chevron-down"></i>
                 <ul class="dropdown-options"></ul>
             </div>
+            <i class="fas fa-comment-dots open-dialogue" title="Open Dialogue Console"></i>
             <i class="fas fa-cog open-config" title="Open Skin Studio"></i>
         </div>
     `;
@@ -244,6 +325,7 @@ function createHUDButton(): void {
     const currentValueSpan = customSelect.querySelector('.current-value') as HTMLElement;
     const optionsList = customSelect.querySelector('.dropdown-options') as HTMLElement;
     const configBtn = container.querySelector('.open-config') as HTMLElement;
+    const dialogueBtn = container.querySelector('.open-dialogue') as HTMLElement;
     const controls = container.querySelector('.hud-controls') as HTMLElement;
 
     toggleAction.onclick = async (e) => {
@@ -302,6 +384,12 @@ function createHUDButton(): void {
         e.stopPropagation();
         customSelect.classList.remove('open');
         new SkinConfig().render(true, { focus: true });
+    };
+
+    dialogueBtn.onclick = (e) => {
+        e.stopPropagation();
+        customSelect.classList.remove('open');
+        new DialogueConsole().render(true, { focus: true });
     };
 
     const observer = new MutationObserver((mutations) => {

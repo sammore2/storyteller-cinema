@@ -64,6 +64,22 @@ Hooks.once('init', async function () {
     range: { min: 1.0, max: 3.0, step: 0.1 }
   });
 
+  game.settings.register('storyteller-cinema', 'cinemaModeActive', {
+    name: "Cinema Mode Active",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
+  });
+
+  game.settings.register('storyteller-cinema', 'sceneCast', {
+    name: "Scene Cast",
+    scope: "world",
+    config: false,
+    type: Array,
+    default: []
+  });
+
   // INITIALIZE API
   window.StorytellerCinema = new StorytellerAPI();
   window.StorytellerCinema.skins = new SkinManager();
@@ -154,5 +170,20 @@ Hooks.on('updateToken', (tokenDocument: any, change: any, options: any) => {
     if (isCinematic && tokenDocument.object) {
       applyVisualDepth(tokenDocument.object);
     }
+  }
+});
+
+Hooks.once('socketlib.ready', () => {
+  const socket = (window as any).socketlib?.registerModule('storyteller-cinema');
+  if (socket) {
+    socket.register('showSubtitle', (actorName: string, message: string, options: any) => {
+      window.StorytellerCinema._showSubtitleLocal(actorName, message, options);
+    });
+    socket.register('clearSubtitle', () => {
+      window.StorytellerCinema._clearLocal();
+    });
+    (game as any).modules.get('storyteller-cinema').socket = socket;
+  } else {
+    console.warn("Storyteller Cinema | Socketlib registration failed. Broadcast features will be disabled.");
   }
 });
