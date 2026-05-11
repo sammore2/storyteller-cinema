@@ -1,6 +1,5 @@
 import { S as StorytellerAPI } from "./core/api.js";
 import { S as SkinManager } from "./core/skin-manager.js";
-import { a as applyVisualDepth } from "./core/depth.js";
 import { r as registerUIHooks } from "./hooks/ui.js";
 import { r as registerRenderHooks } from "./hooks/render.js";
 import { r as registerChatHooks } from "./hooks/chat.js";
@@ -25,33 +24,6 @@ Hooks.once("init", async function() {
     config: false,
     type: Array,
     default: []
-  });
-  game.settings.register("storyteller-cinema", "referenceHeight", {
-    name: "Reference Height (%)",
-    hint: "Token height relative to the screen height.",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 35,
-    range: { min: 10, max: 80, step: 5 }
-  });
-  game.settings.register("storyteller-cinema", "minScale", {
-    name: "Min Depth Scale",
-    hint: "Scale multiplier at the top (background).",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 0.5,
-    range: { min: 0.1, max: 1, step: 0.1 }
-  });
-  game.settings.register("storyteller-cinema", "maxScale", {
-    name: "Max Depth Scale",
-    hint: "Scale multiplier at the bottom (foreground).",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 1.2,
-    range: { min: 1, max: 3, step: 0.1 }
   });
   game.settings.register("storyteller-cinema", "cinemaModeActive", {
     name: "Cinema Mode Active",
@@ -203,21 +175,6 @@ Hooks.on("updateScene", async (doc, change) => {
       window.StorytellerCinema.toggle(true);
     }
     window.StorytellerCinema.enforceVision();
-  }
-});
-Hooks.on("updateToken", (tokenDocument, change, options) => {
-  var _a, _b, _c;
-  if (!change.x && !change.y) return;
-  if ((_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) return;
-  if (options.skippingMemory) return;
-  if (((_b = game.user) == null ? void 0 : _b.isGM) || tokenDocument.isOwner) {
-    const isCinematic = (_c = window.StorytellerCinema) == null ? void 0 : _c.active;
-    const targetFlag = isCinematic ? "cinematicPos" : "battlePos";
-    const newPos = { x: change.x ?? tokenDocument.x, y: change.y ?? tokenDocument.y };
-    tokenDocument.setFlag("storyteller-cinema", targetFlag, newPos);
-    if (isCinematic && tokenDocument.object) {
-      applyVisualDepth(tokenDocument.object);
-    }
   }
 });
 Hooks.once("socketlib.ready", () => {

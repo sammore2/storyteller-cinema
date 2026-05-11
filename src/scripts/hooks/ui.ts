@@ -118,38 +118,6 @@ export function registerUIHooks(): void {
         }
     });
 
-    // Interaction: Shift+Wheel SCALING
-    let saveTimeout: any = null;
-
-    window.addEventListener('wheel', (event: WheelEvent) => {
-        if (!event.shiftKey || !document.body.classList.contains('cinematic-mode')) return;
-
-        const hoverToken = canvas.tokens?.hover;
-        if (!hoverToken) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-
-        const delta = event.deltaY > 0 ? -0.05 : 0.05;
-        let current = hoverToken._cinemaScalePreview ?? hoverToken.document.getFlag('storyteller-cinema', 'cinematicScale') ?? 1.0;
-
-        let newScale = Math.max(0.1, Math.min(5.0, current + delta));
-        newScale = Math.round(newScale * 100) / 100;
-
-        hoverToken._cinemaScalePreview = newScale;
-        hoverToken.refresh();
-
-        if (saveTimeout) clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-            hoverToken.document.setFlag('storyteller-cinema', 'cinematicScale', newScale).then(() => {
-                hoverToken._cinemaScalePreview = null;
-            });
-        }, 600);
-    }, { passive: false, capture: true });
-
-
-
     // --- CONTEXT MENU: ACTOR DIRECTORY ---
     Hooks.on('getActorContextOptions', (_app: any, options: any[]) => {
         console.log(">>> STORYTELLER CINEMA V14 - CONTEXT MENU HOOK <<<", options);

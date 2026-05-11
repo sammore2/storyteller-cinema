@@ -1,7 +1,6 @@
 import '../styles/style.scss';
 import { StorytellerAPI } from './core/api.js';
 import { SkinManager } from './core/skin-manager.js';
-import { applyVisualDepth } from './core/depth.js';
 import { registerUIHooks } from './hooks/ui.js';
 import { registerRenderHooks } from './hooks/render.js';
 import { registerChatHooks } from './hooks/chat.js';
@@ -33,36 +32,6 @@ Hooks.once('init', async function () {
     config: false,
     type: Array,
     default: []
-  });
-
-  game.settings.register('storyteller-cinema', 'referenceHeight', {
-    name: "Reference Height (%)",
-    hint: "Token height relative to the screen height.",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 35,
-    range: { min: 10, max: 80, step: 5 }
-  });
-
-  game.settings.register('storyteller-cinema', 'minScale', {
-    name: "Min Depth Scale",
-    hint: "Scale multiplier at the top (background).",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 0.5,
-    range: { min: 0.1, max: 1.0, step: 0.1 }
-  });
-
-  game.settings.register('storyteller-cinema', 'maxScale', {
-    name: "Max Depth Scale",
-    hint: "Scale multiplier at the bottom (foreground).",
-    scope: "world",
-    config: true,
-    type: Number,
-    default: 1.2,
-    range: { min: 1.0, max: 3.0, step: 0.1 }
   });
 
   game.settings.register('storyteller-cinema', 'cinemaModeActive', {
@@ -237,23 +206,7 @@ Hooks.on('updateScene', async (doc: any, change: any) => {
   }
 });
 
-Hooks.on('updateToken', (tokenDocument: any, change: any, options: any) => {
-  if (!change.x && !change.y) return;
-  if (change.flags?.['storyteller-cinema']) return;
-  if (options.skippingMemory) return;
-
-  if (game.user?.isGM || tokenDocument.isOwner) {
-    const isCinematic = window.StorytellerCinema?.active;
-    const targetFlag = isCinematic ? 'cinematicPos' : 'battlePos';
-    const newPos = { x: change.x ?? tokenDocument.x, y: change.y ?? tokenDocument.y };
-
-    tokenDocument.setFlag('storyteller-cinema', targetFlag, newPos);
-
-    if (isCinematic && tokenDocument.object) {
-      applyVisualDepth(tokenDocument.object);
-    }
-  }
-});
+// updateToken hook removed (2.5D feature abandoned)
 
 Hooks.once('socketlib.ready', () => {
   const socket = (window as any).socketlib?.registerModule('storyteller-cinema');
