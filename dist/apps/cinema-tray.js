@@ -10,15 +10,6 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
     /** Whether chat messages are intercepted as subtitles */
     __publicField(this, "isDirectorMode", false);
   }
-  /** @override */
-  _insertElement(element) {
-    const chatNotifications = document.getElementById("chat-notifications");
-    const uiColumn = document.getElementById("ui-right-column-1");
-    const parent = chatNotifications || uiColumn || document.body;
-    parent.appendChild(element);
-    const isLeft = parent.closest("#ui-left") !== null;
-    element.setAttribute("data-side", isLeft ? "left" : "right");
-  }
   async _prepareContext(_options) {
     var _a;
     const castIds = game.settings.get("storyteller-cinema", "sceneCast") || [];
@@ -45,6 +36,8 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
   _onRender(context, options) {
     super._onRender(context, options);
     const html = this.element;
+    const DraggableClass = foundry.applications.ux.Draggable;
+    new DraggableClass(this, html, html, false);
     html.querySelectorAll(".actor-btn").forEach((btn) => {
       btn.addEventListener("click", (ev) => {
         var _a;
@@ -124,7 +117,9 @@ __publicField(CinemaTray, "DEFAULT_OPTIONS", {
   },
   position: {
     width: "auto",
-    height: "auto"
+    height: "auto",
+    top: 100,
+    left: 100
   }
 });
 __publicField(CinemaTray, "PARTS", {

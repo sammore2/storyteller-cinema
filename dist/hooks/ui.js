@@ -6,6 +6,12 @@ function registerUIHooks() {
     var _a;
     window.StorytellerCinema.dialogueConsole = new DialogueConsole();
     window.StorytellerCinema.cinemaTray = new CinemaTray();
+    const root = document.documentElement;
+    root.style.setProperty("--stage-font-family", game.settings.get("storyteller-cinema", "stageFontFamily"));
+    root.style.setProperty("--stage-font-size", `${game.settings.get("storyteller-cinema", "stageFontSize")}px`);
+    root.style.setProperty("--stage-actor-font-size", `${game.settings.get("storyteller-cinema", "stageActorFontSize")}px`);
+    root.style.setProperty("--stage-actor-font-family", game.settings.get("storyteller-cinema", "stageActorFontFamily"));
+    root.style.setProperty("--tray-idle-opacity", game.settings.get("storyteller-cinema", "trayOpacity"));
     if ((_a = game.user) == null ? void 0 : _a.isGM) {
       window.StorytellerCinema.cinemaTray.render(true);
     }
@@ -116,84 +122,6 @@ function registerUIHooks() {
       });
     }, 600);
   }, { passive: false, capture: true });
-  Hooks.on("renderTokenConfig", (app, html) => {
-    var _a;
-    if (!(app == null ? void 0 : app.document) || !html) return;
-    const flags = ((_a = app.document.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
-    const cinematicTexture = flags.cinematicTexture || "";
-    let root = html instanceof HTMLElement ? html : html[0];
-    const appearanceTab = root.querySelector('.tab[data-tab="appearance"]');
-    if (!appearanceTab) return;
-    if (appearanceTab.querySelector('input[name="flags.storyteller-cinema.cinematicTexture"]')) return;
-    const formGroup = document.createElement("div");
-    formGroup.className = "form-group";
-    formGroup.innerHTML = `
-            <label>Cinematic Portrait <span class="units">(Optional)</span></label>
-            <div class="form-fields">
-                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Browse Files" tabindex="-1">
-                    <i class="fas fa-file-import fa-fw"></i>
-                </button>
-                <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
-            </div>
-        `;
-    appearanceTab.appendChild(formGroup);
-    const btn = formGroup.querySelector("button.file-picker");
-    if (btn) {
-      btn.onclick = (event) => {
-        var _a2, _b;
-        event.preventDefault();
-        const FilePickerClass = ((_b = (_a2 = foundry.applications) == null ? void 0 : _a2.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
-        const fp = new FilePickerClass({
-          type: "imagevideo",
-          current: cinematicTexture,
-          callback: (path) => {
-            formGroup.querySelector("input").value = path;
-          }
-        });
-        return fp.browse();
-      };
-    }
-    app.setPosition({ height: "auto" });
-  });
-  Hooks.on("renderTileConfig", (app, html) => {
-    var _a;
-    if (!(app == null ? void 0 : app.document) || !html) return;
-    const flags = ((_a = app.document.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
-    const cinematicTexture = flags.cinematicTexture || "";
-    let root = html instanceof HTMLElement ? html : html[0];
-    const basicTab = root.querySelector('.tab[data-tab="basic"]');
-    if (!basicTab) return;
-    if (basicTab.querySelector('input[name="flags.storyteller-cinema.cinematicTexture"]')) return;
-    const formGroup = document.createElement("div");
-    formGroup.className = "form-group";
-    formGroup.innerHTML = `
-            <label>Cinematic Portrait <span class="units">(Optional)</span></label>
-            <div class="form-fields">
-                <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicTexture" title="Browse Files" tabindex="-1">
-                    <i class="fas fa-file-import fa-fw"></i>
-                </button>
-                <input class="image" type="text" name="flags.storyteller-cinema.cinematicTexture" placeholder="path/to/image.webp" value="${cinematicTexture}">
-            </div>
-        `;
-    basicTab.appendChild(formGroup);
-    const btn = formGroup.querySelector("button.file-picker");
-    if (btn) {
-      btn.onclick = (event) => {
-        var _a2, _b;
-        event.preventDefault();
-        const FilePickerClass = ((_b = (_a2 = foundry.applications) == null ? void 0 : _a2.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
-        const fp = new FilePickerClass({
-          type: "imagevideo",
-          current: cinematicTexture,
-          callback: (path) => {
-            formGroup.querySelector("input").value = path;
-          }
-        });
-        return fp.browse();
-      };
-    }
-    app.setPosition({ height: "auto" });
-  });
   Hooks.on("getActorContextOptions", (_app, options) => {
     console.log(">>> STORYTELLER CINEMA V14 - CONTEXT MENU HOOK <<<", options);
     options.push({

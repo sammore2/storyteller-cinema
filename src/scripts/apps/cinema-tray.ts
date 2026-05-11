@@ -14,7 +14,9 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         },
         position: {
             width: "auto",
-            height: "auto"
+            height: "auto",
+            top: 100,
+            left: 100
         }
     };
 
@@ -24,19 +26,7 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     };
 
-    /** @override */
-    _insertElement(element: HTMLElement) {
-        // EXACT INJECTION LIKE THEATRE INSERTS
-        const chatNotifications = document.getElementById("chat-notifications");
-        const uiColumn = document.getElementById("ui-right-column-1");
-        
-        const parent = chatNotifications || uiColumn || document.body;
-        parent.appendChild(element);
 
-        // Detect side for CSS projection
-        const isLeft = parent.closest("#ui-left") !== null;
-        element.setAttribute("data-side", isLeft ? "left" : "right");
-    }
 
     /** The current actor speaking through the tray */
     speakingAs: { id: string, name: string, img: string } | null = null;
@@ -70,6 +60,10 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context: any, options: any) {
         super._onRender(context, options);
         const html = this.element;
+
+        // Make the whole div movable (V14 namespaced Draggable)
+        const DraggableClass = (foundry.applications.ux as any).Draggable;
+        new DraggableClass(this, html, html, false);
 
         // Click on actor -> Toggle Speaking As
         html.querySelectorAll('.actor-btn').forEach((btn: any) => {

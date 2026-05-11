@@ -67,6 +67,70 @@ Hooks.once("init", async function() {
     type: Array,
     default: []
   });
+  game.settings.register("storyteller-cinema", "stageFontFamily", {
+    name: "Stage Font Family",
+    hint: "The font family used for dialogue subtitles on the stage.",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "Inter",
+    choices: {
+      "Inter": "Inter (Modern Sans)",
+      "Roboto": "Roboto (Clean Sans)",
+      "Outfit": "Outfit (Geometric)",
+      "Merriweather": "Merriweather (Classic Serif)",
+      "Courier Prime": "Courier Prime (Typewriter)"
+    },
+    onChange: () => window.location.reload()
+  });
+  game.settings.register("storyteller-cinema", "stageFontSize", {
+    name: "Stage Font Size (px)",
+    hint: "The font size for dialogue subtitles.",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 24,
+    range: { min: 14, max: 48, step: 2 },
+    onChange: () => window.location.reload()
+  });
+  game.settings.register("storyteller-cinema", "stageActorFontSize", {
+    name: "Stage Actor Name Font Size (px)",
+    hint: "The font size for the actor's name above the dialogue.",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 28,
+    range: { min: 14, max: 60, step: 2 },
+    onChange: () => window.location.reload()
+  });
+  game.settings.register("storyteller-cinema", "stageActorFontFamily", {
+    name: "Stage Actor Font Family",
+    hint: "The font family used for the character's name.",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "Merriweather",
+    choices: {
+      "Inter": "Inter (Modern Sans)",
+      "Roboto": "Roboto (Clean Sans)",
+      "Outfit": "Outfit (Geometric)",
+      "Merriweather": "Merriweather (Classic Serif)",
+      "Courier Prime": "Courier Prime (Typewriter)"
+    },
+    onChange: () => window.location.reload()
+  });
+  game.settings.register("storyteller-cinema", "trayOpacity", {
+    name: "Tray Idle Opacity",
+    hint: "Opacity of the Stage Tray when not hovered.",
+    scope: "client",
+    config: true,
+    type: Number,
+    default: 0.4,
+    range: { min: 0.1, max: 1, step: 0.1 },
+    onChange: (value) => {
+      document.documentElement.style.setProperty("--tray-idle-opacity", value.toString());
+    }
+  });
   window.StorytellerCinema = new StorytellerAPI();
   window.StorytellerCinema.skins = new SkinManager();
   window.StorytellerCinema.init();

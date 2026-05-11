@@ -33,8 +33,9 @@
 
    .cinematic-bar {
       width: 100%;
-      height: 13vh;
-      /* Um pouco mais alto para garantir cobertura */
+      height: 12vh;
+      min-height: 100px;
+      /* Versão final equilibrada */
 
       /* Um pouco mais alto para garantir cobertura */
 
@@ -59,6 +60,43 @@
       &.bottom {
          border-bottom: none;
          border-top: var(--cinematic-bar-border, none);
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         padding: 0 10%;
+
+         .subtitle-container {
+            font-family: var(--stage-font-family, "Inter"), sans-serif;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease;
+            pointer-events: none;
+
+            &.active {
+               opacity: 1;
+               transform: translateY(0);
+            }
+
+            .actor-name {
+               color: var(--cinematic-accent-color, #ff6400);
+               font-family: var(--stage-actor-font-family, "Merriweather"), serif;
+               font-weight: bold;
+               font-size: var(--stage-actor-font-size, 28px);
+               text-transform: uppercase;
+               letter-spacing: 3px;
+               margin-bottom: 8px;
+               text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            }
+
+            .message-text {
+               color: #fff;
+               font-size: var(--stage-font-size, 24px);
+               line-height: 1.4;
+               text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+            }
+         }
       }
    }
 
@@ -717,7 +755,7 @@ fieldset legend {
       .actor-name {
          color: #ff6400;
          font-family: 'Modesto Condensed', 'Georgia', serif;
-         font-size: 2.2em;
+         font-size: var(--stage-actor-font-size);
          font-weight: bold;
          text-transform: uppercase;
          letter-spacing: 2px;
@@ -918,7 +956,7 @@ fieldset legend {
 
 /* --- Cinema Tray (Bottom Bar) --- */
 .storyteller-cinema-tray-app {
-    position: relative !important;
+    position: absolute !important;
     display: block !important;
     z-index: 100 !important;
     pointer-events: all;
@@ -928,13 +966,16 @@ fieldset legend {
     padding: 0 !important;
     margin: 0 !important;
     height: auto !important;
-    width: 100% !important;
-    
-    /* Leis da física: Fluxo normal do DOM, ignorando propriedades de janela absoluta */
-    top: auto !important;
-    left: auto !important;
-    right: auto !important;
-    bottom: auto !important;
+    width: fit-content !important;
+    min-width: unset !important;
+    max-width: fit-content !important;
+    opacity: var(--tray-idle-opacity, 0.4);
+    transition: opacity 0.3s ease;
+    cursor: move;
+
+    &:hover {
+        opacity: 1;
+    }
 }
 
 /* Oclusão Dinâmica: Se o Simple Requests estiver na tela, subir a bandeja inteira 60px para não sobrepor */
