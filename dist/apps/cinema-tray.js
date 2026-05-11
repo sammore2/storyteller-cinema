@@ -7,6 +7,8 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
     super(...arguments);
     /** The current actor speaking through the tray */
     __publicField(this, "speakingAs", null);
+    /** Whether chat messages are intercepted as subtitles */
+    __publicField(this, "isDirectorMode", false);
   }
   /** @override */
   _insertElement(element) {
@@ -31,7 +33,8 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       actors,
       active: game.settings.get("storyteller-cinema", "cinemaModeActive"),
-      speakingAsId: (_a = this.speakingAs) == null ? void 0 : _a.id
+      speakingAsId: (_a = this.speakingAs) == null ? void 0 : _a.id,
+      directorMode: this.isDirectorMode
     };
   }
   /**
@@ -40,33 +43,23 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
   updateChatOverlay() {
   }
   _onRender(context, options) {
-    var _a, _b;
     super._onRender(context, options);
     const html = this.element;
     html.querySelectorAll(".actor-btn").forEach((btn) => {
       btn.addEventListener("click", (ev) => {
-        var _a2;
+        var _a;
         const dataset = ev.currentTarget.dataset;
-        if (((_a2 = this.speakingAs) == null ? void 0 : _a2.id) === dataset.id) {
+        if (((_a = this.speakingAs) == null ? void 0 : _a.id) === dataset.id) {
           this.speakingAs = null;
+          window.StorytellerCinema.clear();
         } else {
           this.speakingAs = { id: dataset.id, name: dataset.name, img: dataset.img };
+          window.StorytellerCinema.say(dataset.name, "", {
+            portrait: dataset.img,
+            side: "left"
+          });
         }
-        this.updateChatOverlay();
         this.render();
-        const console = window.StorytellerCinema.dialogueConsole;
-        if (console) {
-          console.render(true);
-          setTimeout(() => {
-            var _a3;
-            const consoleHtml = console.element;
-            if (consoleHtml) {
-              consoleHtml.querySelector('[name="actorName"]').value = this.speakingAs ? dataset.name : "";
-              consoleHtml.querySelector('[name="portrait"]').value = this.speakingAs ? dataset.img : "";
-              (_a3 = consoleHtml.querySelector('[name="message"]')) == null ? void 0 : _a3.focus();
-            }
-          }, 100);
-        }
       });
       btn.addEventListener("contextmenu", (ev) => {
         ev.preventDefault();
@@ -77,24 +70,48 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         });
       });
     });
-    (_a = html.querySelector(".narrator-btn")) == null ? void 0 : _a.addEventListener("click", () => {
-      const console = window.StorytellerCinema.dialogueConsole;
-      if (console) {
-        console.render(true);
-        setTimeout(() => {
-          var _a2;
-          const consoleHtml = console.element;
-          if (consoleHtml) {
-            consoleHtml.querySelector('[name="actorName"]').value = "";
-            consoleHtml.querySelector('[name="portrait"]').value = "";
-            (_a2 = consoleHtml.querySelector('[name="message"]')) == null ? void 0 : _a2.focus();
-          }
-        }, 100);
-      }
-    });
-    (_b = html.querySelector(".clear-btn")) == null ? void 0 : _b.addEventListener("click", () => {
-      window.StorytellerCinema.clearCast();
-    });
+    const narratorBtn = html.querySelector(".narrator-btn");
+    if (narratorBtn) {
+      narratorBtn.addEventListener("click", (ev) => {
+        var _a;
+        ev.preventDefault();
+        console.log("Storyteller Cinema | Narrator Clicked");
+        if (((_a = this.speakingAs) == null ? void 0 : _a.id) === "narrator") {
+          this.speakingAs = null;
+          window.StorytellerCinema.clear();
+        } else {
+          this.speakingAs = {
+            id: "narrator",
+            name: "Narrator",
+            img: game.user.avatar || "icons/svg/book.svg"
+          };
+          window.StorytellerCinema.say("Narrator", "", {
+            portrait: this.speakingAs.img,
+            side: "left"
+          });
+        }
+        this.render();
+      });
+    }
+    const directorBtn = html.querySelector(".director-mode-btn");
+    if (directorBtn) {
+      directorBtn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        this.isDirectorMode = !this.isDirectorMode;
+        console.log("Storyteller Cinema | Director Mode:", this.isDirectorMode);
+        ui.notifications.info(`Director Mode is now ${this.isDirectorMode ? "ON" : "OFF"}`);
+        this.render();
+      });
+    }
+    const clearBtn = html.querySelector(".clear-btn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        window.StorytellerCinema.clear();
+      });
+      clearBtn.addEventListener("dblclick", () => {
+        window.StorytellerCinema.clearCast();
+      });
+    }
   }
 }
 __publicField(CinemaTray, "DEFAULT_OPTIONS", {

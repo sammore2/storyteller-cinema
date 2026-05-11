@@ -4,7 +4,7 @@
         <span>STAGE CAST</span>
     </div>
     <div class="tray-content">
-        <div class="tray-item narrator-btn" title="Narrator Mode">
+        <div class="tray-item narrator-btn" title="Speak as Narrator">
             <i class="fas fa-book-open"></i>
         </div>
         {{#each actors}}
@@ -12,7 +12,12 @@
             <img src="{{this.img}}" />
         </div>
         {{/each}}
-        <div class="tray-item clear-btn" title="Clear Stage">
+
+        <div class="tray-item director-mode-btn {{#if directorMode}}active{{/if}}" title="Director Mode (Chat Subtitles)">
+            <i class="fas fa-microphone"></i>
+        </div>
+
+        <div class="tray-item clear-btn" title="Clear Active Subtitle">
             <i class="fas fa-eraser"></i>
         </div>
     </div>

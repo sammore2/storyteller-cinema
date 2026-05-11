@@ -3,6 +3,7 @@ import { S as SkinManager } from "./core/skin-manager.js";
 import { a as applyVisualDepth } from "./core/depth.js";
 import { r as registerUIHooks } from "./hooks/ui.js";
 import { r as registerRenderHooks } from "./hooks/render.js";
+import { r as registerChatHooks } from "./hooks/chat.js";
 Hooks.once("init", async function() {
   console.log("Storyteller Cinema | Initializing...");
   game.settings.register("storyteller-cinema", "activeSkin", {
@@ -92,6 +93,16 @@ Hooks.once("init", async function() {
   }
   registerUIHooks();
   registerRenderHooks();
+  registerChatHooks();
+  Hooks.on("updateActor", (actor) => {
+    const tray = window.StorytellerCinema.cinemaTray;
+    if (tray) {
+      const castIds = game.settings.get("storyteller-cinema", "sceneCast") || [];
+      if (castIds.includes(actor.id)) {
+        tray.render();
+      }
+    }
+  });
   game.keybindings.register("storyteller-cinema", "toggle-mode", {
     name: "Toggle Cinematic Mode",
     hint: "Switch view",

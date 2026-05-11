@@ -241,17 +241,6 @@ function registerUIHooks() {
       }
     });
   });
-  Hooks.on("preCreateChatMessage", (document2, data, _options, _userId) => {
-    var _a;
-    const tray = window.StorytellerCinema.cinemaTray;
-    if ((tray == null ? void 0 : tray.speakingAs) && !data.content.startsWith("/") && !((_a = data.rolls) == null ? void 0 : _a.length)) {
-      const speaker = {
-        actor: tray.speakingAs.id,
-        alias: tray.speakingAs.name
-      };
-      document2.updateSource({ speaker });
-    }
-  });
 }
 function createHUDButton() {
   var _a, _b;

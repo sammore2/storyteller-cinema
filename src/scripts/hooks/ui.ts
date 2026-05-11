@@ -273,18 +273,6 @@ export function registerUIHooks(): void {
         });
     });
 
-    // --- CHAT INTEGRATION: SPEAKING AS ---
-    Hooks.on('preCreateChatMessage', (document: any, data: any, _options: any, _userId: string) => {
-        const tray = (window as any).StorytellerCinema.cinemaTray;
-        if (tray?.speakingAs && !data.content.startsWith('/') && !data.rolls?.length) {
-            const speaker = {
-                actor: tray.speakingAs.id,
-                alias: tray.speakingAs.name
-            };
-            document.updateSource({ speaker });
-        }
-    });
-
     // --- SIDEBAR AWARENESS (Handled natively by injection into #chat-notifications) ---
 
 

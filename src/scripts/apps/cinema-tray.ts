@@ -40,6 +40,9 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /** The current actor speaking through the tray */
     speakingAs: { id: string, name: string, img: string } | null = null;
+    
+    /** Whether chat messages are intercepted as subtitles */
+    isDirectorMode: boolean = false;
 
     async _prepareContext(_options: any) {
         const castIds = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
@@ -52,7 +55,8 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             actors: actors,
             active: (game as any).settings.get('storyteller-cinema', 'cinemaModeActive'),
-            speakingAsId: this.speakingAs?.id
+            speakingAsId: this.speakingAs?.id,
+            directorMode: this.isDirectorMode
         };
     }
 
@@ -67,41 +71,31 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         super._onRender(context, options);
         const html = this.element;
 
-        // Click on actor -> Toggle Speaking As & Open Dialogue Console
+        // Click on actor -> Toggle Speaking As
         html.querySelectorAll('.actor-btn').forEach((btn: any) => {
             btn.addEventListener('click', (ev: any) => {
                 const dataset = ev.currentTarget.dataset;
                 
-                // Toggle Speaking As
                 if (this.speakingAs?.id === dataset.id) {
                     this.speakingAs = null;
+                    (window as any).StorytellerCinema.clear();
                 } else {
                     this.speakingAs = { id: dataset.id, name: dataset.name, img: dataset.img };
+                    // Activate Stage Instantly
+                    (window as any).StorytellerCinema.say(dataset.name, "", {
+                        portrait: dataset.img,
+                        side: 'left'
+                    });
                 }
                 
-                this.updateChatOverlay();
-                this.render(); // Update active state in tray
-
-                const console = (window as any).StorytellerCinema.dialogueConsole;
-                if (console) {
-                    console.render(true);
-                    setTimeout(() => {
-                        const consoleHtml = console.element;
-                        if (consoleHtml) {
-                            (consoleHtml.querySelector('[name="actorName"]') as HTMLInputElement).value = this.speakingAs ? dataset.name : "";
-                            (consoleHtml.querySelector('[name="portrait"]') as HTMLInputElement).value = this.speakingAs ? dataset.img : "";
-                            consoleHtml.querySelector('[name="message"]')?.focus();
-                        }
-                    }, 100);
-                }
+                this.render(); 
             });
 
-
-            // Right click -> Just stage them (show portrait)
+            // Right click -> Show portrait without text
             btn.addEventListener('contextmenu', (ev: any) => {
                 ev.preventDefault();
                 const dataset = ev.currentTarget.dataset;
-                window.StorytellerCinema.say(dataset.name, "", {
+                (window as any).StorytellerCinema.say(dataset.name, "", {
                     portrait: dataset.img,
                     side: 'left'
                 });
@@ -109,24 +103,52 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         // Narrator Mode
-        html.querySelector('.narrator-btn')?.addEventListener('click', () => {
-            const console = (window as any).StorytellerCinema.dialogueConsole;
-            if (console) {
-                console.render(true);
-                setTimeout(() => {
-                    const consoleHtml = console.element;
-                    if (consoleHtml) {
-                        (consoleHtml.querySelector('[name="actorName"]') as HTMLInputElement).value = "";
-                        (consoleHtml.querySelector('[name="portrait"]') as HTMLInputElement).value = "";
-                        consoleHtml.querySelector('[name="message"]')?.focus();
-                    }
-                }, 100);
-            }
-        });
+        const narratorBtn = html.querySelector('.narrator-btn');
+        if (narratorBtn) {
+            narratorBtn.addEventListener('click', (ev: any) => {
+                ev.preventDefault();
+                console.log("Storyteller Cinema | Narrator Clicked");
+                if (this.speakingAs?.id === 'narrator') {
+                    this.speakingAs = null;
+                    (window as any).StorytellerCinema.clear();
+                } else {
+                    this.speakingAs = { 
+                        id: 'narrator', 
+                        name: 'Narrator', 
+                        img: (game.user as any).avatar || 'icons/svg/book.svg' 
+                    };
+                    // Activate Stage Instantly for Narrator
+                    (window as any).StorytellerCinema.say("Narrator", "", {
+                        portrait: this.speakingAs.img,
+                        side: 'left'
+                    });
+                }
+                this.render();
+            });
+        }
 
-        // Clear Stage
-        html.querySelector('.clear-btn')?.addEventListener('click', () => {
-            window.StorytellerCinema.clearCast();
-        });
+        // Director Mode Toggle
+        const directorBtn = html.querySelector('.director-mode-btn');
+        if (directorBtn) {
+            directorBtn.addEventListener('click', (ev: any) => {
+                ev.preventDefault();
+                this.isDirectorMode = !this.isDirectorMode;
+                console.log("Storyteller Cinema | Director Mode:", this.isDirectorMode);
+                ui.notifications.info(`Director Mode is now ${this.isDirectorMode ? 'ON' : 'OFF'}`);
+                this.render();
+            });
+        }
+
+        // Clear Subtitle & Stage
+        const clearBtn = html.querySelector('.clear-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                (window as any).StorytellerCinema.clear();
+            });
+
+            clearBtn.addEventListener('dblclick', () => {
+                (window as any).StorytellerCinema.clearCast();
+            });
+        }
     }
 }

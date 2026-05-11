@@ -658,25 +658,25 @@ fieldset legend {
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 1px rgba(255, 255, 255, 0.2);
   opacity: 0;
-  transition: all 0.5s ease;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
   z-index: 1001;
+  transform: translateY(20px) scale(0.98);
 }
 #storyteller-cinema-overlay .subtitle-container.left {
   left: 2%;
   text-align: left;
   border-left: 5px solid #ff6400;
-  transform: translateX(-20px);
 }
 #storyteller-cinema-overlay .subtitle-container.right {
   right: 2%;
   text-align: right;
   border-right: 5px solid #ff6400;
-  transform: translateX(20px);
 }
 #storyteller-cinema-overlay .subtitle-container.active {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateY(0) scale(1);
+  animation: cinematicFadeIn 0.5s forwards;
 }
 #storyteller-cinema-overlay .subtitle-container .actor-name {
   color: #ff6400;
@@ -697,24 +697,24 @@ fieldset legend {
 }
 #storyteller-cinema-overlay .portrait-container {
   position: absolute;
-  bottom: 10vh; /* Lowered to be closer to subtitles */
+  bottom: 10vh;
   width: 500px;
   height: 70vh;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: bottom center;
   opacity: 0;
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
-  z-index: 999; /* Below the bars but above the map */
+  z-index: 999;
 }
 #storyteller-cinema-overlay .portrait-container.left {
   left: 2%;
-  transform: translateX(-50px);
+  transform: translateX(-100px);
 }
 #storyteller-cinema-overlay .portrait-container.right {
   right: 2%;
-  transform: translateX(50px);
+  transform: translateX(100px);
 }
 #storyteller-cinema-overlay .portrait-container.active {
   opacity: 1;
@@ -914,8 +914,8 @@ body.cinematic-mode .storyteller-cinema-tray-app {
 }
 .cinema-tray-container .tray-content {
   display: flex;
-  padding: 10px 15px;
-  gap: 15px;
+  padding: 8px 12px;
+  gap: 10px;
   overflow-x: auto;
 }
 .cinema-tray-container .tray-content::-webkit-scrollbar {
@@ -926,8 +926,8 @@ body.cinematic-mode .storyteller-cinema-tray-app {
   border-radius: 2px;
 }
 .cinema-tray-container .tray-content .tray-item {
-  flex: 0 0 80px;
-  height: 80px;
+  flex: 0 0 60px;
+  height: 60px;
   border-radius: 50%;
   border: 2px solid #444;
   background: #000;
@@ -958,7 +958,7 @@ body.cinematic-mode .storyteller-cinema-tray-app {
 }
 .cinema-tray-container .tray-content .tray-item.active {
   border-color: #ff6400;
-  box-shadow: 0 0 10px #ff6400;
+  box-shadow: 0 0 15px #ff6400;
   transform: scale(1.1);
 }
 .cinema-tray-container .tray-content .tray-item.narrator-btn i {
@@ -966,6 +966,41 @@ body.cinematic-mode .storyteller-cinema-tray-app {
 }
 .cinema-tray-container .tray-content .tray-item.clear-btn:hover i {
   color: #ff3333;
+}
+
+/* Animations */
+@keyframes cinematicFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+/* Director Mode UI */
+.director-mode-btn {
+  background: rgba(255, 100, 0, 0.2) !important;
+  color: #ff6400 !important;
+  border: 1px solid #ff6400 !important;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+}
+.director-mode-btn.active {
+  background: #ff6400 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px #ff6400;
+}
+.director-mode-btn:hover {
+  transform: scale(1.1);
 }
 
 /* --- Chat Overlay (REMOVED) --- */

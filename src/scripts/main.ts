@@ -4,6 +4,7 @@ import { SkinManager } from './core/skin-manager.js';
 import { applyVisualDepth } from './core/depth.js';
 import { registerUIHooks } from './hooks/ui.js';
 import { registerRenderHooks } from './hooks/render.js';
+import { registerChatHooks } from './hooks/chat.js';
 import './lib/shim.js'; // Import libWrapper Shim
 
 /**
@@ -111,6 +112,18 @@ Hooks.once('init', async function () {
   // SETUP UI HOOKS
   registerUIHooks();
   registerRenderHooks();
+  registerChatHooks();
+
+  // Re-render tray if actors change
+  Hooks.on('updateActor', (actor: any) => {
+    const tray = (window as any).StorytellerCinema.cinemaTray;
+    if (tray) {
+        const castIds = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
+        if (castIds.includes(actor.id)) {
+            tray.render();
+        }
+    }
+  });
 
   // KEYBINDINGS
   game.keybindings.register('storyteller-cinema', 'toggle-mode', {
