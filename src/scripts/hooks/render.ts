@@ -24,7 +24,8 @@ export function registerRenderHooks(): void {
         if (token.bars) token.bars.visible = false;
         if (token.nameplate) token.nameplate.visible = false;
         if (token.effects) token.effects.visible = false;
-        if (token.target) token.target.visible = false;
+        if (token.targetArrows) token.targetArrows.visible = false;
+        if (token.targetPips) token.targetPips.visible = false;
     });
 
     /**
