@@ -6,50 +6,27 @@
 
 ![Foundry Version](https://img.shields.io/badge/Foundry-v14-orange)
 
-## ✨ Key Features
+## 🌟 Core Features
 
-### 1. 🎬 Cinematic Mode (CSS Staging)
-Toggle the **Cinematic Mode** using the floating film icon in the HUD.
-*   **True Widescreen Overlays:** The tactical map and tokens are masked by a high-performance CSS-based scenic overlay, ensuring a perfect "Theater" experience regardless of canvas complexity.
-*   **Optimized Layering:** Uses a robust Z-index hierarchy to separate backgrounds, actor portraits, and UI elements into distinct, non-conflicting visual planes.
-*   **Smart Camera:** The view automatically adapts to the scenic background, ensuring full-screen immersion on any monitor resolution.
+* **Cinematic Stage (Dialogue & Subtitles):** Elevate your roleplay with beautiful dynamic subtitles and large, expressive character portraits that appear alongside dialogue.
+* **Stage Cast (Cinema Tray):** A dedicated, floating control bar for the GM. Activate **Director Mode** to automatically intercept chat messages and broadcast them as cinematic subtitles directly onto the screen.
+* **Smart Occlusion Engine (V14 Native):** When Cinematic Mode is active, tactical elements (grid, tiles, drawings, and non-portrait tokens) are intelligently hidden. This leaves a pure, immersive scene without needing to delete any map assets!
+* **Per-Scene Customization:** Assign dedicated widescreen background images to specific scenes and choose whether a scene defaults to Tactical (top-down) or Cinematic mode upon loading.
 
-### 2. 🎭 Cinematic Portraits (Layered Staging)
-Tokens can display high-fidelity portraits layered above the scenic background.
-*   **Configuration:** Accessible via **Token Configuration -> Appearance**.
-*   **Cinematic Assets:** Set dedicated high-res busts or visual-novel style portraits that stay crisp and properly positioned.
-*   **Visual Novel Experience:** Seamlessly transition between tactical top-down combat and immersive, story-driven portrait scenes.
+## ✨ The Skin Studio
 
-### 3. 📺 Cinematic Stage (Dialogue & Subtitles)
-The **Stage** is the central interface for storytelling, combining dialogue and art.
-*   **Dynamic Subtitles:** Beautifully rendered subtitles with customizable fonts and styles.
-*   **Portrait Integration:** Large, expressive portraits appear alongside dialogue to represent the current speaker.
-*   **Multi-Channel API:** Developers and GMs can use `StorytellerCinema.say()` to trigger stage events with custom portraits and text.
+Gone are the days of static black bars. Storyteller's Cinema features a powerful in-app theme engine:
 
-### 4. 🖼️ Setup per Scene
-Each scene can be customized individually.
-*   **Configuration:** Go to **Scene Configuration**.
-*   **Default View Mode:** Choose if the scene starts in "Battlemap" (Tactical) or "Cinematic" (Immersive) mode.
-*   **Cinematic Background:** Select the image that will be displayed when Cinematic Mode is active.
+* **Design Your Own UI:** Change the cinematic borders from simple black bars to Wood, Stone, Sci-Fi Neon, or Parchment directly inside Foundry.
+* **Live Preview:** See changes instantly as you tweak textures, heights, and borders.
+* **Cinematic Filters:** Apply full-screen overlays like **Film Grain**, **Old Paper**, or **Vignettes** to set the perfect mood.
 
-### 5. 🎨 Skin Studio & Overlays
-Customize everything with the new **Skin Studio** (Cog icon in HUD).
-*   **Custom Themes:** Create skins with custom textures (wood, stone, sci-fi) for the cinematic bars.
-*   **Overlays:** Apply full-screen effects like **Film Grain**, **Vignettes**, or **Old Paper** filters.
-*   **Auto-Download:** Import community JSON skins and the module automatically downloads and installs the necessary assets for you.
-*   **Safe Storage:** Assets are saved locally to your User Data, ensuring offline compatibility.
+## 🔄 Smart Import & Community Themes
 
-### 6. 🎙️ Stage Cast (Cinema Tray)
-The GM has a dedicated, floating control bar to manage the cinematic narrative.
-*   **Movable UI:** A compact, non-intrusive DIV that can be dragged and placed anywhere on the screen.
-*   **Speaking As:** One-click assignment to set which actor is currently "Speaking".
-*   **Director Mode:** When active, your chat messages are automatically intercepted and displayed as cinematic subtitles on the stage.
-*   **Quick Stage Control:** Instantly show portraits or clear the stage with dedicated hotkeys/buttons.
+Share your creations with the world easily using the new **Smart Importer**:
 
-### 7. 📏 Depth Scaling (2.5D Effect)
-Tokens visually resize based on their vertical (Y) position, simulating depth.
-*   **Shift + Mouse Wheel:** Hover over a token while in Cinematic Mode to manually adjust its visual scale on the fly.
-*   **Automatic:** Characters "closer" to the camera (bottom of screen) appear larger.
+* **Drag & Drop Installation:** Found a cool theme JSON on Discord? Just drag it into the module settings.
+* **Offline Ready (Auto-Downloader):** The smart importer automatically fetches referenced images (from the web) and **saves them locally** to your user data folder. Your themes will work forever, even without internet.
 
 ![Cinematic Demo - Classic](docs/classic.png)
 ![Cinematic Demo - Old Photograph](docs/old-photograph.png)
