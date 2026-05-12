@@ -51,7 +51,8 @@ Tokens visually resize based on their vertical (Y) position, simulating depth.
 *   **Shift + Mouse Wheel:** Hover over a token while in Cinematic Mode to manually adjust its visual scale on the fly.
 *   **Automatic:** Characters "closer" to the camera (bottom of screen) appear larger.
 
-![Cinematic Demo](docs/demo.gif)
+![Cinematic Demo - Classic](docs/classic.png)
+![Cinematic Demo - Old Photograph](docs/old-photograph.png)
 
 ## 📦 Installation
 1.  Copy the Manifest Link from the latest Release.
