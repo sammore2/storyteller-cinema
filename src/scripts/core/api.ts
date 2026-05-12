@@ -275,33 +275,56 @@ export class StorytellerAPI {
             return;
         }
 
-        if (this._lastBackgroundPath === path) return;
+        console.log(`Storyteller Cinema | Updating background to: ${path}`);
+        if (this._lastBackgroundPath === path && this.cinematicSprite) {
+            this.cinematicSprite.visible = true;
+            return;
+        }
         this._lastBackgroundPath = path;
 
         if (!canvas.ready) return;
 
+        // V14 Check: If container/sprite were destroyed by a scene change, we must recreate them
+        if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.primary.children.includes(this.cinematicContainer))) {
+            console.log("Storyteller Cinema | Resetting destroyed PIXI objects");
+            this.cinematicContainer = null;
+            this.cinematicSprite = null;
+        }
+
         if (!this.cinematicContainer) {
             this.cinematicContainer = new (PIXI as any).Container();
-            (this.cinematicContainer as any).sort = 1000;
-            (this.cinematicContainer as any).elevation = 0;
+            this.cinematicContainer.sortableChildren = true;
+            this.cinematicContainer.zIndex = 1000;
             canvas.primary.addChild(this.cinematicContainer);
         }
 
         (foundry.canvas as any).loadTexture(path).then((tex: any) => {
-            if (!tex) return;
+            if (!tex || tex.baseTexture?.destroyed) {
+                console.error("Storyteller Cinema | Texture invalid or destroyed:", path);
+                return;
+            }
+            
+            // Re-verify if sprite was destroyed during load
+            if (this.cinematicSprite && this.cinematicSprite.destroyed) {
+                this.cinematicSprite = null;
+            }
+
             if (!this.cinematicSprite) {
                 this.cinematicSprite = new (PIXI as any).Sprite(tex);
                 this.cinematicContainer?.addChild(this.cinematicSprite);
             } else {
                 this.cinematicSprite.texture = tex;
             }
+
             if (this.cinematicSprite) {
                 this.cinematicSprite.visible = true;
-                const rect = canvas.dimensions!.sceneRect;
+                const rect = (canvas as any).dimensions!.sceneRect;
                 this.cinematicSprite.width = rect.width;
                 this.cinematicSprite.height = rect.height;
                 this.cinematicSprite.position.set(rect.x, rect.y);
             }
+        }).catch((err: Error) => {
+            console.error("Storyteller Cinema | Failed to load background texture:", err);
         });
     }
 

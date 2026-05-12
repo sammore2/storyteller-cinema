@@ -215,21 +215,36 @@ class StorytellerAPI {
       this._lastBackgroundPath = null;
       return;
     }
-    if (this._lastBackgroundPath === path) return;
+    console.log(`Storyteller Cinema | Updating background to: ${path}`);
+    if (this._lastBackgroundPath === path && this.cinematicSprite) {
+      this.cinematicSprite.visible = true;
+      return;
+    }
     this._lastBackgroundPath = path;
     if (!canvas.ready) return;
+    if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.primary.children.includes(this.cinematicContainer))) {
+      console.log("Storyteller Cinema | Resetting destroyed PIXI objects");
+      this.cinematicContainer = null;
+      this.cinematicSprite = null;
+    }
     if (!this.cinematicContainer) {
       this.cinematicContainer = new PIXI.Container();
-      this.cinematicContainer.sort = 1e3;
-      this.cinematicContainer.elevation = 0;
+      this.cinematicContainer.sortableChildren = true;
+      this.cinematicContainer.zIndex = 1e3;
       canvas.primary.addChild(this.cinematicContainer);
     }
     foundry.canvas.loadTexture(path).then((tex) => {
-      var _a;
-      if (!tex) return;
+      var _a, _b;
+      if (!tex || ((_a = tex.baseTexture) == null ? void 0 : _a.destroyed)) {
+        console.error("Storyteller Cinema | Texture invalid or destroyed:", path);
+        return;
+      }
+      if (this.cinematicSprite && this.cinematicSprite.destroyed) {
+        this.cinematicSprite = null;
+      }
       if (!this.cinematicSprite) {
         this.cinematicSprite = new PIXI.Sprite(tex);
-        (_a = this.cinematicContainer) == null ? void 0 : _a.addChild(this.cinematicSprite);
+        (_b = this.cinematicContainer) == null ? void 0 : _b.addChild(this.cinematicSprite);
       } else {
         this.cinematicSprite.texture = tex;
       }
@@ -240,6 +255,8 @@ class StorytellerAPI {
         this.cinematicSprite.height = rect.height;
         this.cinematicSprite.position.set(rect.x, rect.y);
       }
+    }).catch((err) => {
+      console.error("Storyteller Cinema | Failed to load background texture:", err);
     });
   }
   _toggleLayerVisibility(visible) {
