@@ -160,34 +160,46 @@ class StorytellerAPI {
     overlay.querySelectorAll(".portrait-container").forEach((p) => p.classList.remove("active"));
   }
   _applyVisionOverride(active) {
+    var _a;
     if (!canvas.ready || !canvas.scene) return;
+    const isV14 = !!canvas.scene.environment;
     const environment = canvas.scene.environment;
     if (active) {
       this._visionOverrideActive = true;
       if (this._sceneLightCache === null) {
-        if (environment == null ? void 0 : environment.globalLight) {
-          this._sceneLightCache = environment.globalLight.enabled;
-          environment.globalLight.enabled = true;
-          environment.globalLight.source = true;
+        if (isV14 && environment) {
+          this._sceneLightCache = {
+            version: 14,
+            enabled: (_a = environment.globalLight) == null ? void 0 : _a.enabled,
+            darkness: canvas.scene.darkness
+          };
+          if (environment.globalLight) environment.globalLight.enabled = true;
+          canvas.scene.updateSource({ darkness: 0 }, { render: false });
         } else {
-          this._sceneLightCache = canvas.scene.globalLight;
-          canvas.scene.globalLight = true;
+          this._sceneLightCache = {
+            version: 13,
+            enabled: canvas.scene.globalLight,
+            darkness: canvas.scene.darkness
+          };
+          canvas.scene.updateSource({ globalLight: true, darkness: 0 }, { render: false });
         }
       }
     } else {
       this._visionOverrideActive = false;
       if (this._sceneLightCache !== null) {
-        if (environment == null ? void 0 : environment.globalLight) {
-          environment.globalLight.enabled = this._sceneLightCache;
-        } else {
-          canvas.scene.globalLight = this._sceneLightCache;
+        if (this._sceneLightCache.version === 14 && (environment == null ? void 0 : environment.globalLight)) {
+          environment.globalLight.enabled = this._sceneLightCache.enabled;
         }
+        const updateData = { darkness: this._sceneLightCache.darkness };
+        if (this._sceneLightCache.version === 13) updateData.globalLight = this._sceneLightCache.enabled;
+        canvas.scene.updateSource(updateData, { render: false });
         this._sceneLightCache = null;
       }
     }
     canvas.perception.update({
       refreshVision: true,
-      refreshLighting: true
+      refreshLighting: true,
+      refreshPrimary: true
     }, true);
   }
   enforceVision() {
@@ -222,21 +234,20 @@ class StorytellerAPI {
     }
     this._lastBackgroundPath = path;
     if (!canvas.ready) return;
-    if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.primary.children.includes(this.cinematicContainer))) {
-      console.log("Storyteller Cinema | Resetting destroyed PIXI objects");
+    if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.stage.children.includes(this.cinematicContainer))) {
       this.cinematicContainer = null;
       this.cinematicSprite = null;
     }
     if (!this.cinematicContainer) {
       this.cinematicContainer = new PIXI.Container();
       this.cinematicContainer.sortableChildren = true;
-      this.cinematicContainer.zIndex = 1e3;
-      canvas.primary.addChild(this.cinematicContainer);
+      this.cinematicContainer.zIndex = 1e4;
+      canvas.stage.addChild(this.cinematicContainer);
     }
-    foundry.canvas.loadTexture(path).then((tex) => {
-      var _a, _b;
-      if (!tex || ((_a = tex.baseTexture) == null ? void 0 : _a.destroyed)) {
-        console.error("Storyteller Cinema | Texture invalid or destroyed:", path);
+    PIXI.Assets.load(path).then((tex) => {
+      var _a;
+      if (!tex) {
+        console.error("Storyteller Cinema | Texture failed to load:", path);
         return;
       }
       if (this.cinematicSprite && this.cinematicSprite.destroyed) {
@@ -244,7 +255,7 @@ class StorytellerAPI {
       }
       if (!this.cinematicSprite) {
         this.cinematicSprite = new PIXI.Sprite(tex);
-        (_b = this.cinematicContainer) == null ? void 0 : _b.addChild(this.cinematicSprite);
+        (_a = this.cinematicContainer) == null ? void 0 : _a.addChild(this.cinematicSprite);
       } else {
         this.cinematicSprite.texture = tex;
       }
@@ -261,11 +272,22 @@ class StorytellerAPI {
   }
   _toggleLayerVisibility(visible) {
     var _a;
-    if (canvas.grid) canvas.grid.visible = visible;
-    if ((_a = canvas.interface) == null ? void 0 : _a.grid) canvas.interface.grid.visible = visible;
-    if (canvas.drawings) canvas.drawings.visible = visible;
-    if (canvas.measuredTemplates) canvas.measuredTemplates.visible = visible;
-    else if (canvas.templates) canvas.templates.visible = visible;
+    const groups = ["primary", "effects", "interface", "controls"];
+    let anyGroupHidden = false;
+    for (const g of groups) {
+      if (canvas[g]) {
+        canvas[g].visible = visible;
+        anyGroupHidden = true;
+      }
+    }
+    if (!anyGroupHidden || !visible) {
+      if (canvas.grid) canvas.grid.visible = visible;
+      if ((_a = canvas.interface) == null ? void 0 : _a.grid) canvas.interface.grid.visible = visible;
+      const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+      for (const l of layers) {
+        if (canvas[l]) canvas[l].visible = visible;
+      }
+    }
   }
   _refreshAllPlaceables() {
     if (!canvas.ready) return;

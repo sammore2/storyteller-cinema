@@ -9,7 +9,7 @@ export function registerUIHooks(): void {
     Hooks.once('ready', () => {
         (window as any).StorytellerCinema.dialogueConsole = new DialogueConsole();
         (window as any).StorytellerCinema.cinemaTray = new CinemaTray();
-        
+
         // Initialize CSS Variables from settings
         const root = document.documentElement;
         root.style.setProperty('--stage-font-family', game.settings.get('storyteller-cinema', 'stageFontFamily') as string);
@@ -121,7 +121,7 @@ export function registerUIHooks(): void {
     // --- CONTEXT MENU: ACTOR DIRECTORY ---
     Hooks.on('getActorContextOptions', (_app: any, options: any[]) => {
         console.log(">>> STORYTELLER CINEMA V14 - CONTEXT MENU HOOK <<<", options);
-        
+
         options.push({
             label: "Cinema: Stage Actor",
             icon: '<i class="fas fa-user-plus"></i>',
@@ -134,7 +134,7 @@ export function registerUIHooks(): void {
             onClick: async (_event: PointerEvent, target: HTMLElement) => {
                 const actorId = target.closest('[data-document-id]')?.getAttribute('data-document-id') || target.closest('[data-entry-id]')?.getAttribute('data-entry-id');
                 if (!actorId) return;
-                
+
                 const cast = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
                 if (!cast.includes(actorId)) {
                     cast.push(actorId);
