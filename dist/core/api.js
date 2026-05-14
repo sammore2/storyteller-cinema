@@ -212,12 +212,14 @@ class StorytellerAPI {
     if (active) {
       const bgPath = canvas.scene.getFlag("storyteller-cinema", "cinematicBg");
       this._toggleLayerVisibility(false);
+      if (this.cinematicContainer) this.cinematicContainer.visible = true;
       if (bgPath) {
         this._updateCanvasBackground(bgPath);
       }
     } else {
       this._toggleLayerVisibility(true);
       if (this.cinematicSprite) this.cinematicSprite.visible = false;
+      if (this.cinematicContainer) this.cinematicContainer.visible = false;
       this._lastBackgroundPath = null;
     }
   }
@@ -273,20 +275,14 @@ class StorytellerAPI {
   _toggleLayerVisibility(visible) {
     var _a;
     const groups = ["primary", "effects", "interface", "controls"];
-    let anyGroupHidden = false;
     for (const g of groups) {
-      if (canvas[g]) {
-        canvas[g].visible = visible;
-        anyGroupHidden = true;
-      }
+      if (canvas[g]) canvas[g].visible = visible;
     }
-    if (!anyGroupHidden || !visible) {
-      if (canvas.grid) canvas.grid.visible = visible;
-      if ((_a = canvas.interface) == null ? void 0 : _a.grid) canvas.interface.grid.visible = visible;
-      const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
-      for (const l of layers) {
-        if (canvas[l]) canvas[l].visible = visible;
-      }
+    if (canvas.grid) canvas.grid.visible = visible;
+    if ((_a = canvas.interface) == null ? void 0 : _a.grid) canvas.interface.grid.visible = visible;
+    const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+    for (const l of layers) {
+      if (canvas[l]) canvas[l].visible = visible;
     }
   }
   _refreshAllPlaceables() {

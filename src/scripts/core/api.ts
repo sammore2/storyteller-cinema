@@ -273,12 +273,14 @@ export class StorytellerAPI {
         if (active) {
             const bgPath = canvas.scene.getFlag('storyteller-cinema', 'cinematicBg') as string;
             this._toggleLayerVisibility(false);
+            if (this.cinematicContainer) this.cinematicContainer.visible = true;
             if (bgPath) {
                 this._updateCanvasBackground(bgPath);
             }
         } else {
             this._toggleLayerVisibility(true);
             if (this.cinematicSprite) this.cinematicSprite.visible = false;
+            if (this.cinematicContainer) this.cinematicContainer.visible = false;
             this._lastBackgroundPath = null;
         }
     }
@@ -345,24 +347,17 @@ export class StorytellerAPI {
     private _toggleLayerVisibility(visible: boolean): void {
         // V14+ Hybrid Group Hiding
         const groups = ["primary", "effects", "interface", "controls"];
-        let anyGroupHidden = false;
-
         for ( const g of groups ) {
-            if ( (canvas as any)[g] ) {
-                (canvas as any)[g].visible = visible;
-                anyGroupHidden = true;
-            }
+            if ( (canvas as any)[g] ) (canvas as any)[g].visible = visible;
         }
         
-        // V13 and Legacy Fallback
-        if ( !anyGroupHidden || !visible ) {
-            if (canvas.grid) canvas.grid.visible = visible;
-            if ((canvas as any).interface?.grid) (canvas as any).interface.grid.visible = visible;
-            
-            const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
-            for ( const l of layers ) {
-                if ( (canvas as any)[l] ) (canvas as any)[l].visible = visible;
-            }
+        // Always handle individual layers for maximum compatibility and to restore visibility
+        if (canvas.grid) canvas.grid.visible = visible;
+        if ((canvas as any).interface?.grid) (canvas as any).interface.grid.visible = visible;
+        
+        const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+        for ( const l of layers ) {
+            if ( (canvas as any)[l] ) (canvas as any)[l].visible = visible;
         }
     }
 
