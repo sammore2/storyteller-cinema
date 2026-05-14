@@ -236,15 +236,15 @@ class StorytellerAPI {
     }
     this._lastBackgroundPath = path;
     if (!canvas.ready) return;
-    if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.stage.children.includes(this.cinematicContainer))) {
+    if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.primary.children.includes(this.cinematicContainer))) {
       this.cinematicContainer = null;
       this.cinematicSprite = null;
     }
     if (!this.cinematicContainer) {
       this.cinematicContainer = new PIXI.Container();
       this.cinematicContainer.sortableChildren = true;
-      this.cinematicContainer.zIndex = 1e4;
-      canvas.stage.addChild(this.cinematicContainer);
+      this.cinematicContainer.zIndex = 999999;
+      canvas.primary.addChild(this.cinematicContainer);
     }
     PIXI.Assets.load(path).then((tex) => {
       var _a;
@@ -273,16 +273,33 @@ class StorytellerAPI {
     });
   }
   _toggleLayerVisibility(visible) {
-    var _a;
-    const groups = ["primary", "effects", "interface", "controls"];
-    for (const g of groups) {
-      if (canvas[g]) canvas[g].visible = visible;
-    }
-    if (canvas.grid) canvas.grid.visible = visible;
-    if ((_a = canvas.interface) == null ? void 0 : _a.grid) canvas.interface.grid.visible = visible;
-    const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
-    for (const l of layers) {
-      if (canvas[l]) canvas[l].visible = visible;
+    const isV14 = !!canvas.effects;
+    if (isV14) {
+      if (canvas.primary) {
+        canvas.primary.tokens.visible = visible;
+        canvas.primary.tiles.visible = visible;
+        if (!visible) {
+          if (canvas.primary.background) canvas.primary.background.visible = false;
+        } else {
+          if (canvas.primary.background) canvas.primary.background.visible = true;
+        }
+      }
+      if (canvas.effects) {
+        const e = canvas.effects;
+        if (e.illumination) e.illumination.visible = visible;
+        if (e.coloration) e.coloration.visible = visible;
+        if (e.visibility) e.visibility.visible = visible;
+        if (e.weather) e.weather.visible = true;
+      }
+      if (canvas.interface) canvas.interface.visible = visible;
+      if (canvas.controls) canvas.controls.visible = visible;
+    } else {
+      if (canvas.grid) canvas.grid.visible = visible;
+      const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+      for (const l of layers) {
+        if (canvas[l]) canvas[l].visible = visible;
+      }
+      if (canvas.weather) canvas.weather.visible = true;
     }
   }
   _refreshAllPlaceables() {

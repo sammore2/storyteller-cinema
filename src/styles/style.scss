@@ -991,7 +991,8 @@ fieldset legend {
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    height: auto !important;
+    height: fit-content !important;
+    min-height: 0 !important;
     width: fit-content !important;
     min-width: unset !important;
     max-width: fit-content !important;
