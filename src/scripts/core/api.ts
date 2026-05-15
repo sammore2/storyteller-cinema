@@ -302,7 +302,7 @@ export class StorytellerAPI {
         if (!canvas.ready) return;
 
         // V14 Check: If container/sprite were destroyed by a scene change, we must recreate them
-        if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.primary.children.includes(this.cinematicContainer))) {
+        if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.stage.children.includes(this.cinematicContainer))) {
             this.cinematicContainer = null;
             this.cinematicSprite = null;
         }
@@ -310,8 +310,10 @@ export class StorytellerAPI {
         if (!this.cinematicContainer) {
             this.cinematicContainer = new (PIXI as any).Container();
             this.cinematicContainer.sortableChildren = true;
-            this.cinematicContainer.zIndex = 999999; // Extremely high to be above all tokens/tiles
-            canvas.primary.addChild(this.cinematicContainer);
+            // In V14, we want to be above primary but below effects if possible
+            // Primary is usually 0, Effects is usually higher. We'll use a middle ground.
+            this.cinematicContainer.zIndex = 10; 
+            canvas.stage.addChild(this.cinematicContainer);
         }
 
         // Universal PIXI Asset Loading (V13/V14)
@@ -349,25 +351,24 @@ export class StorytellerAPI {
 
         if ( isV14 ) {
             // V14 Selective Hiding
-            if ( (canvas as any).primary ) {
-                // Hide map contents but keep the group for our background
-                (canvas as any).primary.tokens.visible = visible;
-                (canvas as any).primary.tiles.visible = visible;
-                if (!visible) {
-                    // When in cinema, also hide background/foreground of map if possible
-                    if ((canvas as any).primary.background) (canvas as any).primary.background.visible = false;
-                } else {
-                    if ((canvas as any).primary.background) (canvas as any).primary.background.visible = true;
-                }
-            }
+            if ( (canvas as any).primary ) (canvas as any).primary.visible = visible;
 
             if ( (canvas as any).effects ) {
                 const e = (canvas as any).effects;
-                if ( e.illumination ) e.illumination.visible = visible;
-                if ( e.coloration ) e.coloration.visible = visible;
-                if ( e.visibility ) e.visibility.visible = visible;
-                // Weather stays visible!
-                if ( e.weather ) e.weather.visible = true; 
+                // If we are in cinema mode (visible=false), we want to keep effects visible for weather
+                // but hide the sub-groups that cause shadows/lighting
+                if (!visible) {
+                    e.visible = true;
+                    if ( e.illumination ) e.illumination.visible = false;
+                    if ( e.coloration ) e.coloration.visible = false;
+                    if ( e.visibility ) e.visibility.visible = false;
+                    if ( e.weather ) e.weather.visible = true;
+                } else {
+                    // Restore native behavior
+                    if ( e.illumination ) e.illumination.visible = true;
+                    if ( e.coloration ) e.coloration.visible = true;
+                    if ( e.visibility ) e.visibility.visible = true;
+                }
             }
 
             if ( (canvas as any).interface ) (canvas as any).interface.visible = visible;
