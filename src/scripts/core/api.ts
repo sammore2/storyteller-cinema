@@ -310,10 +310,21 @@ export class StorytellerAPI {
         if (!this.cinematicContainer) {
             this.cinematicContainer = new (PIXI as any).Container();
             this.cinematicContainer.sortableChildren = true;
-            // In V14, we want to be above primary but below effects if possible
-            // Primary is usually 0, Effects is usually higher. We'll use a middle ground.
-            this.cinematicContainer.zIndex = 10; 
-            canvas.stage.addChild(this.cinematicContainer);
+            
+            const stage = canvas.stage;
+            stage.addChild(this.cinematicContainer); // Add to top first
+
+            // Now try to move it just below effects
+            try {
+                if ( (canvas as any).effects ) {
+                    const effectsIndex = stage.getChildIndex((canvas as any).effects);
+                    // Insert at effectsIndex moves effects to index+1
+                    stage.setChildIndex(this.cinematicContainer, Math.max(0, effectsIndex));
+                    console.log(`Storyteller Cinema | Container layered at index ${effectsIndex} (below effects)`);
+                }
+            } catch(e) {
+                console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top.");
+            }
         }
 
         // Universal PIXI Asset Loading (V13/V14)
