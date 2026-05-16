@@ -1,8 +1,6 @@
 # Storyteller's Cinema
 
-
-
-**Storyteller's Cinema** transforms your Foundry VTT sessions into an immersive **visual novel experience**. It creates a seamless "Cinematic Mode" where the map is replaced by a scenic background, tokens become high-quality portraits, and the camera dynamically adapts to tell your story—all while keeping the tactical map just a click away.
+**Storyteller's Cinema** transforms your Foundry VTT sessions into an immersive **visual novel experience**. It introduces a powerful, non-destructive **Cinematic Overlay** that instantly elevates roleplay. With a single click on the HUD, the tactical battlemap transitions into a scenic, atmospheric stage with widescreen cinematic bars, expressive character portraits, dynamic subtitles, and mood filters—all while preserving your underlying map assets and keeping tactical gameplay just a toggle away.
 
 ![Foundry Version](https://img.shields.io/badge/Foundry-v14-orange)
 
