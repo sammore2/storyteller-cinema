@@ -243,16 +243,17 @@ class StorytellerAPI {
     if (!this.cinematicContainer) {
       this.cinematicContainer = new PIXI.Container();
       this.cinematicContainer.sortableChildren = true;
-      const stage = canvas.stage;
-      stage.addChild(this.cinematicContainer);
+      const effects = canvas.effects;
+      const parent = (effects == null ? void 0 : effects.parent) || canvas.stage;
+      parent.addChild(this.cinematicContainer);
       try {
-        if (canvas.effects) {
-          const effectsIndex = stage.getChildIndex(canvas.effects);
-          stage.setChildIndex(this.cinematicContainer, Math.max(0, effectsIndex));
-          console.log(`Storyteller Cinema | Container layered at index ${effectsIndex} (below effects)`);
+        if (effects) {
+          const effectsIndex = parent.getChildIndex(effects);
+          parent.setChildIndex(this.cinematicContainer, Math.max(0, effectsIndex));
+          console.log(`Storyteller Cinema | Container layered at index ${effectsIndex} inside ${parent.constructor.name}`);
         }
       } catch (e) {
-        console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top.");
+        console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.");
       }
     }
     PIXI.Assets.load(path).then((tex) => {

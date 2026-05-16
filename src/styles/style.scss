@@ -383,365 +383,361 @@ body.cinematic-mode {
    color: #e0e0e0;
    font-family: "Signika", var(--font-primary);
    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
-}
 
-.skin-header {
-   background: rgba(255, 255, 255, 0.03);
-   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-   padding: 1.5rem;
-   text-align: center;
-   backdrop-filter: blur(5px);
-}
-
-.skin-header h1 {
-   font-family: "Amiri", serif;
-   /* Elegant Serif */
-   font-size: 2.8em;
-   margin: 0 0 5px 0;
-   color: #ff6400;
-   /* Foundry Orange Accent */
-   text-transform: uppercase;
-   letter-spacing: 2px;
-   text-shadow: 0 2px 10px rgba(255, 100, 0, 0.3);
-}
-
-.skin-header p {
-   margin: 0;
-   font-size: 0.9em;
-   color: #888;
-   font-weight: 300;
-}
-
-.skin-layout {
-   display: flex;
-   flex: 1;
-   overflow: hidden;
-}
-
-/* SIDEBAR */
-.skin-sidebar {
-   width: 260px;
-   background: rgba(0, 0, 0, 0.4);
-   border-right: 1px solid rgba(255, 255, 255, 0.05);
-   display: flex;
-   flex-direction: column;
-   padding: 15px;
-   box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
-}
-
-.skin-sidebar h3 {
-   font-size: 0.85em;
-   text-transform: uppercase;
-   letter-spacing: 1px;
-   color: #666;
-   border-bottom: 1px solid #333;
-   padding-bottom: 10px;
-   margin-top: 0;
-   margin-bottom: 15px;
-}
-
-.skin-list {
-   flex: 1;
-   overflow-y: auto;
-   padding-right: 5px;
-   /* Space for scrollbar */
-}
-
-.skin-item {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   padding: 12px 15px;
-   margin-bottom: 8px;
-   background: rgba(255, 255, 255, 0.03);
-   border: 1px solid transparent;
-   border-radius: 6px;
-   cursor: pointer;
-   transition: all 0.2s ease;
-   font-size: 1em;
-}
-
-.skin-item:hover {
-   background: rgba(255, 255, 255, 0.08);
-   transform: translateX(2px);
-}
-
-.skin-item.active {
-   background: linear-gradient(90deg, rgba(255, 100, 0, 0.1) 0%, transparent 100%);
-   border-left: 3px solid #ff6400;
-   color: #fff;
-   font-weight: 600;
-}
-
-.skin-item i.delete-skin {
-   color: #666;
-   transition: color 0.2s;
-}
-
-.skin-item:hover i.delete-skin {
-   color: #e74c3c;
-}
-
-/* CREATE BUTTON */
-.sidebar-actions {
-   margin-top: 15px;
-   display: flex;
-   flex-direction: column;
-   gap: 10px;
-}
-
-.create-skin-btn,
-.import-skin-btn {
-   background: #27ae60;
-   /* Distinct Green */
-   color: #fff;
-   border: none;
-   padding: 10px;
-   border-radius: 6px;
-   font-weight: 600;
-   text-transform: uppercase;
-   font-size: 0.8em;
-   letter-spacing: 0.5px;
-   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-   transition: all 0.2s;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   gap: 8px;
-   cursor: pointer;
-}
-
-.import-skin-btn {
-   background: #e67e22;
-}
-
-.create-skin-btn:hover {
-   background: #219150;
-   transform: translateY(-1px);
-   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}
-
-.import-skin-btn:hover {
-   background: #d35400;
-   transform: translateY(-1px);
-   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* EDITOR MAIN AREA */
-.skin-editor {
-   flex: 1;
-   padding: 30px;
-   overflow-y: auto;
-   background: url('/modules/storyteller-cinema/assets/ui/noise.png');
-   /* Subtle texture if avail, else just dark */
-}
-
-.editor-header {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   margin-bottom: 30px;
-   padding-bottom: 15px;
-   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.editor-header h2 {
-   font-size: 2em;
-   font-weight: 300;
-   color: #fff;
-   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-   margin: 0;
-   border: none;
-}
-
-.actions {
-   display: flex;
-   gap: 10px;
-}
-
-/* Action Buttons */
-.apply-skin-btn,
-.save-skin-btn,
-.export-skin-btn {
-   background: rgba(255, 255, 255, 0.1);
-   border: 1px solid rgba(255, 255, 255, 0.2);
-   color: #fff;
-   border-radius: 4px;
-   padding: 8px 16px;
-   font-size: 0.9em;
-   cursor: pointer;
-   transition: all 0.2s;
-   white-space: nowrap;
-   height: 36px;
-   display: inline-flex;
-   align-items: center;
-}
-
-.apply-skin-btn:hover {
-   background: #ff6400;
-   border-color: #ff6400;
-   color: #000;
-}
-
-.save-skin-btn:hover {
-   background: #2980b9;
-   border-color: #2980b9;
-}
-
-.export-skin-btn:hover {
-   background: #8e44ad;
-   border-color: #8e44ad;
-}
-
-/* FORMS */
-.form-group {
-   margin-bottom: 20px;
-}
-
-.form-group label {
-   display: block;
-   margin-bottom: 8px;
-   color: #aaa;
-   font-size: 0.85em;
-   text-transform: uppercase;
-   letter-spacing: 0.5px;
-}
-
-.skin-editor input[type="text"] {
-   width: 100%;
-   background: rgba(0, 0, 0, 0.3);
-   border: 1px solid #444;
-   color: #fff;
-   padding: 10px;
-   border-radius: 4px;
-   font-family: inherit;
-   transition: border-color 0.2s;
-}
-
-.skin-editor input[type="text"]:focus {
-   border-color: #ff6400;
-   outline: none;
-   box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.2);
-}
-
-.skin-editor input[type="color"] {
-   width: 100%;
-   height: 40px;
-   padding: 2px;
-   background: #333;
-   border: 1px solid #444;
-   cursor: pointer;
-   border-radius: 4px;
-   appearance: none;
-}
-
-.skin-editor input[type="color"]::-webkit-color-swatch-wrapper {
-   padding: 0;
-}
-
-.skin-editor input[type="color"]::-webkit-color-swatch {
-   border: none;
-   border-radius: 3px;
-}
-
-fieldset {
-   border: 1px solid #333;
-   background: rgba(255, 255, 255, 0.02);
-   border-radius: 8px;
-   padding: 20px;
-   margin-bottom: 25px;
-}
-
-fieldset legend {
-   padding: 0 10px;
-   color: #ff6400;
-   font-weight: 600;
-   text-transform: uppercase;
-   font-size: 0.8em;
-}
-
-.color-picker-group {
-   display: flex;
-   gap: 8px;
-   align-items: center;
-   width: 100%;
-
-   input[type="color"] {
-      flex: 0 0 40px !important;
-      height: 32px !important;
-   }
-}
-
-.modular-border-fields {
-   display: flex;
-   gap: 8px;
-   align-items: center;
-   width: 100%;
-
-   input[type="number"] {
-      flex: 0 0 60px;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid #444;
-      color: #fff;
-      padding: 5px;
-      border-radius: 4px;
+   .skin-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
       text-align: center;
+      backdrop-filter: blur(5px);
+
+      h1 {
+         font-family: "Amiri", serif;
+         font-size: 2.8em;
+         margin: 0 0 5px 0;
+         color: #ff6400;
+         text-transform: uppercase;
+         letter-spacing: 2px;
+         text-shadow: 0 2px 10px rgba(255, 100, 0, 0.3);
+      }
+
+      p {
+         margin: 0;
+         font-size: 0.9em;
+         color: #888;
+         font-weight: 300;
+      }
    }
 
-   select {
+   .skin-layout {
+      display: flex;
       flex: 1;
-      background: #222;
-      border: 1px solid #444;
+      overflow: hidden;
+   }
+
+   /* SIDEBAR */
+   .skin-sidebar {
+      width: 260px;
+      background: rgba(0, 0, 0, 0.4);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+
+      h3 {
+         font-size: 0.85em;
+         text-transform: uppercase;
+         letter-spacing: 1px;
+         color: #666;
+         border-bottom: 1px solid #333;
+         padding-bottom: 10px;
+         margin-top: 0;
+         margin-bottom: 15px;
+      }
+   }
+
+   .skin-list {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 5px;
+   }
+
+   .skin-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1em;
+
+      &:hover {
+         background: rgba(255, 255, 255, 0.08);
+         transform: translateX(2px);
+
+         i.delete-skin {
+            color: #e74c3c;
+         }
+      }
+
+      &.active {
+         background: linear-gradient(90deg, rgba(255, 100, 0, 0.1) 0%, transparent 100%);
+         border-left: 3px solid #ff6400;
+         color: #fff;
+         font-weight: 600;
+      }
+
+      i.delete-skin {
+         color: #666;
+         transition: color 0.2s;
+      }
+   }
+
+   /* CREATE BUTTON */
+   .sidebar-actions {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+   }
+
+   .create-skin-btn,
+   .import-skin-btn {
+      background: #27ae60;
       color: #fff;
-      height: 32px;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.8em;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+
+      &:hover {
+         background: #219150;
+         transform: translateY(-1px);
+         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      }
+   }
+
+   .import-skin-btn {
+      background: #e67e22;
+
+      &:hover {
+         background: #d35400;
+         transform: translateY(-1px);
+         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      }
+   }
+
+   /* EDITOR MAIN AREA */
+   .skin-editor {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      background: url('/modules/storyteller-cinema/assets/ui/noise.png');
+
+      input[type="text"] {
+         width: 100%;
+         background: rgba(0, 0, 0, 0.3);
+         border: 1px solid #444;
+         color: #fff;
+         padding: 10px;
+         border-radius: 4px;
+         font-family: inherit;
+         transition: border-color 0.2s;
+
+         &:focus {
+            border-color: #ff6400;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 100, 0, 0.2);
+         }
+      }
+
+      input[type="color"] {
+         width: 100%;
+         height: 40px;
+         padding: 2px;
+         background: #333;
+         border: 1px solid #444;
+         cursor: pointer;
+         border-radius: 4px;
+         appearance: none;
+
+         &::-webkit-color-swatch-wrapper {
+            padding: 0;
+         }
+
+         &::-webkit-color-swatch {
+            border: none;
+            border-radius: 3px;
+         }
+      }
+   }
+
+   .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+      h2 {
+         font-size: 2em;
+         font-weight: 300;
+         color: #fff;
+         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+         margin: 0;
+         border: none;
+      }
+   }
+
+   .actions {
+      display: flex;
+      gap: 10px;
+   }
+
+   /* Action Buttons */
+   .apply-skin-btn,
+   .save-skin-btn,
+   .export-skin-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
       border-radius: 4px;
-      padding: 0 5px;
+      padding: 8px 16px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
    }
 
-   input[type="color"] {
-      flex: 0 0 40px !important;
-      height: 32px !important;
+   .apply-skin-btn:hover {
+      background: #ff6400;
+      border-color: #ff6400;
+      color: #000;
+   }
+
+   .save-skin-btn:hover {
+      background: #2980b9;
+      border-color: #2980b9;
+   }
+
+   .export-skin-btn:hover {
+      background: #8e44ad;
+      border-color: #8e44ad;
+   }
+
+   /* FORMS */
+   .form-group {
+      margin-bottom: 20px;
+
+      label {
+         display: block;
+         margin-bottom: 8px;
+         color: #aaa;
+         font-size: 0.85em;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+      }
+   }
+
+   fieldset {
+      border: 1px solid #333;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 25px;
+
+      legend {
+         padding: 0 10px;
+         color: #ff6400;
+         font-weight: 600;
+         text-transform: uppercase;
+         font-size: 0.8em;
+      }
+   }
+
+   .color-picker-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+
+      input[type="color"] {
+         flex: 0 0 40px !important;
+         height: 32px !important;
+      }
+   }
+
+   .modular-border-fields {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+
+      input[type="number"] {
+         flex: 0 0 60px;
+         background: rgba(0, 0, 0, 0.3);
+         border: 1px solid #444;
+         color: #fff;
+         padding: 5px;
+         border-radius: 4px;
+         text-align: center;
+      }
+
+      select {
+         flex: 1;
+         background: #222;
+         border: 1px solid #444;
+         color: #fff;
+         height: 32px;
+         border-radius: 4px;
+         padding: 0 5px;
+      }
+
+      input[type="color"] {
+         flex: 0 0 40px !important;
+         height: 32px !important;
+      }
+   }
+
+   /* File Picker Fix */
+   .file-picker-group {
+      display: flex;
+      gap: 8px;
+
+      button {
+         flex: 0 0 40px;
+         background: #333;
+         border: 1px solid #444;
+         color: #ccc;
+         border-radius: 4px;
+         cursor: pointer;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+
+         &:hover {
+            background: #444;
+            color: #fff;
+         }
+      }
+   }
+
+   /* Empty State */
+   .empty-state {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      color: #666;
+
+      i {
+         font-size: 5em;
+         margin-bottom: 20px;
+         color: #444;
+      }
    }
 }
 
-/* File Picker Fix */
-.file-picker-group {
-   display: flex;
-   gap: 8px;
-}
-
-.file-picker-group button {
-   flex: 0 0 40px;
-   background: #333;
-   border: 1px solid #444;
-   color: #ccc;
-   border-radius: 4px;
-   cursor: pointer;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-}
-
-.file-picker-group button:hover {
-   background: #444;
-   color: #fff;
-}
-
-/* Empty State */
-.empty-state {
-   display: flex;
-   flex-direction: column;
-   justify-content: center;
-   align-items: center;
-   height: 100%;
-   color: #666;
-}
-
-.empty-state i {
-   font-size: 5em;
-   margin-bottom: 20px;
-   color: #444;
-}
 
 /* --- Subtitles & Portraits --- */
 #storyteller-cinema-overlay {
@@ -1125,4 +1121,17 @@ body:has(#simple-requests-chat-body) .storyteller-cinema-tray-app {
 }
 
 /* --- Chat Overlay (REMOVED) --- */
+
+/* ==========================================================================
+   SYSTEM COMPATIBILITY FIXES
+   ========================================================================== */
+
+/* --- Pathfinder 2e (PF2e) Character Sheet Compatibility Fix --- 
+   Prevents layout collapse and overlapping in .sheet-content by enabling flex-wrap.
+*/
+.actor.sheet section.window-content form.crb-style .sheet-body .sheet-content,
+.actor.sheet section.window-content form.crb-style .sheet-body .sheet-content .inventory {
+    flex-wrap: wrap;
+}
+
 

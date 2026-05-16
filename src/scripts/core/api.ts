@@ -311,19 +311,20 @@ export class StorytellerAPI {
             this.cinematicContainer = new (PIXI as any).Container();
             this.cinematicContainer.sortableChildren = true;
             
-            const stage = canvas.stage;
-            stage.addChild(this.cinematicContainer); // Add to top first
+            // In V14, effects is nested inside environment. We need to find the actual parent to get/set the index.
+            const effects = (canvas as any).effects;
+            const parent = effects?.parent || canvas.stage;
+            
+            parent.addChild(this.cinematicContainer);
 
-            // Now try to move it just below effects
             try {
-                if ( (canvas as any).effects ) {
-                    const effectsIndex = stage.getChildIndex((canvas as any).effects);
-                    // Insert at effectsIndex moves effects to index+1
-                    stage.setChildIndex(this.cinematicContainer, Math.max(0, effectsIndex));
-                    console.log(`Storyteller Cinema | Container layered at index ${effectsIndex} (below effects)`);
+                if (effects) {
+                    const effectsIndex = parent.getChildIndex(effects);
+                    parent.setChildIndex(this.cinematicContainer, Math.max(0, effectsIndex));
+                    console.log(`Storyteller Cinema | Container layered at index ${effectsIndex} inside ${parent.constructor.name}`);
                 }
             } catch(e) {
-                console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top.");
+                console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.");
             }
         }
 
