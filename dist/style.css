@@ -59,10 +59,10 @@
   /* Um pouco mais alto para garantir cobertura */
   background-color: var(--cinematic-bar-bg, black);
   background-image: var(--cinematic-bg-texture, none);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-size: var(--cinematic-bg-size, cover);
+  background-position: var(--cinematic-bg-position, center);
+  background-repeat: var(--cinematic-bg-repeat, no-repeat);
+  background-attachment: var(--cinematic-bg-attachment, scroll);
   border-bottom: var(--cinematic-bar-border, none);
   /* BLOQUEIO DE CLIQUES NA BARRA:
        Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
@@ -80,6 +80,11 @@
   justify-content: center;
   align-items: center;
   padding: 0 10%;
+  /* Garante que o fundo da barra de baixo também siga a configuração */
+  background-size: var(--cinematic-bg-size, cover);
+  background-position: var(--cinematic-bg-position, center);
+  background-repeat: var(--cinematic-bg-repeat, no-repeat);
+  background-attachment: var(--cinematic-bg-attachment, scroll);
 }
 #storyteller-cinema-overlay .cinematic-bar.bottom .subtitle-container {
   font-family: var(--stage-font-family, "Inter"), sans-serif;

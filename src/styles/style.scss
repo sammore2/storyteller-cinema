@@ -67,10 +67,10 @@
 
       background-color: var(--cinematic-bar-bg, black);
       background-image: var(--cinematic-bg-texture, none);
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
+      background-size: var(--cinematic-bg-size, cover);
+      background-position: var(--cinematic-bg-position, center);
+      background-repeat: var(--cinematic-bg-repeat, no-repeat);
+      background-attachment: var(--cinematic-bg-attachment, scroll);
 
       border-bottom: var(--cinematic-bar-border, none);
 
@@ -91,6 +91,12 @@
          justify-content: center;
          align-items: center;
          padding: 0 10%;
+
+         /* Garante que o fundo da barra de baixo também siga a configuração */
+         background-size: var(--cinematic-bg-size, cover);
+         background-position: var(--cinematic-bg-position, center);
+         background-repeat: var(--cinematic-bg-repeat, no-repeat);
+         background-attachment: var(--cinematic-bg-attachment, scroll);
 
          .subtitle-container {
             font-family: var(--stage-font-family, "Inter"), sans-serif;
