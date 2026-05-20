@@ -10,19 +10,19 @@
             <h3>Installed Skins</h3>
             <ul class="skin-list">
                 {{#each skins}}
-                <li class="skin-item {{#if (eq this.id ../activeSkin)}}active{{/if}}" data-id="{{this.id}}">
+                <li class="skin-item {{#if (eq this.id ../activeSkin)}}active{{/if}}" data-action="selectSkin" data-id="{{this.id}}">
                     <span class="skin-name">{{this.name}}</span>
                     {{#if (eq this.author "System")}}
                     <i class="fas fa-lock" title="System Skin"></i>
                     {{else}}
-                    <i class="fas fa-trash delete-skin" data-id="{{this.id}}" title="Delete Skin"></i>
+                    <i class="fas fa-trash" data-action="deleteSkin" data-id="{{this.id}}" title="Delete Skin"></i>
                     {{/if}}
                 </li>
                 {{/each}}
             </ul>
             <div class="sidebar-actions">
-                <button class="create-skin-btn"><i class="fas fa-plus"></i> Create New Skin</button>
-                <button class="import-skin-btn"><i class="fas fa-file-import"></i> Import JSON</button>
+                <button type="button" data-action="createSkin"><i class="fas fa-plus"></i> Create New Skin</button>
+                <button type="button" data-action="importSkin"><i class="fas fa-file-import"></i> Import JSON</button>
             </div>
         </aside>
 
@@ -33,10 +33,10 @@
                 <h2>{{selectedSkin.name}}</h2>
                 <div class="actions">
                     {{#unless (eq selectedSkin.author "System")}}
-                    <button class="save-skin-btn"><i class="fas fa-save"></i> Save</button>
+                    <button type="button" data-action="saveSkin"><i class="fas fa-save"></i> Save</button>
                     {{/unless}}
-                    <button class="export-skin-btn" title="Export JSON"><i class="fas fa-file-export"></i></button>
-                    <button class="apply-skin-btn"><i class="fas fa-check"></i> Apply to Scene</button>
+                    <button type="button" data-action="exportSkin" title="Export JSON"><i class="fas fa-file-export"></i></button>
+                    <button type="button" data-action="applySkin"><i class="fas fa-check"></i> Apply to Scene</button>
                 </div>
             </div>
 
@@ -53,23 +53,14 @@
                     <legend>Textures</legend>
                     <div class="form-group">
                         <label>Bar Texture (Leather/Wood)</label>
-                        <div class="file-picker-group">
-                            <input type="text" name="options.barTexture" value="{{selectedSkin.options.barTexture}}" />
-                            <button class="file-picker" data-target="options.barTexture"><i
-                                    class="fas fa-file-import"></i></button>
-                        </div>
+                        <file-picker type="image" name="options.barTexture" value="{{selectedSkin.options.barTexture}}"></file-picker>
                     </div>
                     <div class="form-group">
                         <label>Overlay (Grain/Vignette)</label>
-                        <div class="file-picker-group">
-                            <input type="text" name="options.overlayTexture"
-                                value="{{selectedSkin.options.overlayTexture}}" />
-                            <button class="file-picker" data-target="options.overlayTexture"><i
-                                    class="fas fa-file-image"></i></button>
-                        </div>
+                        <file-picker type="image" name="options.overlayTexture" value="{{selectedSkin.options.overlayTexture}}"></file-picker>
                     </div>
                 </fieldset>
-
+ 
                 <!-- FILTERS -->
                 <fieldset>
                     <legend>Global Filters</legend>
@@ -82,18 +73,13 @@
                         <code>blur(2px)</code>, etc.
                     </p>
                 </fieldset>
-
+ 
                 <!-- COLORS & BORDERS -->
                 <fieldset>
                     <legend>Colors & Borders</legend>
                     <div class="form-group">
                         <label>Bar Background</label>
-                        <div class="color-picker-group">
-                            <input type="text" name="options.styles.--cinematic-bar-bg"
-                                value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}" />
-                            <input type="color" class="color-swatch" name="options.styles.--cinematic-bar-bg"
-                                value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}" />
-                        </div>
+                        <color-picker name="options.styles.--cinematic-bar-bg" value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}"></color-picker>
                     </div>
                     <div class="form-group">
                         <label>Border Style</label>

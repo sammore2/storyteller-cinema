@@ -25,6 +25,20 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       position: {
         width: 800,
         height: 600
+      },
+      form: {
+        handler: SkinConfig._onSubmit,
+        submitOnChange: true,
+        closeOnSubmit: false
+      },
+      actions: {
+        selectSkin: SkinConfig._onSelectSkin,
+        deleteSkin: SkinConfig._onDeleteSkin,
+        createSkin: SkinConfig._createNewSkin,
+        importSkin: SkinConfig._importSkinDialog,
+        saveSkin: SkinConfig._onSaveSkin,
+        exportSkin: SkinConfig._onExportSkin,
+        applySkin: SkinConfig._onApplySkin
       }
     };
   }
@@ -60,59 +74,40 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
   _onRender(_context, _options) {
-    var _a, _b, _c, _d, _e, _f;
     if (!this._hookId) {
       this._hookId = Hooks.on("storyteller-cinema-skins-updated", () => {
         if (this.rendered) this.render();
       });
     }
-    const inputs = this.element.querySelectorAll("input:not(.border-input), select:not(.border-input)");
-    inputs.forEach((input) => {
-      input.addEventListener("change", (ev) => this._onInputChange(ev));
-    });
-    const borderInputs = this.element.querySelectorAll(".border-input");
-    borderInputs.forEach((input) => {
-      input.addEventListener("change", () => {
-        const width = this.element.querySelector('[name="border.width"]').value;
-        const style = this.element.querySelector('[name="border.style"]').value;
-        const color = this.element.querySelector('[name="border.color"]').value;
-        const newBorder = `${width}px ${style} ${color}`;
-        this._setValue(this.tempSkinData, "options.styles.--cinematic-bar-border", newBorder);
-      });
-    });
-    const skinItems = this.element.querySelectorAll(".skin-item");
-    skinItems.forEach((el) => {
-      el.addEventListener("click", () => {
-        const id = el.dataset.id;
-        this.selectedSkinId = id;
-        this.tempSkinData = null;
-        this.render();
-      });
-    });
-    (_a = this.element.querySelector(".delete-skin")) == null ? void 0 : _a.addEventListener("click", (ev) => this._onDeleteSkin(ev));
-    (_b = this.element.querySelector(".apply-skin-btn")) == null ? void 0 : _b.addEventListener("click", () => this._onApplySkin());
-    (_c = this.element.querySelector(".save-skin-btn")) == null ? void 0 : _c.addEventListener("click", () => this._onSaveSkin());
-    (_d = this.element.querySelector(".create-skin-btn")) == null ? void 0 : _d.addEventListener("click", () => this._createNewSkin());
-    (_e = this.element.querySelector(".export-skin-btn")) == null ? void 0 : _e.addEventListener("click", () => this._onExportSkin());
-    (_f = this.element.querySelector(".import-skin-btn")) == null ? void 0 : _f.addEventListener("click", () => this._importSkinDialog());
-    const filePickers = this.element.querySelectorAll(".file-picker");
-    filePickers.forEach((btn) => {
-      btn.addEventListener("click", () => this._onFilePicker(btn));
-    });
   }
-  _onInputChange(event) {
-    const input = event.currentTarget;
-    const field = input.name;
-    const value = input.value;
-    this._setValue(this.tempSkinData, field, value);
-    const others = this.element.querySelectorAll(`[name="${field}"]`);
-    others.forEach((other) => {
-      if (other !== input) other.value = value;
-    });
+  static async _onSubmit(_event, _form, formData) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    const expanded = foundry.utils.expandObject(formData.object);
+    this.tempSkinData.name = expanded.name;
+    this.tempSkinData.options = this.tempSkinData.options || {};
+    this.tempSkinData.options.barTexture = ((_a = expanded.options) == null ? void 0 : _a.barTexture) || "";
+    this.tempSkinData.options.overlayTexture = ((_b = expanded.options) == null ? void 0 : _b.overlayTexture) || "";
+    this.tempSkinData.options.filter = ((_c = expanded.options) == null ? void 0 : _c.filter) || "";
+    this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
+    this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_e = (_d = expanded.options) == null ? void 0 : _d.styles) == null ? void 0 : _e["--cinematic-bar-bg"]) || "#000000";
+    const borderWidth = ((_f = expanded.border) == null ? void 0 : _f.width) ?? 0;
+    const borderStyle = ((_g = expanded.border) == null ? void 0 : _g.style) ?? "none";
+    const borderColor = ((_h = expanded.border) == null ? void 0 : _h.color) ?? "#000000";
+    const newBorder = `${borderWidth}px ${borderStyle} ${borderColor}`;
+    this.tempSkinData.options.styles["--cinematic-bar-border"] = newBorder;
+    this.render();
   }
-  async _onDeleteSkin(ev) {
-    ev.stopPropagation();
-    const id = ev.currentTarget.dataset.id;
+  static _onSelectSkin(_event, target) {
+    const id = target.dataset.id;
+    if (!id) return;
+    this.selectedSkinId = id;
+    this.tempSkinData = null;
+    this.render();
+  }
+  static async _onDeleteSkin(event, target) {
+    event.stopPropagation();
+    const id = target.dataset.id;
+    if (!id) return;
     const skins = window.StorytellerCinema.skins;
     if (!skins) return;
     const confirmed = await foundry.applications.api.DialogV2.confirm({
@@ -130,7 +125,7 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
   }
-  _onApplySkin() {
+  static _onApplySkin() {
     var _a;
     const skins = window.StorytellerCinema.skins;
     if (this.tempSkinData && skins) {
@@ -139,7 +134,7 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       (_a = ui.notifications) == null ? void 0 : _a.info("Storyteller Cinema | Skin Applied (Not Saved)");
     }
   }
-  _onSaveSkin() {
+  static _onSaveSkin() {
     var _a;
     const skins = window.StorytellerCinema.skins;
     if (this.tempSkinData && skins) {
@@ -148,29 +143,13 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       (_a = ui.notifications) == null ? void 0 : _a.info("Storyteller Cinema | Skin Saved & Applied");
     }
   }
-  _onExportSkin() {
+  static _onExportSkin() {
     const skins = window.StorytellerCinema.skins;
     if (!skins) return;
     const id = this.selectedSkinId;
     skins.exportSkin(id);
   }
-  _onFilePicker(btn) {
-    var _a, _b;
-    const target = btn.dataset.target;
-    const currentVal = this._getValue(this.tempSkinData, target);
-    const startPath = currentVal || "storyteller-cinema/";
-    const FilePickerClass = ((_b = (_a = foundry.applications) == null ? void 0 : _a.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
-    const filePicker = new FilePickerClass({
-      type: "image",
-      current: startPath,
-      callback: (path) => {
-        this._setValue(this.tempSkinData, target, path);
-        this.render();
-      }
-    });
-    filePicker.browse();
-  }
-  _createNewSkin() {
+  static _createNewSkin() {
     var _a;
     const skins = window.StorytellerCinema.skins;
     if (!skins) return;
@@ -193,7 +172,7 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     this.tempSkinData = null;
     this.render();
   }
-  _importSkinDialog() {
+  static _importSkinDialog() {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".json";
