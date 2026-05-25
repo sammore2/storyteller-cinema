@@ -15,7 +15,7 @@ export class CinematicSceneConfig extends (HandlebarsApplicationMixin(Applicatio
     static get DEFAULT_OPTIONS() {
         return {
             id: "cinematic-scene-config",
-            tag: "form",
+            tagName: "form",
             window: {
                 title: "Configuração de Cena Cinemática",
                 icon: "fas fa-film",

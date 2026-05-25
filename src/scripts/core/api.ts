@@ -295,6 +295,8 @@ export class StorytellerAPI {
         console.log(`Storyteller Cinema | Updating background to: ${path}`);
         if (this._lastBackgroundPath === path && this.cinematicSprite) {
             this.cinematicSprite.visible = true;
+            const dim = canvas.scene?.getFlag('storyteller-cinema', 'cinematicBgDim') ?? 0;
+            this.cinematicSprite.alpha = 1 - Math.min(1, Math.max(0, Number(dim)));
             return;
         }
         this._lastBackgroundPath = path;
@@ -356,6 +358,9 @@ export class StorytellerAPI {
                 this.cinematicSprite.width = rect.width;
                 this.cinematicSprite.height = rect.height;
                 this.cinematicSprite.position.set(rect.x, rect.y);
+
+                const dim = canvas.scene?.getFlag('storyteller-cinema', 'cinematicBgDim') ?? 0;
+                this.cinematicSprite.alpha = 1 - Math.min(1, Math.max(0, Number(dim)));
             }
         }).catch((err: Error) => {
             console.error("Storyteller Cinema | Failed to load background texture:", err);

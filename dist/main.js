@@ -169,7 +169,7 @@ Hooks.on("canvasReady", () => {
   window.StorytellerCinema.toggle(shouldBeCinematic, { init: true });
 });
 Hooks.on("updateScene", async (doc, change) => {
-  var _a, _b, _c, _d;
+  var _a, _b, _c, _d, _e, _f;
   if (!doc.isView) return;
   const activeChange = (_b = (_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) == null ? void 0 : _b.active;
   if (activeChange !== void 0) {
@@ -179,7 +179,8 @@ Hooks.on("updateScene", async (doc, change) => {
   }
   if (window.StorytellerCinema.active) {
     const flagChange = (_d = (_c = change.flags) == null ? void 0 : _c["storyteller-cinema"]) == null ? void 0 : _d.cinematicBg;
-    if (flagChange !== void 0) {
+    const dimChange = (_f = (_e = change.flags) == null ? void 0 : _e["storyteller-cinema"]) == null ? void 0 : _f.cinematicBgDim;
+    if (flagChange !== void 0 || dimChange !== void 0) {
       window.StorytellerCinema.toggle(true);
     }
     window.StorytellerCinema.enforceVision();

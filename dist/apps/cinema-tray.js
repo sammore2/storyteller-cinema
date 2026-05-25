@@ -109,7 +109,7 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 __publicField(CinemaTray, "DEFAULT_OPTIONS", {
   id: "storyteller-cinema-tray",
-  tag: "div",
+  tagName: "div",
   classes: ["storyteller-cinema-tray-app"],
   window: {
     frame: false,

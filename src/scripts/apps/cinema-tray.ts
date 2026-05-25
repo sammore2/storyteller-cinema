@@ -6,7 +6,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = (foundry.applications as a
 export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "storyteller-cinema-tray",
-        tag: "div",
+        tagName: "div",
         classes: ["storyteller-cinema-tray-app"],
         window: {
             frame: false,

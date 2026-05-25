@@ -224,6 +224,7 @@ class StorytellerAPI {
     }
   }
   _updateCanvasBackground(path) {
+    var _a;
     if (!path) {
       if (this.cinematicSprite) this.cinematicSprite.visible = false;
       this._lastBackgroundPath = null;
@@ -232,6 +233,8 @@ class StorytellerAPI {
     console.log(`Storyteller Cinema | Updating background to: ${path}`);
     if (this._lastBackgroundPath === path && this.cinematicSprite) {
       this.cinematicSprite.visible = true;
+      const dim = ((_a = canvas.scene) == null ? void 0 : _a.getFlag("storyteller-cinema", "cinematicBgDim")) ?? 0;
+      this.cinematicSprite.alpha = 1 - Math.min(1, Math.max(0, Number(dim)));
       return;
     }
     this._lastBackgroundPath = path;
@@ -262,7 +265,7 @@ class StorytellerAPI {
       }
     }
     PIXI.Assets.load(path).then((tex) => {
-      var _a;
+      var _a2, _b;
       if (!tex) {
         console.error("Storyteller Cinema | Texture failed to load:", path);
         return;
@@ -272,7 +275,7 @@ class StorytellerAPI {
       }
       if (!this.cinematicSprite) {
         this.cinematicSprite = new PIXI.Sprite(tex);
-        (_a = this.cinematicContainer) == null ? void 0 : _a.addChild(this.cinematicSprite);
+        (_a2 = this.cinematicContainer) == null ? void 0 : _a2.addChild(this.cinematicSprite);
       } else {
         this.cinematicSprite.texture = tex;
       }
@@ -282,6 +285,8 @@ class StorytellerAPI {
         this.cinematicSprite.width = rect.width;
         this.cinematicSprite.height = rect.height;
         this.cinematicSprite.position.set(rect.x, rect.y);
+        const dim = ((_b = canvas.scene) == null ? void 0 : _b.getFlag("storyteller-cinema", "cinematicBgDim")) ?? 0;
+        this.cinematicSprite.alpha = 1 - Math.min(1, Math.max(0, Number(dim)));
       }
     }).catch((err) => {
       console.error("Storyteller Cinema | Failed to load background texture:", err);

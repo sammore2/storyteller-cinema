@@ -86,7 +86,7 @@ class DialogueConsole extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 __publicField(DialogueConsole, "DEFAULT_OPTIONS", {
   id: "storyteller-cinema-dialogue-console",
-  tag: "form",
+  tagName: "form",
   classes: ["storyteller-cinema-app", "dialogue-console-app"],
   window: {
     title: "Cinema Director Console",

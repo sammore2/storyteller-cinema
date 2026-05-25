@@ -207,7 +207,8 @@ Hooks.on('updateScene', async (doc: any, change: any) => {
 
   if (window.StorytellerCinema.active) {
     const flagChange = change.flags?.['storyteller-cinema']?.cinematicBg;
-    if (flagChange !== undefined) {
+    const dimChange = change.flags?.['storyteller-cinema']?.cinematicBgDim;
+    if (flagChange !== undefined || dimChange !== undefined) {
       window.StorytellerCinema.toggle(true);
     }
     window.StorytellerCinema.enforceVision();
