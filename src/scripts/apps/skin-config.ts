@@ -29,6 +29,20 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
             position: {
                 width: 800,
                 height: 600
+            },
+            form: {
+                handler: SkinConfig._onSubmit,
+                submitOnChange: true,
+                closeOnSubmit: false
+            },
+            actions: {
+                selectSkin: SkinConfig._onSelectSkin,
+                deleteSkin: SkinConfig._onDeleteSkin,
+                createSkin: SkinConfig._createNewSkin,
+                importSkin: SkinConfig._importSkinDialog,
+                saveSkin: SkinConfig._onSaveSkin,
+                exportSkin: SkinConfig._onExportSkin,
+                applySkin: SkinConfig._onApplySkin
             }
         };
     }
@@ -77,67 +91,48 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
                 if (this.rendered) this.render();
             });
         }
-
-        // General Inputs
-        const inputs = this.element.querySelectorAll('input:not(.border-input), select:not(.border-input)');
-        inputs.forEach((input: any) => {
-            input.addEventListener('change', (ev: any) => this._onInputChange(ev));
-        });
-
-        // Modular Border Inputs
-        const borderInputs = this.element.querySelectorAll('.border-input');
-        borderInputs.forEach((input: any) => {
-            input.addEventListener('change', () => {
-                const width = (this.element.querySelector('[name="border.width"]') as any).value;
-                const style = (this.element.querySelector('[name="border.style"]') as any).value;
-                const color = (this.element.querySelector('[name="border.color"]') as any).value;
-                const newBorder = `${width}px ${style} ${color}`;
-                this._setValue(this.tempSkinData, 'options.styles.--cinematic-bar-border', newBorder);
-            });
-        });
-
-        // Skin Selection
-        const skinItems = this.element.querySelectorAll('.skin-item');
-        skinItems.forEach((el: any) => {
-            el.addEventListener('click', () => {
-                const id = el.dataset.id;
-                this.selectedSkinId = id;
-                this.tempSkinData = null;
-                this.render();
-            });
-        });
-
-        // Actions
-        this.element.querySelector('.delete-skin')?.addEventListener('click', (ev: any) => this._onDeleteSkin(ev));
-        this.element.querySelector('.apply-skin-btn')?.addEventListener('click', () => this._onApplySkin());
-        this.element.querySelector('.save-skin-btn')?.addEventListener('click', () => this._onSaveSkin());
-        this.element.querySelector('.create-skin-btn')?.addEventListener('click', () => this._createNewSkin());
-        this.element.querySelector('.export-skin-btn')?.addEventListener('click', () => this._onExportSkin());
-        this.element.querySelector('.import-skin-btn')?.addEventListener('click', () => this._importSkinDialog());
-
-        // File Pickers
-        const filePickers = this.element.querySelectorAll('.file-picker');
-        filePickers.forEach((btn: any) => {
-            btn.addEventListener('click', () => this._onFilePicker(btn));
-        });
     }
 
-    _onInputChange(event: any): void {
-        const input = event.currentTarget;
-        const field = input.name;
-        const value = input.value;
-        this._setValue(this.tempSkinData, field, value);
+    static async _onSubmit(
+        this: SkinConfig,
+        _event: SubmitEvent | Event,
+        _form: HTMLFormElement,
+        formData: any
+    ): Promise<void> {
+        // Expand flat dot-notation keys
+        const expanded = (foundry.utils as any).expandObject(formData.object) as any;
 
-        // Sync other inputs with same name (e.g., text <-> color picker)
-        const others = this.element.querySelectorAll(`[name="${field}"]`);
-        others.forEach((other: any) => {
-            if (other !== input) other.value = value;
-        });
+        this.tempSkinData.name = expanded.name;
+        this.tempSkinData.options = this.tempSkinData.options || {};
+        this.tempSkinData.options.barTexture = expanded.options?.barTexture || '';
+        this.tempSkinData.options.overlayTexture = expanded.options?.overlayTexture || '';
+        this.tempSkinData.options.filter = expanded.options?.filter || '';
+
+        this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
+        this.tempSkinData.options.styles['--cinematic-bar-bg'] = expanded.options?.styles?.['--cinematic-bar-bg'] || '#000000';
+
+        // Reconstruct border string
+        const borderWidth = expanded.border?.width ?? 0;
+        const borderStyle = expanded.border?.style ?? 'none';
+        const borderColor = expanded.border?.color ?? '#000000';
+        const newBorder = `${borderWidth}px ${borderStyle} ${borderColor}`;
+        this.tempSkinData.options.styles['--cinematic-bar-border'] = newBorder;
+
+        this.render();
     }
 
-    async _onDeleteSkin(ev: any): Promise<void> {
-        ev.stopPropagation();
-        const id = ev.currentTarget.dataset.id;
+    static _onSelectSkin(this: SkinConfig, _event: PointerEvent, target: HTMLElement): void {
+        const id = target.dataset.id;
+        if (!id) return;
+        this.selectedSkinId = id;
+        this.tempSkinData = null;
+        this.render();
+    }
+
+    static async _onDeleteSkin(this: SkinConfig, event: PointerEvent, target: HTMLElement): Promise<void> {
+        event.stopPropagation();
+        const id = target.dataset.id;
+        if (!id) return;
         const skins = window.StorytellerCinema.skins;
         if (!skins) return;
 
@@ -159,7 +154,7 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         }
     }
 
-    _onApplySkin(): void {
+    static _onApplySkin(this: SkinConfig): void {
         const skins = window.StorytellerCinema.skins;
         if (this.tempSkinData && skins) {
             skins.register(this.tempSkinData, false);
@@ -168,7 +163,7 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         }
     }
 
-    _onSaveSkin(): void {
+    static _onSaveSkin(this: SkinConfig): void {
         const skins = window.StorytellerCinema.skins;
         if (this.tempSkinData && skins) {
             skins.register(this.tempSkinData, true);
@@ -177,31 +172,14 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         }
     }
 
-    _onExportSkin(): void {
+    static _onExportSkin(this: SkinConfig): void {
         const skins = window.StorytellerCinema.skins;
         if (!skins) return;
         const id = this.selectedSkinId;
         skins.exportSkin(id);
     }
 
-    _onFilePicker(btn: any): void {
-        const target = btn.dataset.target;
-        const currentVal = this._getValue(this.tempSkinData, target);
-        const startPath = currentVal || 'storyteller-cinema/';
-
-        const FilePickerClass = (foundry as any).applications?.apps?.FilePicker || FilePicker;
-        const filePicker = new FilePickerClass({
-            type: "image",
-            current: startPath,
-            callback: (path: string) => {
-                this._setValue(this.tempSkinData, target, path);
-                this.render();
-            }
-        });
-        filePicker.browse();
-    }
-
-    _createNewSkin(): void {
+    static _createNewSkin(this: SkinConfig): void {
         const skins = window.StorytellerCinema.skins;
         if (!skins) return;
 
@@ -226,7 +204,7 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         this.render();
     }
 
-    _importSkinDialog(): void {
+    static _importSkinDialog(this: SkinConfig): void {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';

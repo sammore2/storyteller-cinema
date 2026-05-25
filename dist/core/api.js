@@ -243,17 +243,22 @@ class StorytellerAPI {
     if (!this.cinematicContainer) {
       this.cinematicContainer = new PIXI.Container();
       this.cinematicContainer.sortableChildren = true;
-      const effects = canvas.effects;
-      const parent = (effects == null ? void 0 : effects.parent) || canvas.stage;
+      const parent = canvas.stage;
       parent.addChild(this.cinematicContainer);
       try {
-        if (effects) {
-          const effectsIndex = parent.getChildIndex(effects);
-          parent.setChildIndex(this.cinematicContainer, Math.max(0, effectsIndex));
-          console.log(`Storyteller Cinema | Container layered at index ${effectsIndex} inside ${parent.constructor.name}`);
+        const weather = canvas.weather;
+        const rendered = canvas.rendered;
+        if (weather && parent.children.includes(weather)) {
+          const weatherIndex = parent.getChildIndex(weather);
+          parent.setChildIndex(this.cinematicContainer, weatherIndex);
+          console.log(`Storyteller Cinema | Container layered at index ${weatherIndex} (below weather) inside canvas.stage`);
+        } else if (rendered && parent.children.includes(rendered)) {
+          const renderedIndex = parent.getChildIndex(rendered);
+          parent.setChildIndex(this.cinematicContainer, renderedIndex + 1);
+          console.log(`Storyteller Cinema | Container layered at index ${renderedIndex + 1} inside canvas.stage`);
         }
       } catch (e) {
-        console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.");
+        console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.", e);
       }
     }
     PIXI.Assets.load(path).then((tex) => {

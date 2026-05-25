@@ -53,7 +53,9 @@ Hooks.once("init", async function() {
       "Merriweather": "Merriweather (Classic Serif)",
       "Courier Prime": "Courier Prime (Typewriter)"
     },
-    onChange: () => window.location.reload()
+    onChange: (value) => {
+      document.documentElement.style.setProperty("--stage-font-family", value);
+    }
   });
   game.settings.register("storyteller-cinema", "stageFontSize", {
     name: "Stage Font Size (px)",
@@ -63,7 +65,9 @@ Hooks.once("init", async function() {
     type: Number,
     default: 24,
     range: { min: 14, max: 48, step: 2 },
-    onChange: () => window.location.reload()
+    onChange: (value) => {
+      document.documentElement.style.setProperty("--stage-font-size", `${value}px`);
+    }
   });
   game.settings.register("storyteller-cinema", "stageActorFontSize", {
     name: "Stage Actor Name Font Size (px)",
@@ -73,7 +77,9 @@ Hooks.once("init", async function() {
     type: Number,
     default: 28,
     range: { min: 14, max: 60, step: 2 },
-    onChange: () => window.location.reload()
+    onChange: (value) => {
+      document.documentElement.style.setProperty("--stage-actor-font-size", `${value}px`);
+    }
   });
   game.settings.register("storyteller-cinema", "stageActorFontFamily", {
     name: "Stage Actor Font Family",
@@ -89,7 +95,9 @@ Hooks.once("init", async function() {
       "Merriweather": "Merriweather (Classic Serif)",
       "Courier Prime": "Courier Prime (Typewriter)"
     },
-    onChange: () => window.location.reload()
+    onChange: (value) => {
+      document.documentElement.style.setProperty("--stage-actor-font-family", value);
+    }
   });
   game.settings.register("storyteller-cinema", "trayOpacity", {
     name: "Tray Idle Opacity",
@@ -191,5 +199,17 @@ Hooks.once("socketlib.ready", () => {
   } else {
     console.warn("Storyteller Cinema | Socketlib registration failed. Broadcast features will be disabled.");
   }
+});
+Hooks.once("ready", () => {
+  const fontFamily = game.settings.get("storyteller-cinema", "stageFontFamily");
+  const fontSize = game.settings.get("storyteller-cinema", "stageFontSize");
+  const actorFontFamily = game.settings.get("storyteller-cinema", "stageActorFontFamily");
+  const actorFontSize = game.settings.get("storyteller-cinema", "stageActorFontSize");
+  const idleOpacity = game.settings.get("storyteller-cinema", "trayOpacity");
+  document.documentElement.style.setProperty("--stage-font-family", fontFamily);
+  document.documentElement.style.setProperty("--stage-font-size", `${fontSize}px`);
+  document.documentElement.style.setProperty("--stage-actor-font-family", actorFontFamily);
+  document.documentElement.style.setProperty("--stage-actor-font-size", `${actorFontSize}px`);
+  document.documentElement.style.setProperty("--tray-idle-opacity", idleOpacity.toString());
 });
 //# sourceMappingURL=main.js.map
