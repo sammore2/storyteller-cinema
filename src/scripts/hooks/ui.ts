@@ -57,6 +57,7 @@ export function registerUIHooks(): void {
             const flags = (scene.flags?.['storyteller-cinema'] as any) || {};
             const bgValue = flags.cinematicBg || "";
             const viewMode = flags.viewMode || "battlemap";
+            const bgDimValue = flags.cinematicBgDim ?? 0;
 
             const container = document.createElement('div');
             container.className = 'storyteller-cinema-config';
@@ -90,9 +91,34 @@ export function registerUIHooks(): void {
                         <input class="image" type="text" name="flags.storyteller-cinema.cinematicBg" placeholder="Image path..." value="${bgValue}">
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Cinematic Background Dimness</label>
+                    <div class="form-fields">
+                        <input type="range" name="flags.storyteller-cinema.cinematicBgDim" min="0" max="1" step="0.05" value="${bgDimValue}">
+                        <span class="range-value" style="margin-left: 8px; font-weight: bold; color: white;">${Math.round(bgDimValue * 100)}%</span>
+                    </div>
+                </div>
             `;
 
             targetContainer.appendChild(container);
+
+            const rangeInput = container.querySelector("input[name='flags.storyteller-cinema.cinematicBgDim']") as HTMLInputElement;
+            const rangeValueSpan = container.querySelector(".range-value") as HTMLElement;
+            if (rangeInput) {
+                rangeInput.oninput = () => {
+                    if (rangeValueSpan) rangeValueSpan.textContent = `${Math.round(Number(rangeInput.value) * 100)}%`;
+                };
+                rangeInput.onchange = async () => {
+                    await scene.setFlag('storyteller-cinema', 'cinematicBgDim', Number(rangeInput.value));
+                };
+            }
+
+            const bgInput = container.querySelector("input[name='flags.storyteller-cinema.cinematicBg']") as HTMLInputElement;
+            if (bgInput) {
+                bgInput.onchange = async () => {
+                    await scene.setFlag('storyteller-cinema', 'cinematicBg', bgInput.value);
+                };
+            }
 
             const btn = container.querySelector("button.file-picker") as HTMLButtonElement;
             if (btn) {
@@ -102,11 +128,10 @@ export function registerUIHooks(): void {
                     const fp = new FilePickerClass({
                         type: "image",
                         current: bgValue,
-                        callback: (path: string) => {
-                            const input = container.querySelector("input[name='flags.storyteller-cinema.cinematicBg']") as HTMLInputElement;
-                            if (input) {
-                                input.value = path;
-                                input.dispatchEvent(new Event('change', { bubbles: true }));
+                        callback: async (path: string) => {
+                            if (bgInput) {
+                                bgInput.value = path;
+                                bgInput.dispatchEvent(new Event('change', { bubbles: true }));
                             }
                         }
                     });

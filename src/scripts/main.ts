@@ -50,6 +50,19 @@ Hooks.once('init', async function () {
     default: []
   });
 
+  game.settings.register('storyteller-cinema', 'activePortraits', {
+    name: "Active Portraits",
+    scope: "world",
+    config: false,
+    type: Array,
+    default: [],
+    onChange: () => {
+      if (window.StorytellerCinema) {
+        window.StorytellerCinema.refreshPortraits();
+      }
+    }
+  });
+
   game.settings.register('storyteller-cinema', 'stageFontFamily', {
     name: "Stage Font Family",
     hint: "The font family used for dialogue subtitles on the stage.",
@@ -207,7 +220,8 @@ Hooks.on('updateScene', async (doc: any, change: any) => {
 
   if (window.StorytellerCinema.active) {
     const flagChange = change.flags?.['storyteller-cinema']?.cinematicBg;
-    if (flagChange !== undefined) {
+    const dimChange = change.flags?.['storyteller-cinema']?.cinematicBgDim;
+    if (flagChange !== undefined || dimChange !== undefined) {
       window.StorytellerCinema.toggle(true);
     }
     window.StorytellerCinema.enforceVision();

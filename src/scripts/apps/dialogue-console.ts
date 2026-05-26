@@ -6,7 +6,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = (foundry.applications as a
 export class DialogueConsole extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "storyteller-cinema-dialogue-console",
-        tag: "form",
+        tagName: "form",
         classes: ["storyteller-cinema-app", "dialogue-console-app"],
         window: {
             title: "Cinema Director Console",

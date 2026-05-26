@@ -17,7 +17,7 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
 
     static get DEFAULT_OPTIONS() {
         return {
-            tag: "form",
+            tagName: "form",
             id: "storyteller-cinema-skin-config",
             window: {
                 title: "Storyteller Cinema - Skin Studio",
@@ -86,11 +86,22 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
     }
 
     _onRender(_context: any, _options: any): void {
+        super._onRender(_context, _options);
         if (!this._hookId) {
             this._hookId = Hooks.on('storyteller-cinema-skins-updated', () => {
                 if (this.rendered) this.render();
             });
         }
+
+        // Keep tempSkinData in sync with form inputs immediately on change to avoid V14 race conditions
+        const html = this.element;
+        html.addEventListener('change', (event: Event) => {
+            const target = event.target as HTMLInputElement;
+            if (!target || !target.name) return;
+            if (this.tempSkinData) {
+                this._setValue(this.tempSkinData, target.name, target.value);
+            }
+        });
     }
 
     static async _onSubmit(

@@ -13,7 +13,7 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   }
   static get DEFAULT_OPTIONS() {
     return {
-      tag: "form",
+      tagName: "form",
       id: "storyteller-cinema-skin-config",
       window: {
         title: "Storyteller Cinema - Skin Studio",
@@ -74,11 +74,20 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
   _onRender(_context, _options) {
+    super._onRender(_context, _options);
     if (!this._hookId) {
       this._hookId = Hooks.on("storyteller-cinema-skins-updated", () => {
         if (this.rendered) this.render();
       });
     }
+    const html = this.element;
+    html.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!target || !target.name) return;
+      if (this.tempSkinData) {
+        this._setValue(this.tempSkinData, target.name, target.value);
+      }
+    });
   }
   static async _onSubmit(_event, _form, formData) {
     var _a, _b, _c, _d, _e, _f, _g, _h;
