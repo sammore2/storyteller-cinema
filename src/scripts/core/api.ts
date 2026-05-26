@@ -64,6 +64,7 @@ export class StorytellerAPI {
 
             // UI
             if (overlay) overlay.classList.add('active');
+            this.refreshPortraits();
             document.body.classList.add('cinematic-mode');
             if (skin) {
                 document.body.classList.add(`cinematic-skin-${skin}`);
@@ -130,7 +131,22 @@ export class StorytellerAPI {
     /**
      * Clear all active cinematic UI elements
      */
-    clear(): void {
+    async clear(): Promise<void> {
+        const socket = (game as any).modules.get('storyteller-cinema')?.socket;
+        if (socket && game.user?.isGM) {
+            socket.executeForEveryone('clearSubtitle');
+        } else {
+            this._clearLocal();
+        }
+        if (game.user?.isGM) {
+            await game.settings.set('storyteller-cinema', 'activePortraits', []);
+            await game.settings.set('storyteller-cinema', 'sceneCast', []);
+            const tray = (window as any).StorytellerCinema?.cinemaTray;
+            if (tray) tray.render(true);
+        }
+    }
+
+    clearSubtitles(): void {
         const socket = (game as any).modules.get('storyteller-cinema')?.socket;
         if (socket && game.user?.isGM) {
             socket.executeForEveryone('clearSubtitle');
@@ -162,12 +178,8 @@ export class StorytellerAPI {
             this._subtitleTimeout = null;
         }
 
-        // Update Subtitle
-        container.classList.remove('active', 'left', 'right');
-        const side = options.side || 'left';
-        container.classList.add(side);
-
         // Wait for fade out if it was active
+        container.classList.remove('active');
         setTimeout(() => {
             container.innerHTML = `
                 <div class="actor-name">${actorName}</div>
@@ -176,7 +188,11 @@ export class StorytellerAPI {
             container.classList.add('active');
 
             // Handle Portrait
-            this._showPortraitLocal(options.portrait, options.side || 'left');
+            if (options.portrait) {
+                this.refreshPortraits({ name: actorName, img: options.portrait });
+            } else {
+                this.refreshPortraits(null);
+            }
 
             // Auto-clear if duration provided
             if (options.duration) {
@@ -187,20 +203,107 @@ export class StorytellerAPI {
         }, 100);
     }
 
-    _showPortraitLocal(path: string | undefined, side: 'left' | 'right'): void {
+    refreshPortraits(speakingActor: { name: string, img: string } | null = null): void {
         const overlay = document.getElementById('storyteller-cinema-overlay');
         if (!overlay) return;
 
-        const container = overlay.querySelector(`.portrait-container.${side}`) as HTMLElement;
-        if (!container) return;
+        let container = overlay.querySelector('.portraits-container') as HTMLElement;
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'portraits-container';
+            overlay.appendChild(container);
+        }
 
-        if (!path) {
+        const activeIds = (game.settings.get('storyteller-cinema', 'activePortraits') as string[]) || [];
+        const portraitsToShow: { name: string, img: string, isTemp?: boolean }[] = [];
+
+        activeIds.forEach(id => {
+            let img = 'icons/svg/book.svg';
+            let name = 'Narrator';
+
+            if (id !== 'narrator') {
+                const actor = game.actors?.get(id);
+                if (actor) {
+                    img = actor.img || '';
+                    name = actor.name || '';
+                } else {
+                    return;
+                }
+            } else {
+                img = (game.user as any)?.avatar || 'icons/svg/book.svg';
+            }
+            portraitsToShow.push({ name, img });
+        });
+
+        // Add temporary speaker if not already on stage
+        if (speakingActor && speakingActor.name) {
+            const alreadyExists = portraitsToShow.some(p => p.name.toLowerCase() === speakingActor.name.toLowerCase());
+            if (!alreadyExists) {
+                portraitsToShow.push({ name: speakingActor.name, img: speakingActor.img, isTemp: true });
+            }
+        }
+
+        if (portraitsToShow.length === 0) {
             container.classList.remove('active');
+            const cards = Array.from(container.querySelectorAll('.portrait-card')) as HTMLElement[];
+            cards.forEach(card => card.classList.remove('active'));
+            setTimeout(() => {
+                const currentActive = (game.settings.get('storyteller-cinema', 'activePortraits') as string[]) || [];
+                if (currentActive.length === 0) {
+                    container.innerHTML = "";
+                }
+            }, 800);
             return;
         }
 
-        container.style.backgroundImage = `url("${path}")`;
         container.classList.add('active');
+
+        // Track existing cards in the DOM by actor name
+        const existingCards = Array.from(container.querySelectorAll('.portrait-card')) as HTMLElement[];
+        
+        // Remove cards that are no longer in portraitsToShow
+        existingCards.forEach(card => {
+            const cardName = card.querySelector('.portrait-name')?.textContent || "";
+            const stillExists = portraitsToShow.some(p => p.name.toLowerCase() === cardName.toLowerCase());
+            if (!stillExists) {
+                card.classList.remove('active');
+                setTimeout(() => card.remove(), 800);
+            }
+        });
+
+        // Render / Update portraits
+        portraitsToShow.forEach(p => {
+            let card = existingCards.find(c => {
+                const cardName = c.querySelector('.portrait-name')?.textContent || "";
+                return cardName.toLowerCase() === p.name.toLowerCase();
+            });
+
+            if (!card) {
+                // Create new card (triggers fade/slide-in)
+                card = document.createElement('div');
+                card.className = 'portrait-card';
+                if (p.isTemp) card.classList.add('temp-speaker');
+                card.style.backgroundImage = `url("${p.img}")`;
+                card.innerHTML = `<div class="portrait-name">${p.name}</div>`;
+                container.appendChild(card);
+
+                // Force reflow and activate
+                void card.offsetWidth;
+                card.classList.add('active');
+            } else {
+                // Update properties of existing card
+                if (p.isTemp) card.classList.add('temp-speaker');
+                else card.classList.remove('temp-speaker');
+                card.style.backgroundImage = `url("${p.img}")`;
+            }
+
+            // Update speaking class
+            if (speakingActor && p.name.toLowerCase() === speakingActor.name.toLowerCase()) {
+                card.classList.add('speaking');
+            } else {
+                card.classList.remove('speaking');
+            }
+        });
     }
 
     _clearLocal(): void {
@@ -208,7 +311,7 @@ export class StorytellerAPI {
         if (!overlay) return;
 
         overlay.querySelector('.subtitle-container')?.classList.remove('active');
-        overlay.querySelectorAll('.portrait-container').forEach(p => p.classList.remove('active'));
+        this.refreshPortraits(null);
     }
 
     private _applyVisionOverride(active: boolean): void {
@@ -304,7 +407,13 @@ export class StorytellerAPI {
         if (!canvas.ready) return;
 
         // V14 Check: If container/sprite were destroyed by a scene change, we must recreate them
-        if (this.cinematicContainer && (this.cinematicContainer.destroyed || !canvas.stage.children.includes(this.cinematicContainer))) {
+        const isV14 = !!(canvas as any).effects;
+        const parent = isV14 ? ((canvas as any).primary || (canvas as any).rendered || canvas.stage) : ((canvas as any).rendered || canvas.stage);
+
+        if (this.cinematicContainer && (this.cinematicContainer.destroyed || (this.cinematicContainer.parent && this.cinematicContainer.parent !== parent))) {
+            if (this.cinematicContainer.parent) {
+                try { this.cinematicContainer.parent.removeChild(this.cinematicContainer); } catch(e) {}
+            }
             this.cinematicContainer = null;
             this.cinematicSprite = null;
         }
@@ -313,21 +422,16 @@ export class StorytellerAPI {
             this.cinematicContainer = new (PIXI as any).Container();
             this.cinematicContainer.sortableChildren = true;
             
-            const parent = canvas.stage;
-            
             parent.addChild(this.cinematicContainer);
 
             try {
                 const weather = (canvas as any).weather;
-                const rendered = (canvas as any).rendered;
                 if (weather && parent.children.includes(weather)) {
                     const weatherIndex = parent.getChildIndex(weather);
                     parent.setChildIndex(this.cinematicContainer, weatherIndex);
-                    console.log(`Storyteller Cinema | Container layered at index ${weatherIndex} (below weather) inside canvas.stage`);
-                } else if (rendered && parent.children.includes(rendered)) {
-                    const renderedIndex = parent.getChildIndex(rendered);
-                    parent.setChildIndex(this.cinematicContainer, renderedIndex + 1);
-                    console.log(`Storyteller Cinema | Container layered at index ${renderedIndex + 1} inside canvas.stage`);
+                    console.log(`Storyteller Cinema | Container layered at index ${weatherIndex} (below weather) inside parent group`);
+                } else {
+                    parent.setChildIndex(this.cinematicContainer, 0);
                 }
             } catch(e) {
                 console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.", e);
@@ -355,9 +459,26 @@ export class StorytellerAPI {
             if (this.cinematicSprite) {
                 this.cinematicSprite.visible = true;
                 const rect = (canvas as any).dimensions!.sceneRect;
-                this.cinematicSprite.width = rect.width;
-                this.cinematicSprite.height = rect.height;
+                
+                // Align to top-left of the scene bounds to avoid shifting
                 this.cinematicSprite.position.set(rect.x, rect.y);
+
+                // Scale proportionally (preserving aspect ratio) to cover the scene bounds
+                const tex = this.cinematicSprite.texture;
+                if (tex && tex.valid) {
+                    const ratio = tex.width / tex.height;
+                    const sceneRatio = rect.width / rect.height;
+                    if (sceneRatio > ratio) {
+                        this.cinematicSprite.width = rect.width;
+                        this.cinematicSprite.height = rect.width / ratio;
+                    } else {
+                        this.cinematicSprite.height = rect.height;
+                        this.cinematicSprite.width = rect.height * ratio;
+                    }
+                } else {
+                    this.cinematicSprite.width = rect.width;
+                    this.cinematicSprite.height = rect.height;
+                }
 
                 const dim = canvas.scene?.getFlag('storyteller-cinema', 'cinematicBgDim') ?? 0;
                 this.cinematicSprite.alpha = 1 - Math.min(1, Math.max(0, Number(dim)));
@@ -372,7 +493,17 @@ export class StorytellerAPI {
 
         if ( isV14 ) {
             // V14 Selective Hiding
-            if ( (canvas as any).primary ) (canvas as any).primary.visible = visible;
+            if ( (canvas as any).primary ) {
+                const p = (canvas as any).primary;
+                p.visible = true; // Keep primary group visible so weather can render
+                for ( const child of p.children ) {
+                    if ( child === (canvas as any).weather || child === this.cinematicContainer ) {
+                        continue;
+                    }
+                    child.visible = visible;
+                }
+            }
+            if ( (canvas as any).visibility ) (canvas as any).visibility.alpha = visible ? 1 : 0;
 
             if ( (canvas as any).effects ) {
                 const e = (canvas as any).effects;
@@ -464,9 +595,9 @@ export class StorytellerAPI {
             <div class="cinematic-bar bottom">
                 <div class="subtitle-container"></div>
             </div>
-            <div class="portrait-container left"></div>
-            <div class="portrait-container right"></div>
+            <div class="portraits-container"></div>
         `;
         document.body.appendChild(overlay);
+        this.refreshPortraits();
     }
 }

@@ -50,6 +50,19 @@ Hooks.once('init', async function () {
     default: []
   });
 
+  game.settings.register('storyteller-cinema', 'activePortraits', {
+    name: "Active Portraits",
+    scope: "world",
+    config: false,
+    type: Array,
+    default: [],
+    onChange: () => {
+      if (window.StorytellerCinema) {
+        window.StorytellerCinema.refreshPortraits();
+      }
+    }
+  });
+
   game.settings.register('storyteller-cinema', 'stageFontFamily', {
     name: "Stage Font Family",
     hint: "The font family used for dialogue subtitles on the stage.",

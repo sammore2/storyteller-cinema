@@ -36,16 +36,19 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _prepareContext(_options: any) {
         const castIds = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
+        const activePortraits = (game.settings.get('storyteller-cinema', 'activePortraits') as string[]) || [];
         const actors = castIds.map(id => game.actors?.get(id)).filter(a => !!a).map((a: any) => ({
             id: a.id,
             name: a.name,
-            img: a.img
+            img: a.img,
+            isActiveOnStage: activePortraits.includes(a.id)
         }));
 
         return {
             actors: actors,
             active: (game as any).settings.get('storyteller-cinema', 'cinemaModeActive'),
             speakingAsId: this.speakingAs?.id,
+            isNarratorActive: activePortraits.includes('narrator'),
             directorMode: this.isDirectorMode
         };
     }
@@ -65,58 +68,114 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         const DraggableClass = (foundry.applications.ux as any).Draggable;
         new DraggableClass(this, html, html, false);
 
-        // Click on actor -> Toggle Speaking As
+        // Click on actor -> Toggle active portrait + speakingAs
         html.querySelectorAll('.actor-btn').forEach((btn: any) => {
-            btn.addEventListener('click', (ev: any) => {
+            btn.addEventListener('click', async (ev: any) => {
                 const dataset = ev.currentTarget.dataset;
+                const activePortraits = (game.settings.get('storyteller-cinema', 'activePortraits') as string[]) || [];
                 
-                if (this.speakingAs?.id === dataset.id) {
-                    this.speakingAs = null;
-                    (window as any).StorytellerCinema.clear();
+                let newPortraits = [...activePortraits];
+                
+                if (this.isDirectorMode) {
+                    // Director Mode: Click selects speaker, never removes from stage
+                    if (this.speakingAs?.id === dataset.id) {
+                        this.speakingAs = null;
+                    } else {
+                        this.speakingAs = { id: dataset.id, name: dataset.name, img: dataset.img };
+                        if (!newPortraits.includes(dataset.id)) {
+                            newPortraits.push(dataset.id);
+                        }
+                    }
                 } else {
-                    this.speakingAs = { id: dataset.id, name: dataset.name, img: dataset.img };
-                    // Activate Stage Instantly
-                    (window as any).StorytellerCinema.say(dataset.name, "", {
-                        portrait: dataset.img,
-                        side: 'left'
-                    });
+                    // Normal Mode: Click toggles stage presence
+                    if (activePortraits.includes(dataset.id)) {
+                        newPortraits = activePortraits.filter(id => id !== dataset.id);
+                        if (this.speakingAs?.id === dataset.id) {
+                            this.speakingAs = null;
+                        }
+                    } else {
+                        newPortraits = [...activePortraits, dataset.id];
+                        this.speakingAs = { id: dataset.id, name: dataset.name, img: dataset.img };
+                    }
                 }
-                
+
+                await game.settings.set('storyteller-cinema', 'activePortraits', newPortraits);
                 this.render(); 
             });
 
-            // Right click -> Show portrait without text
-            btn.addEventListener('contextmenu', (ev: any) => {
+            // Right click -> Toggle portrait on stage without changing speakingAs
+            btn.addEventListener('contextmenu', async (ev: any) => {
                 ev.preventDefault();
                 const dataset = ev.currentTarget.dataset;
-                (window as any).StorytellerCinema.say(dataset.name, "", {
-                    portrait: dataset.img,
-                    side: 'left'
-                });
+                const activePortraits = (game.settings.get('storyteller-cinema', 'activePortraits') as string[]) || [];
+                
+                let newPortraits: string[];
+                if (activePortraits.includes(dataset.id)) {
+                    newPortraits = activePortraits.filter(id => id !== dataset.id);
+                } else {
+                    newPortraits = [...activePortraits, dataset.id];
+                }
+
+                await game.settings.set('storyteller-cinema', 'activePortraits', newPortraits);
+                this.render();
             });
         });
 
         // Narrator Mode
         const narratorBtn = html.querySelector('.narrator-btn');
         if (narratorBtn) {
-            narratorBtn.addEventListener('click', (ev: any) => {
+            narratorBtn.addEventListener('click', async (ev: any) => {
                 ev.preventDefault();
                 console.log("Storyteller Cinema | Narrator Clicked");
-                if (this.speakingAs?.id === 'narrator') {
-                    this.speakingAs = null;
-                    (window as any).StorytellerCinema.clear();
+                const activePortraits = (game.settings.get('storyteller-cinema', 'activePortraits') as string[]) || [];
+                
+                let newPortraits = [...activePortraits];
+                
+                if (this.isDirectorMode) {
+                    if (this.speakingAs?.id === 'narrator') {
+                        this.speakingAs = null;
+                    } else {
+                        this.speakingAs = { 
+                            id: 'narrator', 
+                            name: 'Narrator', 
+                            img: (game.user as any)?.avatar || 'icons/svg/book.svg' 
+                        };
+                        if (!newPortraits.includes('narrator')) {
+                            newPortraits.push('narrator');
+                        }
+                    }
                 } else {
-                    this.speakingAs = { 
-                        id: 'narrator', 
-                        name: 'Narrator', 
-                        img: (game.user as any).avatar || 'icons/svg/book.svg' 
-                    };
-                    // Activate Stage Instantly for Narrator
-                    (window as any).StorytellerCinema.say("Narrator", "", {
-                        portrait: this.speakingAs.img,
-                        side: 'left'
-                    });
+                    if (activePortraits.includes('narrator')) {
+                        newPortraits = activePortraits.filter(id => id !== 'narrator');
+                        if (this.speakingAs?.id === 'narrator') {
+                            this.speakingAs = null;
+                        }
+                    } else {
+                        newPortraits = [...activePortraits, 'narrator'];
+                        this.speakingAs = { 
+                            id: 'narrator', 
+                            name: 'Narrator', 
+                            img: (game.user as any)?.avatar || 'icons/svg/book.svg' 
+                        };
+                    }
                 }
+
+                await game.settings.set('storyteller-cinema', 'activePortraits', newPortraits);
+                this.render();
+            });
+
+            narratorBtn.addEventListener('contextmenu', async (ev: any) => {
+                ev.preventDefault();
+                const activePortraits = (game.settings.get('storyteller-cinema', 'activePortraits') as string[]) || [];
+                
+                let newPortraits: string[];
+                if (activePortraits.includes('narrator')) {
+                    newPortraits = activePortraits.filter(id => id !== 'narrator');
+                } else {
+                    newPortraits = [...activePortraits, 'narrator'];
+                }
+
+                await game.settings.set('storyteller-cinema', 'activePortraits', newPortraits);
                 this.render();
             });
         }
@@ -129,6 +188,9 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.isDirectorMode = !this.isDirectorMode;
                 console.log("Storyteller Cinema | Director Mode:", this.isDirectorMode);
                 ui.notifications.info(`Director Mode is now ${this.isDirectorMode ? 'ON' : 'OFF'}`);
+                if (!this.isDirectorMode) {
+                    (window as any).StorytellerCinema.clearSubtitles();
+                }
                 this.render();
             });
         }
@@ -137,11 +199,11 @@ export class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         const clearBtn = html.querySelector('.clear-btn');
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
-                (window as any).StorytellerCinema.clear();
+                (window as any).StorytellerCinema.clearSubtitles();
             });
 
             clearBtn.addEventListener('dblclick', () => {
-                (window as any).StorytellerCinema.clearCast();
+                (window as any).StorytellerCinema.clear();
             });
         }
     }

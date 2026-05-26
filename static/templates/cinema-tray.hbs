@@ -4,11 +4,11 @@
         <span>STAGE CAST</span>
     </div>
     <div class="tray-content">
-        <div class="tray-item narrator-btn" title="Speak as Narrator">
+        <div class="tray-item narrator-btn {{#if isNarratorActive}}active-stage{{/if}} {{#if (eq speakingAsId 'narrator')}}active{{/if}}" title="Speak as Narrator">
             <i class="fas fa-book-open"></i>
         </div>
         {{#each actors}}
-        <div class="tray-item actor-btn {{#if (eq this.id ../speakingAsId)}}active{{/if}}" data-id="{{this.id}}" data-name="{{this.name}}" data-img="{{this.img}}" title="{{this.name}}">
+        <div class="tray-item actor-btn {{#if this.isActiveOnStage}}active-stage{{/if}} {{#if (eq this.id ../speakingAsId)}}active{{/if}}" data-id="{{this.id}}" data-name="{{this.name}}" data-img="{{this.img}}" title="{{this.name}}">
             <img src="{{this.img}}" />
         </div>
         {{/each}}
