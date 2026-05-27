@@ -104,7 +104,7 @@ class StorytellerAPI {
     } else {
       this._clearLocal();
     }
-    if ((_c = game.user) == null ? void 0 : _c.isGM) {
+    if (game.ready && ((_c = game.user) == null ? void 0 : _c.isGM)) {
       await game.settings.set("storyteller-cinema", "activePortraits", []);
       await game.settings.set("storyteller-cinema", "sceneCast", []);
       const tray = (_d = window.StorytellerCinema) == null ? void 0 : _d.cinemaTray;
@@ -295,6 +295,7 @@ class StorytellerAPI {
   enforceVision() {
     if (this._visionOverrideActive) {
       this._applyVisionOverride(true);
+      this._toggleLayerVisibility(false);
     }
   }
   async _setCinematicBackground(active) {
@@ -352,7 +353,9 @@ class StorytellerAPI {
           parent.setChildIndex(this.cinematicContainer, weatherIndex);
           console.log(`Storyteller Cinema | Container layered at index ${weatherIndex} (below weather) inside parent group`);
         } else {
-          parent.setChildIndex(this.cinematicContainer, 0);
+          const topIndex = Math.max(0, parent.children.length - 1);
+          parent.setChildIndex(this.cinematicContainer, topIndex);
+          console.log(`Storyteller Cinema | Container layered at top index ${topIndex} of primary group`);
         }
       } catch (e) {
         console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.", e);
@@ -401,6 +404,7 @@ class StorytellerAPI {
   }
   _toggleLayerVisibility(visible) {
     const isV14 = !!canvas.effects;
+    if (canvas.visibility) canvas.visibility.visible = visible;
     if (isV14) {
       if (canvas.primary) {
         const p = canvas.primary;
@@ -412,23 +416,15 @@ class StorytellerAPI {
           child.visible = visible;
         }
       }
-      if (canvas.visibility) canvas.visibility.alpha = visible ? 1 : 0;
       if (canvas.effects) {
-        const e = canvas.effects;
-        if (!visible) {
-          e.visible = true;
-          if (e.illumination) e.illumination.visible = false;
-          if (e.coloration) e.coloration.visible = false;
-          if (e.visibility) e.visibility.visible = false;
-          if (e.weather) e.weather.visible = true;
-        } else {
-          if (e.illumination) e.illumination.visible = true;
-          if (e.coloration) e.coloration.visible = true;
-          if (e.visibility) e.visibility.visible = true;
-        }
+        canvas.effects.visible = visible;
       }
       if (canvas.interface) canvas.interface.visible = visible;
       if (canvas.controls) canvas.controls.visible = visible;
+      const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+      for (const l of layers) {
+        if (canvas[l]) canvas[l].visible = visible;
+      }
     } else {
       if (canvas.grid) canvas.grid.visible = visible;
       const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];

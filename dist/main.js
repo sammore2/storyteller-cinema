@@ -7,7 +7,7 @@ Hooks.once("init", async function() {
   console.log("Storyteller Cinema | Initializing...");
   game.settings.register("storyteller-cinema", "activeSkin", {
     name: "Active Skin",
-    scope: "client",
+    scope: "world",
     config: false,
     type: String,
     default: "default",

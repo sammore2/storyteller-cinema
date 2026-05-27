@@ -138,7 +138,7 @@ export class StorytellerAPI {
         } else {
             this._clearLocal();
         }
-        if (game.user?.isGM) {
+        if (game.ready && game.user?.isGM) {
             await game.settings.set('storyteller-cinema', 'activePortraits', []);
             await game.settings.set('storyteller-cinema', 'sceneCast', []);
             const tray = (window as any).StorytellerCinema?.cinemaTray;
@@ -367,6 +367,7 @@ export class StorytellerAPI {
     enforceVision(): void {
         if (this._visionOverrideActive) {
             this._applyVisionOverride(true);
+            this._toggleLayerVisibility(false);
         }
     }
 
@@ -431,7 +432,10 @@ export class StorytellerAPI {
                     parent.setChildIndex(this.cinematicContainer, weatherIndex);
                     console.log(`Storyteller Cinema | Container layered at index ${weatherIndex} (below weather) inside parent group`);
                 } else {
-                    parent.setChildIndex(this.cinematicContainer, 0);
+                    // For V14, place container at the top of primary group (below weather in effects layer)
+                    const topIndex = Math.max(0, parent.children.length - 1);
+                    parent.setChildIndex(this.cinematicContainer, topIndex);
+                    console.log(`Storyteller Cinema | Container layered at top index ${topIndex} of primary group`);
                 }
             } catch(e) {
                 console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.", e);
@@ -491,6 +495,8 @@ export class StorytellerAPI {
     private _toggleLayerVisibility(visible: boolean): void {
         const isV14 = !!(canvas as any).effects;
 
+        if ( (canvas as any).visibility ) (canvas as any).visibility.visible = visible;
+
         if ( isV14 ) {
             // V14 Selective Hiding
             if ( (canvas as any).primary ) {
@@ -503,28 +509,19 @@ export class StorytellerAPI {
                     child.visible = visible;
                 }
             }
-            if ( (canvas as any).visibility ) (canvas as any).visibility.alpha = visible ? 1 : 0;
 
             if ( (canvas as any).effects ) {
-                const e = (canvas as any).effects;
-                // If we are in cinema mode (visible=false), we want to keep effects visible for weather
-                // but hide the sub-groups that cause shadows/lighting
-                if (!visible) {
-                    e.visible = true;
-                    if ( e.illumination ) e.illumination.visible = false;
-                    if ( e.coloration ) e.coloration.visible = false;
-                    if ( e.visibility ) e.visibility.visible = false;
-                    if ( e.weather ) e.weather.visible = true;
-                } else {
-                    // Restore native behavior
-                    if ( e.illumination ) e.illumination.visible = true;
-                    if ( e.coloration ) e.coloration.visible = true;
-                    if ( e.visibility ) e.visibility.visible = true;
-                }
+                (canvas as any).effects.visible = visible;
             }
 
             if ( (canvas as any).interface ) (canvas as any).interface.visible = visible;
             if ( canvas.controls ) canvas.controls.visible = visible;
+
+            // Hide interaction layers in V14 as well
+            const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+            for ( const l of layers ) {
+                if ( (canvas as any)[l] ) (canvas as any)[l].visible = visible;
+            }
         } else {
             // V13 and Legacy Fallback
             if (canvas.grid) canvas.grid.visible = visible;

@@ -15,7 +15,7 @@ Hooks.once('init', async function () {
   // 1. REGISTER SETTINGS
   game.settings.register('storyteller-cinema', 'activeSkin', {
     name: "Active Skin",
-    scope: "client",
+    scope: "world",
     config: false,
     type: String,
     default: 'default',
@@ -147,6 +147,7 @@ Hooks.once('init', async function () {
   window.StorytellerCinema.init();
   window.StorytellerCinema.skins.init();
 
+
   // LIBWRAPPER HOOKS
   const visTarget = 'foundry.canvas.groups.CanvasVisibility.prototype.tokenVision';
   try {
@@ -227,6 +228,7 @@ Hooks.on('updateScene', async (doc: any, change: any) => {
     window.StorytellerCinema.enforceVision();
   }
 });
+
 
 // updateToken hook removed (2.5D feature abandoned)
 
