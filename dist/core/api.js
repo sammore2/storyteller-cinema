@@ -128,7 +128,7 @@ class StorytellerAPI {
     if (!((_a = game.user) == null ? void 0 : _a.isGM)) return;
     await game.settings.set("storyteller-cinema", "sceneCast", []);
     (_b = window.StorytellerCinema.cinemaTray) == null ? void 0 : _b.render(true);
-    ui.notifications.info("Cinema Stage cleared.");
+    ui.notifications.info(game.i18n.localize("STORYTELLER_CINEMA.Notification.StageClear"));
   }
   _showSubtitleLocal(actorName, message, options = {}) {
     const overlay = document.getElementById("storyteller-cinema-overlay");
@@ -421,17 +421,35 @@ class StorytellerAPI {
       }
       if (canvas.interface) canvas.interface.visible = visible;
       if (canvas.controls) canvas.controls.visible = visible;
-      const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+      const layers = ["walls", "sounds", "notes", "lighting", "tokens", "templates"];
       for (const l of layers) {
         if (canvas[l]) canvas[l].visible = visible;
       }
     } else {
       if (canvas.grid) canvas.grid.visible = visible;
-      const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+      const layers = ["walls", "sounds", "notes", "lighting", "tokens", "templates"];
       for (const l of layers) {
         if (canvas[l]) canvas[l].visible = visible;
       }
       if (canvas.weather) canvas.weather.visible = true;
+    }
+    if (canvas.tiles) {
+      canvas.tiles.visible = true;
+      if (canvas.tiles.placeables) {
+        for (const t of canvas.tiles.placeables) {
+          const showInCinema = t.document.getFlag("storyteller-cinema", "showInCinema") || false;
+          if (t.mesh) t.mesh.visible = visible ? !t.document.hidden : showInCinema && !t.document.hidden;
+        }
+      }
+    }
+    if (canvas.drawings) {
+      canvas.drawings.visible = true;
+      if (canvas.drawings.placeables) {
+        for (const d of canvas.drawings.placeables) {
+          const showInCinema = d.document.getFlag("storyteller-cinema", "showInCinema") || false;
+          d.visible = visible ? !d.document.hidden : showInCinema && !d.document.hidden;
+        }
+      }
     }
   }
   _refreshAllPlaceables() {

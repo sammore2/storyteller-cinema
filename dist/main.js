@@ -173,6 +173,38 @@ Hooks.once("init", async function() {
     restricted: false
   });
 });
+Hooks.once("ready", () => {
+  var _a;
+  const DrawingClass = (_a = CONFIG.Drawing) == null ? void 0 : _a.objectClass;
+  if (!DrawingClass) {
+    console.warn("Storyteller Cinema | Could not find Drawing class via CONFIG.Drawing.objectClass");
+    return;
+  }
+  const proto = DrawingClass.prototype;
+  if (proto._scIsVisiblePatched) return;
+  let targetProto = proto;
+  while (targetProto && !Object.getOwnPropertyDescriptor(targetProto, "isVisible")) {
+    targetProto = Object.getPrototypeOf(targetProto);
+  }
+  const originalDescriptor = targetProto ? Object.getOwnPropertyDescriptor(targetProto, "isVisible") : null;
+  if (originalDescriptor == null ? void 0 : originalDescriptor.get) {
+    Object.defineProperty(proto, "isVisible", {
+      get() {
+        var _a2, _b, _c;
+        if ((_a2 = window.StorytellerCinema) == null ? void 0 : _a2.active) {
+          const showInCinema = ((_c = (_b = this.document) == null ? void 0 : _b.getFlag) == null ? void 0 : _c.call(_b, "storyteller-cinema", "showInCinema")) || false;
+          if (!showInCinema) return false;
+        }
+        return originalDescriptor.get.call(this);
+      },
+      configurable: true
+    });
+    proto._scIsVisiblePatched = true;
+    console.log("Storyteller Cinema | Drawing.isVisible patched successfully.");
+  } else {
+    console.warn("Storyteller Cinema | Could not find isVisible getter on Drawing prototype chain.");
+  }
+});
 Hooks.on("canvasReady", () => {
   if (!canvas.scene) return;
   const viewMode = canvas.scene.getFlag("storyteller-cinema", "viewMode");

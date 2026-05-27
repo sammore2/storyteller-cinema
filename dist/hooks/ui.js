@@ -59,16 +59,16 @@ function registerUIHooks() {
                 <hr>
                 <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
                 <div class="form-group">
-                    <label>Default View Mode</label>
+                    <label>${game.i18n.localize("STORYTELLER_CINEMA.Scene.ViewModeLabel")}</label>
                     <div class="form-fields">
                         <select name="flags.storyteller-cinema.viewMode">
-                            <option value="battlemap" ${viewMode === "battlemap" ? "selected" : ""}>📍 Battlemap (Tactical)</option>
-                            <option value="cinematic" ${viewMode === "cinematic" ? "selected" : ""}>🎬 Cinematic (Immersive)</option>
+                            <option value="battlemap" ${viewMode === "battlemap" ? "selected" : ""}>${game.i18n.localize("STORYTELLER_CINEMA.Scene.ViewModeBattlemap")}</option>
+                            <option value="cinematic" ${viewMode === "cinematic" ? "selected" : ""}>${game.i18n.localize("STORYTELLER_CINEMA.Scene.ViewModeCinematic")}</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Cinematic Background</label>
+                    <label>${game.i18n.localize("STORYTELLER_CINEMA.Scene.BgLabel")}</label>
                     <div class="form-fields">
                         <button type="button" class="file-picker" data-type="imagevideo" data-target="flags.storyteller-cinema.cinematicBg" title="Browse Files" tabindex="-1">
                             <i class="fas fa-file-import fa-fw"></i>
@@ -77,7 +77,7 @@ function registerUIHooks() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Cinematic Background Dimness</label>
+                    <label>${game.i18n.localize("STORYTELLER_CINEMA.Scene.BgDimLabel")}</label>
                     <div class="form-fields">
                         <input type="range" name="flags.storyteller-cinema.cinematicBgDim" min="0" max="1" step="0.05" value="${bgDimValue}">
                         <span class="range-value" style="margin-left: 8px; font-weight: bold; color: white;">${Math.round(bgDimValue * 100)}%</span>
@@ -126,7 +126,7 @@ function registerUIHooks() {
   Hooks.on("getActorContextOptions", (_app, options) => {
     console.log(">>> STORYTELLER CINEMA V14 - CONTEXT MENU HOOK <<<", options);
     options.push({
-      label: "Cinema: Stage Actor",
+      label: game.i18n.localize("STORYTELLER_CINEMA.Context.StageActor"),
       icon: '<i class="fas fa-user-plus"></i>',
       visible: (target) => {
         var _a, _b;
@@ -144,12 +144,12 @@ function registerUIHooks() {
           cast.push(actorId);
           await game.settings.set("storyteller-cinema", "sceneCast", cast);
           (_c = window.StorytellerCinema.cinemaTray) == null ? void 0 : _c.render(true);
-          ui.notifications.info(`Actor added to Stage.`);
+          ui.notifications.info(game.i18n.localize("STORYTELLER_CINEMA.Notification.ActorAdded"));
         }
       }
     });
     options.push({
-      label: "Cinema: Unstage Actor",
+      label: game.i18n.localize("STORYTELLER_CINEMA.Context.UnstageActor"),
       icon: '<i class="fas fa-user-minus"></i>',
       visible: (target) => {
         var _a, _b;
@@ -166,7 +166,7 @@ function registerUIHooks() {
         const newCast = cast.filter((id) => id !== actorId);
         await game.settings.set("storyteller-cinema", "sceneCast", newCast);
         (_c = window.StorytellerCinema.cinemaTray) == null ? void 0 : _c.render(true);
-        ui.notifications.info(`Actor removed from Stage.`);
+        ui.notifications.info(game.i18n.localize("STORYTELLER_CINEMA.Notification.ActorRemoved"));
       }
     });
   });
@@ -184,13 +184,13 @@ function createHUDButton() {
         </div>
         <div class="hud-controls">
             <span class="separator">|</span>
-            <div class="custom-skin-select" title="Change Skin">
-                <span class="current-value">Loading...</span>
+            <div class="custom-skin-select" title="${game.i18n.localize("STORYTELLER_CINEMA.HUD.ChangeSkin")}">
+                <span class="current-value">${game.i18n.localize("STORYTELLER_CINEMA.HUD.Loading")}</span>
                 <i class="fas fa-chevron-down"></i>
                 <ul class="dropdown-options"></ul>
             </div>
             <!-- Obsolete: Director Console entry point removed -->
-            <i class="fas fa-cog open-config" title="Open Skin Studio"></i>
+            <i class="fas fa-cog open-config" title="${game.i18n.localize("STORYTELLER_CINEMA.HUD.OpenSkinStudio")}"></i>
         </div>
     `;
   document.body.appendChild(container);
@@ -219,7 +219,7 @@ function createHUDButton() {
     const skins = ((_b2 = (_a2 = window.StorytellerCinema) == null ? void 0 : _a2.skins) == null ? void 0 : _b2.getSkins()) || [];
     const activeId = ((_d = (_c = window.StorytellerCinema) == null ? void 0 : _c.skins) == null ? void 0 : _d.activeSkin) || "default";
     const activeSkin = skins.find((s) => s.id === activeId);
-    currentValueSpan.textContent = activeSkin ? activeSkin.name : "Select Skin";
+    currentValueSpan.textContent = activeSkin ? activeSkin.name : game.i18n.localize("STORYTELLER_CINEMA.HUD.SelectSkin");
     optionsList.innerHTML = skins.map((s) => `
             <li data-value="${s.id}" class="${s.id === activeId ? "selected" : ""}">${s.name}</li>
         `).join("");

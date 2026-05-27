@@ -142,7 +142,9 @@ class CinemaTray extends HandlebarsApplicationMixin(ApplicationV2) {
         ev.preventDefault();
         this.isDirectorMode = !this.isDirectorMode;
         console.log("Storyteller Cinema | Director Mode:", this.isDirectorMode);
-        ui.notifications.info(`Director Mode is now ${this.isDirectorMode ? "ON" : "OFF"}`);
+        ui.notifications.info(game.i18n.localize(
+          this.isDirectorMode ? "STORYTELLER_CINEMA.DirectorMode.On" : "STORYTELLER_CINEMA.DirectorMode.Off"
+        ));
         if (!this.isDirectorMode) {
           window.StorytellerCinema.clearSubtitles();
         }
