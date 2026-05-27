@@ -2,6 +2,32 @@
     "STORYTELLER_CINEMA.Title": "Cinema do Storyteller",
     "STORYTELLER_CINEMA.SkinStudio": "Estúdio de Skins",
     "STORYTELLER_CINEMA.ToggleCinematic": "Alternar Modo Cinema",
+
     "STORYTELLER_CINEMA.Settings.ActiveSkin": "Skin Ativa",
-    "STORYTELLER_CINEMA.Settings.ActiveSkinHint": "A skin visual aplicada durante o modo cinema."
+    "STORYTELLER_CINEMA.Settings.ActiveSkinHint": "A skin visual aplicada durante o modo cinema.",
+
+    "STORYTELLER_CINEMA.ShowInCinema.Label": "Exibir no Modo Cinema",
+    "STORYTELLER_CINEMA.ShowInCinema.HintDrawing": "Se marcado, este desenho continuará visível no modo cinematográfico.",
+    "STORYTELLER_CINEMA.ShowInCinema.HintTile": "Se marcado, este tile continuará visível no modo cinematográfico.",
+
+    "STORYTELLER_CINEMA.Scene.ViewModeLabel": "Modo de Visualização Padrão",
+    "STORYTELLER_CINEMA.Scene.BgLabel": "Fundo Cinematográfico",
+    "STORYTELLER_CINEMA.Scene.BgDimLabel": "Escurecimento do Fundo",
+    "STORYTELLER_CINEMA.Scene.ViewModeBattlemap": "📍 Battlemap (Tático)",
+    "STORYTELLER_CINEMA.Scene.ViewModeCinematic": "🎬 Cinematográfico (Imersivo)",
+
+    "STORYTELLER_CINEMA.Context.StageActor": "Cinema: Adicionar ao Palco",
+    "STORYTELLER_CINEMA.Context.UnstageActor": "Cinema: Remover do Palco",
+
+    "STORYTELLER_CINEMA.Notification.ActorAdded": "Ator adicionado ao Palco.",
+    "STORYTELLER_CINEMA.Notification.ActorRemoved": "Ator removido do Palco.",
+    "STORYTELLER_CINEMA.Notification.StageClear": "Palco do Cinema limpo.",
+
+    "STORYTELLER_CINEMA.HUD.Loading": "Carregando...",
+    "STORYTELLER_CINEMA.HUD.SelectSkin": "Selecionar Skin",
+    "STORYTELLER_CINEMA.HUD.OpenSkinStudio": "Abrir Estúdio de Skins",
+    "STORYTELLER_CINEMA.HUD.ChangeSkin": "Mudar Skin",
+
+    "STORYTELLER_CINEMA.DirectorMode.On": "Modo Diretor está ATIVO",
+    "STORYTELLER_CINEMA.DirectorMode.Off": "Modo Diretor está INATIVO"
 }

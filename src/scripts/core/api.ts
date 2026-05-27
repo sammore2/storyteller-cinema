@@ -162,7 +162,7 @@ export class StorytellerAPI {
         if (!game.user?.isGM) return;
         await game.settings.set('storyteller-cinema', 'sceneCast', []);
         (window as any).StorytellerCinema.cinemaTray?.render(true);
-        ui.notifications.info("Cinema Stage cleared.");
+        ui.notifications.info(game.i18n.localize('STORYTELLER_CINEMA.Notification.StageClear'));
     }
 
     _showSubtitleLocal(actorName: string, message: string, options: any = {}): void {
@@ -517,20 +517,42 @@ export class StorytellerAPI {
             if ( (canvas as any).interface ) (canvas as any).interface.visible = visible;
             if ( canvas.controls ) canvas.controls.visible = visible;
 
-            // Hide interaction layers in V14 as well
-            const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+            // Hide interaction layers in V14 as well (excluding drawings and tiles)
+            const layers = ["walls", "sounds", "notes", "lighting", "tokens", "templates"];
             for ( const l of layers ) {
                 if ( (canvas as any)[l] ) (canvas as any)[l].visible = visible;
             }
         } else {
             // V13 and Legacy Fallback
             if (canvas.grid) canvas.grid.visible = visible;
-            const layers = ["drawings", "walls", "sounds", "notes", "lighting", "tokens", "tiles", "templates"];
+            const layers = ["walls", "sounds", "notes", "lighting", "tokens", "templates"];
             for ( const l of layers ) {
                 if ( (canvas as any)[l] ) (canvas as any)[l].visible = visible;
             }
             // Weather stays visible in V13 too
             if ( canvas.weather ) canvas.weather.visible = true;
+        }
+
+        // Handle individual tiles visibility based on the showInCinema flag
+        if ( canvas.tiles ) {
+            canvas.tiles.visible = true;
+            if ( canvas.tiles.placeables ) {
+                for ( const t of canvas.tiles.placeables ) {
+                    const showInCinema = t.document.getFlag("storyteller-cinema", "showInCinema") || false;
+                    if (t.mesh) t.mesh.visible = visible ? !t.document.hidden : (showInCinema && !t.document.hidden);
+                }
+            }
+        }
+
+        // Handle individual drawings visibility based on the showInCinema flag
+        if ( canvas.drawings ) {
+            canvas.drawings.visible = true;
+            if ( canvas.drawings.placeables ) {
+                for ( const d of canvas.drawings.placeables ) {
+                    const showInCinema = d.document.getFlag("storyteller-cinema", "showInCinema") || false;
+                    d.visible = visible ? !d.document.hidden : (showInCinema && !d.document.hidden);
+                }
+            }
         }
     }
 

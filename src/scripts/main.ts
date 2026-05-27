@@ -200,6 +200,44 @@ Hooks.once('init', async function () {
   });
 });
 
+// Patch Drawing.prototype.isVisible ONCE, after Foundry is ready.
+// Cannot use libWrapper because Drawing is not exported in a libWrapper-discoverable namespace.
+// CONFIG.Drawing.objectClass is the canonical reference to the Drawing class in V13/V14.
+Hooks.once('ready', () => {
+  const DrawingClass = (CONFIG as any).Drawing?.objectClass;
+  if (!DrawingClass) {
+    console.warn('Storyteller Cinema | Could not find Drawing class via CONFIG.Drawing.objectClass');
+    return;
+  }
+  const proto = DrawingClass.prototype;
+  if (proto._scIsVisiblePatched) return;
+
+  // Walk prototype chain to find where isVisible is actually defined
+  let targetProto = proto;
+  while (targetProto && !Object.getOwnPropertyDescriptor(targetProto, 'isVisible')) {
+    targetProto = Object.getPrototypeOf(targetProto);
+  }
+  const originalDescriptor = targetProto ? Object.getOwnPropertyDescriptor(targetProto, 'isVisible') : null;
+
+  if (originalDescriptor?.get) {
+    Object.defineProperty(proto, 'isVisible', {
+      get(this: any) {
+        if (window.StorytellerCinema?.active) {
+          const showInCinema = this.document?.getFlag?.('storyteller-cinema', 'showInCinema') || false;
+          if (!showInCinema) return false;
+        }
+        return originalDescriptor.get!.call(this);
+      },
+      configurable: true
+    });
+    proto._scIsVisiblePatched = true;
+    console.log('Storyteller Cinema | Drawing.isVisible patched successfully.');
+  } else {
+    console.warn('Storyteller Cinema | Could not find isVisible getter on Drawing prototype chain.');
+  }
+});
+
+
 Hooks.on('canvasReady', () => {
   if (!canvas.scene) return;
   const viewMode = canvas.scene.getFlag('storyteller-cinema', 'viewMode');
