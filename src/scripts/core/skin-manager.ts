@@ -107,10 +107,10 @@ export class SkinManager {
                                     backgroundTexture: skin.options?.backgroundTexture,
                                     overlayTexture: skin.options?.overlayTexture,
                                     styles: {
-                                        '--cinematic-bar-bg': skin.styles?.['--cinematic-bar-bg'] || skin.styles?.barBg || '#000000',
-                                        '--cinematic-bar-border': skin.styles?.['--cinematic-bar-border'] || skin.styles?.barBorder || 'none',
-                                        '--cinematic-text-color': skin.styles?.['--cinematic-text-color'] || skin.styles?.textColor || '#ffffff',
-                                        ...skin.styles
+                                        '--cinematic-bar-bg': skin.options?.styles?.['--cinematic-bar-bg'] || '#000000',
+                                        '--cinematic-bar-border': skin.options?.styles?.['--cinematic-bar-border'] || 'none',
+                                        '--cinematic-text-color': skin.options?.styles?.['--cinematic-text-color'] || '#ffffff',
+                                        ...skin.options?.styles
                                     }
                                 }
                             };

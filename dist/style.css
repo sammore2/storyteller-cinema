@@ -772,7 +772,7 @@ body.cinematic-mode #fps {
   background-size: 100% 100%;
   background-repeat: no-repeat;
   border-radius: 8px;
-  z-index: 2;
+  z-index: 1;
 }
 #storyteller-cinema-overlay .portraits-container .portrait-card.active {
   opacity: 1;
@@ -792,18 +792,20 @@ body.cinematic-mode #fps {
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--cinematic-bar-bg, rgba(0, 0, 0, 0.85));
-  border-top: var(--cinematic-bar-border, 1px solid rgba(255, 255, 255, 0.1));
+  background: var(--cinematic-portrait-name-bg, var(--cinematic-bar-bg, rgba(0, 0, 0, 0.85)));
+  border-top: var(--cinematic-portrait-name-border-top, var(--cinematic-bar-border, 1px solid rgba(255, 255, 255, 0.1)));
   color: var(--cinematic-text-color, #ffffff);
   padding: 10px;
   text-align: center;
   font-family: "Modesto Condensed", "Georgia", serif;
-  font-size: 20px;
+  font-size: var(--cinematic-portrait-name-font-size, 20px);
   text-transform: uppercase;
   letter-spacing: 2px;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: var(--cinematic-portrait-name-radius, 8px);
+  border-bottom-right-radius: var(--cinematic-portrait-name-radius, 8px);
+  margin-bottom: var(--cinematic-portrait-name-margin-bottom, 0px);
   box-sizing: border-box;
+  z-index: 5;
 }
 
 /* --- Dialogue Console App --- */

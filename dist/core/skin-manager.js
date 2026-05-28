@@ -42,7 +42,7 @@ class SkinManager {
     }
   }
   async _loadHubSkins() {
-    var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
+    var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
     const token = (_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumGitHubToken");
     if (token) {
       try {
@@ -74,10 +74,10 @@ class SkinManager {
                   backgroundTexture: (_e = skin.options) == null ? void 0 : _e.backgroundTexture,
                   overlayTexture: (_f = skin.options) == null ? void 0 : _f.overlayTexture,
                   styles: {
-                    "--cinematic-bar-bg": ((_g = skin.styles) == null ? void 0 : _g["--cinematic-bar-bg"]) || ((_h = skin.styles) == null ? void 0 : _h.barBg) || "#000000",
-                    "--cinematic-bar-border": ((_i = skin.styles) == null ? void 0 : _i["--cinematic-bar-border"]) || ((_j = skin.styles) == null ? void 0 : _j.barBorder) || "none",
-                    "--cinematic-text-color": ((_k = skin.styles) == null ? void 0 : _k["--cinematic-text-color"]) || ((_l = skin.styles) == null ? void 0 : _l.textColor) || "#ffffff",
-                    ...skin.styles
+                    "--cinematic-bar-bg": ((_h = (_g = skin.options) == null ? void 0 : _g.styles) == null ? void 0 : _h["--cinematic-bar-bg"]) || "#000000",
+                    "--cinematic-bar-border": ((_j = (_i = skin.options) == null ? void 0 : _i.styles) == null ? void 0 : _j["--cinematic-bar-border"]) || "none",
+                    "--cinematic-text-color": ((_l = (_k = skin.options) == null ? void 0 : _k.styles) == null ? void 0 : _l["--cinematic-text-color"]) || "#ffffff",
+                    ...(_m = skin.options) == null ? void 0 : _m.styles
                   }
                 }
               };
