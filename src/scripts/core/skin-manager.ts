@@ -16,6 +16,7 @@ interface SkinData {
         barTexture?: string;
         backgroundTexture?: string;
         overlayTexture?: string;
+        footerTexture?: string;
     };
 }
 
@@ -99,7 +100,7 @@ export class SkinManager {
                                 name: game.i18n.has(skin.name) ? game.i18n.localize(skin.name) : (skin.name || skin.id),
                                 author: skin.author || 'The Blacksmith',
                                 version: skin.version || '1.0.0',
-                                assets: skin.files || {}, // Save relative asset paths
+                                assets: { ...(skin.files || {}), ...(skin.assets || {}) }, // Merge legacy files + new assets (footer, etc.)
                                 options: {
                                     theme: skin.options?.theme || 'dark',
                                     filter: skin.options?.filter || 'none',
@@ -236,6 +237,16 @@ export class SkinManager {
                     this._objectUrls.set('background', bgObjUrl);
                     skin.options.backgroundTexture = bgObjUrl;
                     skin.options.styles['--cinematic-portrait-background'] = `url("${bgObjUrl}")`;
+                }
+            }
+
+            const footerPath = skin.assets.footer;
+            if (footerPath) {
+                const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, token);
+                if (footerObjUrl) {
+                    this._objectUrls.set('footer', footerObjUrl);
+                    skin.options.footerTexture = footerObjUrl;
+                    skin.options.styles['--cinematic-footer-texture'] = `url("${footerObjUrl}")`;
                 }
             }
         }
@@ -386,12 +397,15 @@ export class SkinManager {
 
         const sanitize = (p?: string): string | null => {
             if (!p) return null;
-            if (p.startsWith('http') || p.startsWith('/')) return p;
+            if (p.startsWith('http') || p.startsWith('/') || p.startsWith('blob:')) return p;
             return `/${p}`;
         };
 
         const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
         css += `    --cinematic-bg-texture: ${barTex ? `url("${barTex}")` : 'none'};\n`;
+
+        const footerTex = sanitize(skin.options.footerTexture);
+        css += `    --cinematic-footer-texture: ${footerTex ? `url("${footerTex}")` : 'none'};\n`;
 
         const overlayTex = sanitize(skin.options.overlayTexture);
         css += `    --cinematic-overlay-texture: ${overlayTex ? `url("${overlayTex}")` : 'none'};\n`;

@@ -612,7 +612,8 @@ export class StorytellerAPI {
         overlay.id = 'storyteller-cinema-overlay';
         overlay.innerHTML = `
             <div class="cinematic-bar top"></div>
-            <div class="cinematic-bar bottom">
+            <div class="cinematic-bar bottom"></div>
+            <div class="cinematic-footer">
                 <div class="subtitle-container"></div>
             </div>
             <div class="portraits-container"></div>

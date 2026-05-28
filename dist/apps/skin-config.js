@@ -80,30 +80,27 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this.rendered) this.render();
       });
     }
-    const html = this.element;
-    html.addEventListener("change", (event) => {
-      const target = event.target;
-      if (!target || !target.name) return;
-      if (this.tempSkinData) {
-        this._setValue(this.tempSkinData, target.name, target.value);
-      }
-    });
   }
   static async _onSubmit(_event, _form, formData) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
     const expanded = foundry.utils.expandObject(formData.object);
     this.tempSkinData.name = expanded.name;
     this.tempSkinData.options = this.tempSkinData.options || {};
     this.tempSkinData.options.barTexture = ((_a = expanded.options) == null ? void 0 : _a.barTexture) || "";
-    this.tempSkinData.options.portraitBorder = ((_b = expanded.options) == null ? void 0 : _b.portraitBorder) || "";
-    this.tempSkinData.options.overlayTexture = ((_c = expanded.options) == null ? void 0 : _c.overlayTexture) || "";
-    this.tempSkinData.options.filter = ((_d = expanded.options) == null ? void 0 : _d.filter) || "";
+    this.tempSkinData.options.footerTexture = ((_b = expanded.options) == null ? void 0 : _b.footerTexture) || "";
+    this.tempSkinData.options.portraitBorder = ((_c = expanded.options) == null ? void 0 : _c.portraitBorder) || "";
+    this.tempSkinData.options.overlayTexture = ((_d = expanded.options) == null ? void 0 : _d.overlayTexture) || "";
+    this.tempSkinData.options.filter = ((_e = expanded.options) == null ? void 0 : _e.filter) || "";
     this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
-    this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_f = (_e = expanded.options) == null ? void 0 : _e.styles) == null ? void 0 : _f["--cinematic-bar-bg"]) || "#000000";
-    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = ((_g = expanded.options) == null ? void 0 : _g.portraitBorder) ? `url(${expanded.options.portraitBorder})` : "none";
-    const borderWidth = ((_h = expanded.border) == null ? void 0 : _h.width) ?? 0;
-    const borderStyle = ((_i = expanded.border) == null ? void 0 : _i.style) ?? "none";
-    const borderColor = ((_j = expanded.border) == null ? void 0 : _j.color) ?? "#000000";
+    this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_g = (_f = expanded.options) == null ? void 0 : _f.styles) == null ? void 0 : _g["--cinematic-bar-bg"]) || "#000000";
+    this.tempSkinData.options.styles["--cinematic-footer-bg"] = ((_i = (_h = expanded.options) == null ? void 0 : _h.styles) == null ? void 0 : _i["--cinematic-footer-bg"]) || "transparent";
+    this.tempSkinData.options.styles["--cinematic-portrait-name-bg"] = ((_k = (_j = expanded.options) == null ? void 0 : _j.styles) == null ? void 0 : _k["--cinematic-portrait-name-bg"]) || "none";
+    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = ((_l = expanded.options) == null ? void 0 : _l.portraitBorder) ? `url(${expanded.options.portraitBorder})` : "none";
+    const footerTexture = ((_m = expanded.options) == null ? void 0 : _m.footerTexture) || "";
+    this.tempSkinData.options.styles["--cinematic-footer-texture"] = footerTexture ? `url(${footerTexture})` : "none";
+    const borderWidth = ((_n = expanded.border) == null ? void 0 : _n.width) ?? 0;
+    const borderStyle = ((_o = expanded.border) == null ? void 0 : _o.style) ?? "none";
+    const borderColor = ((_p = expanded.border) == null ? void 0 : _p.color) ?? "#000000";
     const newBorder = `${borderWidth}px ${borderStyle} ${borderColor}`;
     this.tempSkinData.options.styles["--cinematic-bar-border"] = newBorder;
     this.render();

@@ -92,16 +92,6 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
                 if (this.rendered) this.render();
             });
         }
-
-        // Keep tempSkinData in sync with form inputs immediately on change to avoid V14 race conditions
-        const html = this.element;
-        html.addEventListener('change', (event: Event) => {
-            const target = event.target as HTMLInputElement;
-            if (!target || !target.name) return;
-            if (this.tempSkinData) {
-                this._setValue(this.tempSkinData, target.name, target.value);
-            }
-        });
     }
 
     static async _onSubmit(
@@ -116,13 +106,20 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         this.tempSkinData.name = expanded.name;
         this.tempSkinData.options = this.tempSkinData.options || {};
         this.tempSkinData.options.barTexture = expanded.options?.barTexture || '';
+        this.tempSkinData.options.footerTexture = expanded.options?.footerTexture || '';
         this.tempSkinData.options.portraitBorder = expanded.options?.portraitBorder || '';
         this.tempSkinData.options.overlayTexture = expanded.options?.overlayTexture || '';
         this.tempSkinData.options.filter = expanded.options?.filter || '';
 
         this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
         this.tempSkinData.options.styles['--cinematic-bar-bg'] = expanded.options?.styles?.['--cinematic-bar-bg'] || '#000000';
+        this.tempSkinData.options.styles['--cinematic-footer-bg'] = expanded.options?.styles?.['--cinematic-footer-bg'] || 'transparent';
+        this.tempSkinData.options.styles['--cinematic-portrait-name-bg'] = expanded.options?.styles?.['--cinematic-portrait-name-bg'] || 'none';
         this.tempSkinData.options.styles['--cinematic-portrait-border-image'] = expanded.options?.portraitBorder ? `url(${expanded.options.portraitBorder})` : 'none';
+        
+        // Map Footer Texture
+        const footerTexture = expanded.options?.footerTexture || '';
+        this.tempSkinData.options.styles['--cinematic-footer-texture'] = footerTexture ? `url(${footerTexture})` : 'none';
 
         // Reconstruct border string
         const borderWidth = expanded.border?.width ?? 0;

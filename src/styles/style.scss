@@ -61,80 +61,89 @@
       width: 100%;
       height: 12vh;
       min-height: 100px;
-      /* Versão final equilibrada */
-
-      /* Um pouco mais alto para garantir cobertura */
 
       background-color: var(--cinematic-bar-bg, black);
-      background-image: var(--cinematic-bg-texture, none);
+
+      /* Fallback: tenta textura específica primeiro, depois a genérica */
       background-size: var(--cinematic-bg-size, cover);
       background-position: var(--cinematic-bg-position, center);
       background-repeat: var(--cinematic-bg-repeat, no-repeat);
       background-attachment: var(--cinematic-bg-attachment, scroll);
 
-      border-bottom: var(--cinematic-bar-border, none);
-      border-image-source: var(--cinematic-bar-border-image, none);
       border-image-slice: 30 fill;
       border-image-repeat: round;
 
-
-      /* BLOQUEIO DE CLIQUES NA BARRA:
-           Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
-           Se 'none', você clica através da barra preta.
-           Geralmente 'none' é melhor para evitar frustração de "não consigo clicar no token que está meio escondido". */
       pointer-events: none;
 
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
 
-      /* Special handling for bottom bar if border exists */
+      &.top {
+         background-image: var(--cinematic-bar-top-texture, var(--cinematic-bg-texture, none));
+         border-bottom: var(--cinematic-bar-border, none);
+         border-image-source: var(--cinematic-bar-border-image, none);
+      }
+
       &.bottom {
+         background-image: var(--cinematic-bar-bottom-texture, var(--cinematic-bg-texture, none));
          border-bottom: none;
          border-top: var(--cinematic-bar-border, none);
          border-image-source: var(--cinematic-bar-border-image, none);
-         border-image-slice: 30 fill;
-         border-image-repeat: round;
-         display: flex;
-         flex-direction: column;
-         justify-content: center;
-         align-items: center;
-         padding: 0 10%;
+      }
+   }
+   }
 
-         /* Garante que o fundo da barra de baixo também siga a configuração */
-         background-size: var(--cinematic-bg-size, cover);
-         background-position: var(--cinematic-bg-position, center);
-         background-repeat: var(--cinematic-bg-repeat, no-repeat);
-         background-attachment: var(--cinematic-bg-attachment, scroll);
+   .cinematic-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 12vh;
+      min-height: 100px;
+      z-index: 11;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 10%;
+      box-sizing: border-box;
 
-         .subtitle-container {
-            font-family: var(--stage-font-family, "Inter"), sans-serif;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.5s ease;
-            pointer-events: none;
+      /* Estilo customizado do footer independente */
+      background-color: var(--cinematic-footer-bg, transparent);
+      background-image: var(--cinematic-footer-texture, none);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
 
-            &.active {
-               opacity: 1;
-               transform: translateY(0);
-            }
+      .subtitle-container {
+         font-family: var(--stage-font-family, "Inter"), sans-serif;
+         text-align: center;
+         opacity: 0;
+         transform: translateY(10px);
+         transition: all 0.5s ease;
+         pointer-events: none;
 
-            .actor-name {
-               color: var(--cinematic-accent-color, #ff6400);
-               font-family: var(--stage-actor-font-family, "Merriweather"), serif;
-               font-weight: bold;
-               font-size: var(--stage-actor-font-size, 28px);
-               text-transform: uppercase;
-               letter-spacing: 3px;
-               margin-bottom: 8px;
-               text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            }
+         &.active {
+            opacity: 1;
+            transform: translateY(0);
+         }
 
-            .message-text {
-               color: #fff;
-               font-size: var(--stage-font-size, 24px);
-               line-height: 1.4;
-               text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
-            }
+         .actor-name {
+            color: var(--cinematic-accent-color, #ff6400);
+            font-family: var(--stage-actor-font-family, "Merriweather"), serif;
+            font-weight: bold;
+            font-size: var(--stage-actor-font-size, 28px);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+         }
+
+         .message-text {
+            color: #fff;
+            font-size: var(--stage-font-size, 24px);
+            line-height: 1.4;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
          }
       }
    }

@@ -65,8 +65,8 @@ class SkinManager {
                 name: game.i18n.has(skin.name) ? game.i18n.localize(skin.name) : skin.name || skin.id,
                 author: skin.author || "The Blacksmith",
                 version: skin.version || "1.0.0",
-                assets: skin.files || {},
-                // Save relative asset paths
+                assets: { ...skin.files || {}, ...skin.assets || {} },
+                // Merge legacy files + new assets (footer, etc.)
                 options: {
                   theme: ((_b2 = skin.options) == null ? void 0 : _b2.theme) || "dark",
                   filter: ((_c = skin.options) == null ? void 0 : _c.filter) || "none",
@@ -177,6 +177,15 @@ class SkinManager {
           this._objectUrls.set("background", bgObjUrl);
           skin.options.backgroundTexture = bgObjUrl;
           skin.options.styles["--cinematic-portrait-background"] = `url("${bgObjUrl}")`;
+        }
+      }
+      const footerPath = skin.assets.footer;
+      if (footerPath) {
+        const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, token);
+        if (footerObjUrl) {
+          this._objectUrls.set("footer", footerObjUrl);
+          skin.options.footerTexture = footerObjUrl;
+          skin.options.styles["--cinematic-footer-texture"] = `url("${footerObjUrl}")`;
         }
       }
     }
@@ -305,6 +314,9 @@ class SkinManager {
     };
     const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
     css += `    --cinematic-bg-texture: ${barTex ? `url("${barTex}")` : "none"};
+`;
+    const footerTex = sanitize(skin.options.footerTexture);
+    css += `    --cinematic-footer-texture: ${footerTex ? `url("${footerTex}")` : "none"};
 `;
     const overlayTex = sanitize(skin.options.overlayTexture);
     css += `    --cinematic-overlay-texture: ${overlayTex ? `url("${overlayTex}")` : "none"};

@@ -56,6 +56,10 @@
                         <file-picker type="image" name="options.barTexture" value="{{selectedSkin.options.barTexture}}"></file-picker>
                     </div>
                     <div class="form-group">
+                        <label>Footer Texture (Independent)</label>
+                        <file-picker type="image" name="options.footerTexture" value="{{selectedSkin.options.footerTexture}}"></file-picker>
+                    </div>
+                    <div class="form-group">
                         <label>Portrait Card Border Image</label>
                         <file-picker type="image" name="options.portraitBorder" value="{{selectedSkin.options.portraitBorder}}"></file-picker>
                     </div>
@@ -84,6 +88,14 @@
                     <div class="form-group">
                         <label>Bar Background</label>
                         <color-picker name="options.styles.--cinematic-bar-bg" value="{{lookup selectedSkin.options.styles '--cinematic-bar-bg'}}"></color-picker>
+                    </div>
+                    <div class="form-group">
+                        <label>Footer Background Color</label>
+                        <color-picker name="options.styles.--cinematic-footer-bg" value="{{lookup selectedSkin.options.styles '--cinematic-footer-bg'}}"></color-picker>
+                    </div>
+                    <div class="form-group">
+                        <label>Portrait Name Background</label>
+                        <color-picker name="options.styles.--cinematic-portrait-name-bg" value="{{lookup selectedSkin.options.styles '--cinematic-portrait-name-bg'}}"></color-picker>
                     </div>
                     <div class="form-group">
                         <label>Border Style</label>
