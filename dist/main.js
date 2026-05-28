@@ -18,6 +18,20 @@ Hooks.once("init", async function() {
       }
     }
   });
+  game.settings.register("storyteller-cinema", "premiumGitHubToken", {
+    name: "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Name",
+    hint: "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "",
+    onChange: () => {
+      var _a;
+      if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {
+        window.StorytellerCinema.skins.init();
+      }
+    }
+  });
   game.settings.register("storyteller-cinema", "customSkins", {
     name: "Custom Skins",
     scope: "client",
@@ -126,7 +140,7 @@ Hooks.once("init", async function() {
   window.StorytellerCinema = new StorytellerAPI();
   window.StorytellerCinema.skins = new SkinManager();
   window.StorytellerCinema.init();
-  window.StorytellerCinema.skins.init();
+  await window.StorytellerCinema.skins.init();
   const visTarget = "foundry.canvas.groups.CanvasVisibility.prototype.tokenVision";
   try {
     libWrapper.register("storyteller-cinema", visTarget, function(wrapped, ...args) {

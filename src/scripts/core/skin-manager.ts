@@ -33,7 +33,7 @@ export class SkinManager {
         this._styleTag = null;
     }
 
-    init(): void {
+    async init(): Promise<void> {
         console.log("Storyteller Cinema | Initializing Skin Manager...");
         this._createStyleTag();
         this._registerDefaultSkins();
@@ -43,10 +43,96 @@ export class SkinManager {
 
         this._loadCustomSkins();
 
+        // Load Premium Hub Skins and await them
+        await this._loadHubSkins();
+
         // Load saved skin setting
         const savedSkin = game.settings?.get('storyteller-cinema', 'activeSkin') || 'default';
-        this.apply(savedSkin);
+        await this.apply(savedSkin);
     }
+
+
+    private _objectUrls: Map<string, string> = new Map();
+
+    private async _fetchAssetAsObjectURL(relativePath: string, token: string): Promise<string | null> {
+        try {
+            const url = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/${relativePath}`;
+            const response = await fetch(url, {
+                headers: {
+                    "Authorization": `token ${token}`,
+                    "Accept": "application/vnd.github.v3.raw"
+                }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const blob = await response.blob();
+            return URL.createObjectURL(blob);
+        } catch (err) {
+            console.error(`Storyteller Cinema | Failed to fetch asset as Blob: ${relativePath}`, err);
+            return null;
+        }
+    }
+
+    private async _loadHubSkins(): Promise<void> {
+        // Load premium skins exclusively from the private GitHub repository using the token
+        const token = game.settings?.get('storyteller-cinema', 'premiumGitHubToken') as string;
+        if (token) {
+            try {
+                // Fetch skins.json from private repository API
+                const url = "https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/skins.json";
+                const response = await fetch(url, {
+                    headers: {
+                        "Authorization": `token ${token}`,
+                        "Accept": "application/vnd.github.v3.raw"
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json().catch(err => {
+                        console.error("Storyteller Cinema | Failed to parse skins.json from GitHub:", err);
+                        return null;
+                    });
+
+                    if (data && Array.isArray(data.skins)) {
+                        for (const skin of data.skins) {
+                            const mappedSkin: SkinData = {
+                                id: skin.id,
+                                name: game.i18n.has(skin.name) ? game.i18n.localize(skin.name) : (skin.name || skin.id),
+                                author: skin.author || 'The Blacksmith',
+                                version: skin.version || '1.0.0',
+                                assets: skin.files || {}, // Save relative asset paths
+                                options: {
+                                    theme: skin.options?.theme || 'dark',
+                                    filter: skin.options?.filter || 'none',
+                                    barTexture: skin.options?.barTexture,
+                                    backgroundTexture: skin.options?.backgroundTexture,
+                                    overlayTexture: skin.options?.overlayTexture,
+                                    styles: {
+                                        '--cinematic-bar-bg': skin.styles?.['--cinematic-bar-bg'] || skin.styles?.barBg || '#000000',
+                                        '--cinematic-bar-border': skin.styles?.['--cinematic-bar-border'] || skin.styles?.barBorder || 'none',
+                                        '--cinematic-text-color': skin.styles?.['--cinematic-text-color'] || skin.styles?.textColor || '#ffffff',
+                                        ...skin.styles
+                                    }
+                                }
+                            };
+
+                            await this.register(mappedSkin, false);
+                        }
+                        console.log("Storyteller Cinema | Premium Hub Skins loaded from private GitHub repo.");
+                    }
+                } else {
+                    console.warn(`Storyteller Cinema | Premium skin sync failed with HTTP status ${response.status}`);
+                }
+            } catch (err) {
+                console.error("Storyteller Cinema | Premium skin synchronization failed:", err);
+            }
+        }
+    }
+
+
+
+
+
+
 
     async register(skinData: SkinData, persist: boolean = false): Promise<void> {
         if (!skinData.id) {
@@ -110,6 +196,48 @@ export class SkinManager {
             console.warn(`Storyteller Cinema | Skin '${skinId}' not found. Reverting to default.`);
             skinId = 'default';
             skin = this.skins.get('default')!;
+        }
+
+        // Revoke old object URLs to release memory
+        for (const url of this._objectUrls.values()) {
+            URL.revokeObjectURL(url);
+        }
+        this._objectUrls.clear();
+
+        // If it's a premium skin and has assets, fetch them on the fly using token
+        const token = game.settings?.get('storyteller-cinema', 'premiumGitHubToken') as string;
+        if (skin.assets && token) {
+            ui.notifications?.info(`Storyteller Cinema | Loading secure premium assets for: ${skin.name}...`);
+            const borderPath = skin.assets.border;
+            const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
+            const bgPath = skin.assets.background;
+
+            skin.options.styles = skin.options.styles || {};
+
+            if (borderPath) {
+                const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, token);
+                if (borderObjUrl) {
+                    this._objectUrls.set('border', borderObjUrl);
+                    skin.options.styles['--cinematic-bar-border-image'] = `url("${borderObjUrl}")`;
+                }
+            }
+
+            if (portraitBorderPath) {
+                const portraitBorderObjUrl = await this._fetchAssetAsObjectURL(portraitBorderPath, token);
+                if (portraitBorderObjUrl) {
+                    this._objectUrls.set('portraitBorder', portraitBorderObjUrl);
+                    skin.options.styles['--cinematic-portrait-border-image'] = `url("${portraitBorderObjUrl}")`;
+                }
+            }
+
+            if (bgPath) {
+                const bgObjUrl = await this._fetchAssetAsObjectURL(bgPath, token);
+                if (bgObjUrl) {
+                    this._objectUrls.set('background', bgObjUrl);
+                    skin.options.backgroundTexture = bgObjUrl;
+                    skin.options.styles['--cinematic-portrait-background'] = `url("${bgObjUrl}")`;
+                }
+            }
         }
 
         this.activeSkin = skinId;
@@ -211,9 +339,13 @@ export class SkinManager {
         }
     }
 
-    private async _downloadAndSave(url: string, targetDir: string, filename: string): Promise<string | null> {
+    private async _downloadAndSave(url: string, targetDir: string, filename: string, token?: string): Promise<string | null> {
         try {
-            const response = await fetch(url);
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers["Authorization"] = `token ${token}`;
+            }
+            const response = await fetch(url, { headers });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const blob = await response.blob();
             const file = new File([blob], filename, { type: blob.type });
@@ -226,6 +358,7 @@ export class SkinManager {
             return null;
         }
     }
+
 
     private _createStyleTag(): void {
         const existing = document.getElementById('storyteller-cinema-skin-styles');

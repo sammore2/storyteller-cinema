@@ -64,6 +64,9 @@
   background-repeat: var(--cinematic-bg-repeat, no-repeat);
   background-attachment: var(--cinematic-bg-attachment, scroll);
   border-bottom: var(--cinematic-bar-border, none);
+  border-image-source: var(--cinematic-bar-border-image, none);
+  border-image-slice: 30 fill;
+  border-image-repeat: round;
   /* BLOQUEIO DE CLIQUES NA BARRA:
        Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
        Se 'none', você clica através da barra preta.
@@ -75,6 +78,9 @@
 #storyteller-cinema-overlay .cinematic-bar.bottom {
   border-bottom: none;
   border-top: var(--cinematic-bar-border, none);
+  border-image-source: var(--cinematic-bar-border-image, none);
+  border-image-slice: 30 fill;
+  border-image-repeat: round;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -731,8 +737,6 @@ body.cinematic-mode #fps {
   align-items: flex-end;
   gap: 30px;
   pointer-events: none;
-  z-index: 999;
-  opacity: 0;
   transition: opacity 0.5s ease;
 }
 #storyteller-cinema-overlay .portraits-container.active {
@@ -742,6 +746,7 @@ body.cinematic-mode #fps {
   flex: 1 1 0;
   max-width: 450px;
   height: 100%;
+  background-image: var(--cinematic-portrait-background, none);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: top center;
@@ -753,6 +758,21 @@ body.cinematic-mode #fps {
   transform: translateY(120px) scale(0.95);
   filter: blur(5px);
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
+  /* Premium Border Overlay */
+}
+#storyteller-cinema-overlay .portraits-container .portrait-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: var(--cinematic-portrait-border-image, none);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border-radius: 8px;
+  z-index: 2;
 }
 #storyteller-cinema-overlay .portraits-container .portrait-card.active {
   opacity: 1;
@@ -763,6 +783,9 @@ body.cinematic-mode #fps {
   border-color: #ff6400;
   box-shadow: 0 0 20px rgba(255, 100, 0, 0.6);
   transform: translateY(-10px) scale(1.02);
+}
+#storyteller-cinema-overlay .portraits-container .portrait-card.speaking::after {
+  filter: drop-shadow(0 0 8px rgba(255, 100, 0, 0.8));
 }
 #storyteller-cinema-overlay .portraits-container .portrait-card .portrait-name {
   position: absolute;

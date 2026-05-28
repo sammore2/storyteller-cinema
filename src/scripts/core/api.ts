@@ -38,7 +38,8 @@ export class StorytellerAPI {
      */
     async toggle(active: boolean, options: { skin?: string, init?: boolean } = {}): Promise<void> {
         const overlay = document.getElementById('storyteller-cinema-overlay');
-        const skin = options.skin || 'default';
+        const skin = options.skin || game.settings.get('storyteller-cinema', 'activeSkin') || 'default';
+
         this.active = active;
 
         // 1. Vision & Light Logic

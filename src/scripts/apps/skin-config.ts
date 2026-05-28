@@ -116,11 +116,13 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         this.tempSkinData.name = expanded.name;
         this.tempSkinData.options = this.tempSkinData.options || {};
         this.tempSkinData.options.barTexture = expanded.options?.barTexture || '';
+        this.tempSkinData.options.portraitBorder = expanded.options?.portraitBorder || '';
         this.tempSkinData.options.overlayTexture = expanded.options?.overlayTexture || '';
         this.tempSkinData.options.filter = expanded.options?.filter || '';
 
         this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
         this.tempSkinData.options.styles['--cinematic-bar-bg'] = expanded.options?.styles?.['--cinematic-bar-bg'] || '#000000';
+        this.tempSkinData.options.styles['--cinematic-portrait-border-image'] = expanded.options?.portraitBorder ? `url(${expanded.options.portraitBorder})` : 'none';
 
         // Reconstruct border string
         const borderWidth = expanded.border?.width ?? 0;

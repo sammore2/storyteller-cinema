@@ -73,6 +73,10 @@
       background-attachment: var(--cinematic-bg-attachment, scroll);
 
       border-bottom: var(--cinematic-bar-border, none);
+      border-image-source: var(--cinematic-bar-border-image, none);
+      border-image-slice: 30 fill;
+      border-image-repeat: round;
+
 
       /* BLOQUEIO DE CLIQUES NA BARRA:
            Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
@@ -86,6 +90,9 @@
       &.bottom {
          border-bottom: none;
          border-top: var(--cinematic-bar-border, none);
+         border-image-source: var(--cinematic-bar-border-image, none);
+         border-image-slice: 30 fill;
+         border-image-repeat: round;
          display: flex;
          flex-direction: column;
          justify-content: center;
@@ -802,67 +809,86 @@ body.cinematic-mode {
        align-items: flex-end;
        gap: 30px;
        pointer-events: none;
-       z-index: 999;
-       opacity: 0;
-       transition: opacity 0.5s ease;
+      transition: opacity 0.5s ease;
 
        &.active {
           opacity: 1;
        }
 
-       .portrait-card {
-          flex: 1 1 0;
-          max-width: 450px;
-          height: 100%;
-          background-size: cover;
-          background-repeat: no-repeat;
-          background-position: top center;
-          border-radius: 8px;
-          border: 2px solid transparent;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 1px rgba(255, 255, 255, 0.2);
-          position: relative;
+        .portrait-card {
+           flex: 1 1 0;
+           max-width: 450px;
+           height: 100%;
+           background-image: var(--cinematic-portrait-background, none);
+           background-size: cover;
+           background-repeat: no-repeat;
+           background-position: top center;
+           border-radius: 8px;
+           border: 2px solid transparent;
+           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 1px rgba(255, 255, 255, 0.2);
+           position: relative;
+           
+           opacity: 0;
+           transform: translateY(120px) scale(0.95);
+           filter: blur(5px);
           
-          opacity: 0;
-          transform: translateY(120px) scale(0.95);
-          filter: blur(5px);
-          
-          transition: 
-             opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-             transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-             filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-             border-color 0.3s,
-             box-shadow 0.3s;
-          
-          &.active {
-             opacity: 1;
-             transform: translateY(0) scale(1);
-             filter: blur(0);
-          }
+           transition: 
+              opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s,
+              box-shadow 0.3s;
 
-          &.speaking {
-             border-color: #ff6400;
-             box-shadow: 0 0 20px rgba(255, 100, 0, 0.6);
-             transform: translateY(-10px) scale(1.02);
-          }
-          
-          .portrait-name {
-             position: absolute;
-             bottom: 0;
-             left: 0;
-             right: 0;
-             background: var(--cinematic-bar-bg, rgba(0, 0, 0, 0.85));
-             border-top: var(--cinematic-bar-border, 1px solid rgba(255, 255, 255, 0.1));
-             color: var(--cinematic-text-color, #ffffff);
-             padding: 10px;
-             text-align: center;
-             font-family: 'Modesto Condensed', 'Georgia', serif;
-             font-size: 20px;
-             text-transform: uppercase;
-             letter-spacing: 2px;
-             border-bottom-left-radius: 8px;
-             border-bottom-right-radius: 8px;
-             box-sizing: border-box;
-          }
+           /* Premium Border Overlay */
+           &::after {
+              content: "";
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              pointer-events: none;
+              background-image: var(--cinematic-portrait-border-image, none);
+              background-size: 100% 100%;
+              background-repeat: no-repeat;
+              border-radius: 8px;
+              z-index: 2;
+           }
+           
+           &.active {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+              filter: blur(0);
+           }
+
+           &.speaking {
+              border-color: #ff6400;
+              box-shadow: 0 0 20px rgba(255, 100, 0, 0.6);
+              transform: translateY(-10px) scale(1.02);
+              
+              &::after {
+                 filter: drop-shadow(0 0 8px rgba(255, 100, 0, 0.8));
+              }
+           }
+           
+           .portrait-name {
+              position: absolute;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              background: var(--cinematic-bar-bg, rgba(0, 0, 0, 0.85));
+              border-top: var(--cinematic-bar-border, 1px solid rgba(255, 255, 255, 0.1));
+              color: var(--cinematic-text-color, #ffffff);
+              padding: 10px;
+              text-align: center;
+              font-family: 'Modesto Condensed', 'Georgia', serif;
+              font-size: 20px;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              border-bottom-left-radius: 8px;
+              border-bottom-right-radius: 8px;
+              box-sizing: border-box;
+           }
        }
     }
 }

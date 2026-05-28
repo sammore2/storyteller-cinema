@@ -29,5 +29,8 @@
     "STORYTELLER_CINEMA.HUD.ChangeSkin": "Mudar Skin",
 
     "STORYTELLER_CINEMA.DirectorMode.On": "Modo Diretor está ATIVO",
-    "STORYTELLER_CINEMA.DirectorMode.Off": "Modo Diretor está INATIVO"
+    "STORYTELLER_CINEMA.DirectorMode.Off": "Modo Diretor está INATIVO",
+    "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Name": "Token de Acesso Premium (GitHub)",
+    "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Hint": "Insira o seu Personal Access Token do GitHub para liberar e baixar as skins premium do The Blacksmith."
 }
+

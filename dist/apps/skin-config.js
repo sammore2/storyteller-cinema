@@ -90,18 +90,20 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
   static async _onSubmit(_event, _form, formData) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
     const expanded = foundry.utils.expandObject(formData.object);
     this.tempSkinData.name = expanded.name;
     this.tempSkinData.options = this.tempSkinData.options || {};
     this.tempSkinData.options.barTexture = ((_a = expanded.options) == null ? void 0 : _a.barTexture) || "";
-    this.tempSkinData.options.overlayTexture = ((_b = expanded.options) == null ? void 0 : _b.overlayTexture) || "";
-    this.tempSkinData.options.filter = ((_c = expanded.options) == null ? void 0 : _c.filter) || "";
+    this.tempSkinData.options.portraitBorder = ((_b = expanded.options) == null ? void 0 : _b.portraitBorder) || "";
+    this.tempSkinData.options.overlayTexture = ((_c = expanded.options) == null ? void 0 : _c.overlayTexture) || "";
+    this.tempSkinData.options.filter = ((_d = expanded.options) == null ? void 0 : _d.filter) || "";
     this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
-    this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_e = (_d = expanded.options) == null ? void 0 : _d.styles) == null ? void 0 : _e["--cinematic-bar-bg"]) || "#000000";
-    const borderWidth = ((_f = expanded.border) == null ? void 0 : _f.width) ?? 0;
-    const borderStyle = ((_g = expanded.border) == null ? void 0 : _g.style) ?? "none";
-    const borderColor = ((_h = expanded.border) == null ? void 0 : _h.color) ?? "#000000";
+    this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_f = (_e = expanded.options) == null ? void 0 : _e.styles) == null ? void 0 : _f["--cinematic-bar-bg"]) || "#000000";
+    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = ((_g = expanded.options) == null ? void 0 : _g.portraitBorder) ? `url(${expanded.options.portraitBorder})` : "none";
+    const borderWidth = ((_h = expanded.border) == null ? void 0 : _h.width) ?? 0;
+    const borderStyle = ((_i = expanded.border) == null ? void 0 : _i.style) ?? "none";
+    const borderColor = ((_j = expanded.border) == null ? void 0 : _j.color) ?? "#000000";
     const newBorder = `${borderWidth}px ${borderStyle} ${borderColor}`;
     this.tempSkinData.options.styles["--cinematic-bar-border"] = newBorder;
     this.render();

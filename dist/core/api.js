@@ -30,7 +30,7 @@ class StorytellerAPI {
   async toggle(active, options = {}) {
     var _a, _b;
     const overlay = document.getElementById("storyteller-cinema-overlay");
-    const skin = options.skin || "default";
+    const skin = options.skin || game.settings.get("storyteller-cinema", "activeSkin") || "default";
     this.active = active;
     this._applyVisionOverride(active);
     if (active) {
