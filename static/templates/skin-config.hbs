@@ -52,8 +52,16 @@
                 <fieldset>
                     <legend>Textures</legend>
                     <div class="form-group">
-                        <label>Bar Texture (Leather/Wood)</label>
+                        <label>Bar Texture (Global Fallback)</label>
                         <file-picker type="image" name="options.barTexture" value="{{selectedSkin.options.barTexture}}"></file-picker>
+                    </div>
+                    <div class="form-group">
+                        <label>Top Bar Texture (Independent)</label>
+                        <file-picker type="image" name="options.barTopTexture" value="{{selectedSkin.options.barTopTexture}}"></file-picker>
+                    </div>
+                    <div class="form-group">
+                        <label>Bottom Bar Texture (Independent)</label>
+                        <file-picker type="image" name="options.barBottomTexture" value="{{selectedSkin.options.barBottomTexture}}"></file-picker>
                     </div>
                     <div class="form-group">
                         <label>Footer Texture (Independent)</label>

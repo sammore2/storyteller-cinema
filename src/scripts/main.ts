@@ -9,7 +9,7 @@ import './lib/shim.js'; // Import libWrapper Shim
 /**
  * Storyteller Cinema | Main Entry Point (TypeScript)
  */
-Hooks.once('init', async function () {
+Hooks.once('init', function () {
   console.log('Storyteller Cinema | Initializing...');
 
   // 1. REGISTER SETTINGS
@@ -160,7 +160,6 @@ Hooks.once('init', async function () {
   window.StorytellerCinema.skins = new SkinManager();
 
   window.StorytellerCinema.init();
-  await window.StorytellerCinema.skins.init();
 
 
   // LIBWRAPPER HOOKS
@@ -213,6 +212,13 @@ Hooks.once('init', async function () {
     },
     restricted: false
   });
+});
+
+// Skin manager init (async) moved to setup hook to avoid blocking init
+Hooks.once('setup', async () => {
+  if (window.StorytellerCinema?.skins) {
+    await window.StorytellerCinema.skins.init();
+  }
 });
 
 // Patch Drawing.prototype.isVisible ONCE, after Foundry is ready.

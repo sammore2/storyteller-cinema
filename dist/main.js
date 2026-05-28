@@ -3,7 +3,7 @@ import { S as SkinManager } from "./core/skin-manager.js";
 import { r as registerUIHooks } from "./hooks/ui.js";
 import { r as registerRenderHooks } from "./hooks/render.js";
 import { r as registerChatHooks } from "./hooks/chat.js";
-Hooks.once("init", async function() {
+Hooks.once("init", function() {
   console.log("Storyteller Cinema | Initializing...");
   game.settings.register("storyteller-cinema", "activeSkin", {
     name: "Active Skin",
@@ -140,7 +140,6 @@ Hooks.once("init", async function() {
   window.StorytellerCinema = new StorytellerAPI();
   window.StorytellerCinema.skins = new SkinManager();
   window.StorytellerCinema.init();
-  await window.StorytellerCinema.skins.init();
   const visTarget = "foundry.canvas.groups.CanvasVisibility.prototype.tokenVision";
   try {
     libWrapper.register("storyteller-cinema", visTarget, function(wrapped, ...args) {
@@ -186,6 +185,12 @@ Hooks.once("init", async function() {
     },
     restricted: false
   });
+});
+Hooks.once("setup", async () => {
+  var _a;
+  if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {
+    await window.StorytellerCinema.skins.init();
+  }
 });
 Hooks.once("ready", () => {
   var _a;

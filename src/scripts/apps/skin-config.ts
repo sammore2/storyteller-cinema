@@ -106,6 +106,8 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         this.tempSkinData.name = expanded.name;
         this.tempSkinData.options = this.tempSkinData.options || {};
         this.tempSkinData.options.barTexture = expanded.options?.barTexture || '';
+        this.tempSkinData.options.barTopTexture = expanded.options?.barTopTexture || '';
+        this.tempSkinData.options.barBottomTexture = expanded.options?.barBottomTexture || '';
         this.tempSkinData.options.footerTexture = expanded.options?.footerTexture || '';
         this.tempSkinData.options.portraitBorder = expanded.options?.portraitBorder || '';
         this.tempSkinData.options.overlayTexture = expanded.options?.overlayTexture || '';
@@ -164,7 +166,26 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         }
     }
 
+    _captureFormData(this: SkinConfig): void {
+        const form = this.element;
+        if (!form) return;
+        const opts = this.tempSkinData.options || {};
+        form.querySelectorAll('file-picker[name]').forEach((fp: any) => {
+            const name = fp.getAttribute('name');
+            const val = fp.value ?? fp.getAttribute('value') ?? '';
+            if (name === 'options.barTopTexture') opts.barTopTexture = val;
+            else if (name === 'options.barBottomTexture') opts.barBottomTexture = val;
+            else if (name === 'options.barTexture') opts.barTexture = val;
+            else if (name === 'options.footerTexture') opts.footerTexture = val;
+            else if (name === 'options.overlayTexture') opts.overlayTexture = val;
+            else if (name === 'options.portraitBorder') opts.portraitBorder = val;
+            else if (name === 'options.filter') opts.filter = val;
+        });
+        this.tempSkinData.options = opts;
+    }
+
     static _onApplySkin(this: SkinConfig): void {
+        this._captureFormData();
         const skins = window.StorytellerCinema.skins;
         if (this.tempSkinData && skins) {
             skins.register(this.tempSkinData, false);
@@ -174,6 +195,7 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
     }
 
     static _onSaveSkin(this: SkinConfig): void {
+        this._captureFormData();
         const skins = window.StorytellerCinema.skins;
         if (this.tempSkinData && skins) {
             skins.register(this.tempSkinData, true);

@@ -156,6 +156,8 @@ class SkinManager {
       const borderPath = skin.assets.border;
       const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
       const bgPath = skin.assets.background;
+      const topBarPath = skin.assets.topBar;
+      const bottomBarPath = skin.assets.bottomBar;
       skin.options.styles = skin.options.styles || {};
       if (borderPath) {
         const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, token);
@@ -177,6 +179,22 @@ class SkinManager {
           this._objectUrls.set("background", bgObjUrl);
           skin.options.backgroundTexture = bgObjUrl;
           skin.options.styles["--cinematic-portrait-background"] = `url("${bgObjUrl}")`;
+        }
+      }
+      if (topBarPath) {
+        const topBarObjUrl = await this._fetchAssetAsObjectURL(topBarPath, token);
+        if (topBarObjUrl) {
+          this._objectUrls.set("topBar", topBarObjUrl);
+          skin.options.barTopTexture = topBarObjUrl;
+          skin.options.styles["--cinematic-bar-top-texture"] = `url("${topBarObjUrl}")`;
+        }
+      }
+      if (bottomBarPath) {
+        const bottomBarObjUrl = await this._fetchAssetAsObjectURL(bottomBarPath, token);
+        if (bottomBarObjUrl) {
+          this._objectUrls.set("bottomBar", bottomBarObjUrl);
+          skin.options.barBottomTexture = bottomBarObjUrl;
+          skin.options.styles["--cinematic-bar-bottom-texture"] = `url("${bottomBarObjUrl}")`;
         }
       }
       const footerPath = skin.assets.footer;
@@ -300,7 +318,15 @@ class SkinManager {
     let css = `:root { 
 `;
     if (skin.options.styles) {
+      const skipKeys = /* @__PURE__ */ new Set([
+        "--cinematic-bg-texture",
+        "--cinematic-bar-top-texture",
+        "--cinematic-bar-bottom-texture",
+        "--cinematic-footer-texture",
+        "--cinematic-overlay-texture"
+      ]);
       for (const [key, value] of Object.entries(skin.options.styles)) {
+        if (skipKeys.has(key)) continue;
         css += `    ${key}: ${value};
 `;
       }
@@ -309,18 +335,34 @@ class SkinManager {
 `;
     const sanitize = (p) => {
       if (!p) return null;
-      if (p.startsWith("http") || p.startsWith("/")) return p;
+      if (p.startsWith("http") || p.startsWith("/") || p.startsWith("blob:")) return p;
       return `/${p}`;
     };
     const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
-    css += `    --cinematic-bg-texture: ${barTex ? `url("${barTex}")` : "none"};
+    if (barTex) {
+      css += `    --cinematic-bg-texture: url("${barTex}");
 `;
+    }
+    const barTopTex = sanitize(skin.options.barTopTexture);
+    if (barTopTex) {
+      css += `    --cinematic-bar-top-texture: url("${barTopTex}");
+`;
+    }
+    const barBottomTex = sanitize(skin.options.barBottomTexture);
+    if (barBottomTex) {
+      css += `    --cinematic-bar-bottom-texture: url("${barBottomTex}");
+`;
+    }
     const footerTex = sanitize(skin.options.footerTexture);
-    css += `    --cinematic-footer-texture: ${footerTex ? `url("${footerTex}")` : "none"};
+    if (footerTex) {
+      css += `    --cinematic-footer-texture: url("${footerTex}");
 `;
+    }
     const overlayTex = sanitize(skin.options.overlayTexture);
-    css += `    --cinematic-overlay-texture: ${overlayTex ? `url("${overlayTex}")` : "none"};
+    if (overlayTex) {
+      css += `    --cinematic-overlay-texture: url("${overlayTex}");
 `;
+    }
     css += `}
 `;
     this._styleTag.innerHTML = css;

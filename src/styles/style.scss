@@ -70,9 +70,6 @@
       background-repeat: var(--cinematic-bg-repeat, no-repeat);
       background-attachment: var(--cinematic-bg-attachment, scroll);
 
-      border-image-slice: 30 fill;
-      border-image-repeat: round;
-
       pointer-events: none;
 
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
@@ -80,16 +77,13 @@
       &.top {
          background-image: var(--cinematic-bar-top-texture, var(--cinematic-bg-texture, none));
          border-bottom: var(--cinematic-bar-border, none);
-         border-image-source: var(--cinematic-bar-border-image, none);
       }
 
       &.bottom {
          background-image: var(--cinematic-bar-bottom-texture, var(--cinematic-bg-texture, none));
          border-bottom: none;
          border-top: var(--cinematic-bar-border, none);
-         border-image-source: var(--cinematic-bar-border-image, none);
       }
-   }
    }
 
    .cinematic-footer {
@@ -110,7 +104,7 @@
 
       /* Estilo customizado do footer independente */
       background-color: var(--cinematic-footer-bg, transparent);
-      background-image: var(--cinematic-footer-texture, none);
+      background-image: var(--cinematic-footer-texture, var(--cinematic-bar-bottom-texture, var(--cinematic-bg-texture, none)));
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;

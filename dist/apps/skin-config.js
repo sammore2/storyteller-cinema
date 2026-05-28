@@ -82,25 +82,27 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
   static async _onSubmit(_event, _form, formData) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
     const expanded = foundry.utils.expandObject(formData.object);
     this.tempSkinData.name = expanded.name;
     this.tempSkinData.options = this.tempSkinData.options || {};
     this.tempSkinData.options.barTexture = ((_a = expanded.options) == null ? void 0 : _a.barTexture) || "";
-    this.tempSkinData.options.footerTexture = ((_b = expanded.options) == null ? void 0 : _b.footerTexture) || "";
-    this.tempSkinData.options.portraitBorder = ((_c = expanded.options) == null ? void 0 : _c.portraitBorder) || "";
-    this.tempSkinData.options.overlayTexture = ((_d = expanded.options) == null ? void 0 : _d.overlayTexture) || "";
-    this.tempSkinData.options.filter = ((_e = expanded.options) == null ? void 0 : _e.filter) || "";
+    this.tempSkinData.options.barTopTexture = ((_b = expanded.options) == null ? void 0 : _b.barTopTexture) || "";
+    this.tempSkinData.options.barBottomTexture = ((_c = expanded.options) == null ? void 0 : _c.barBottomTexture) || "";
+    this.tempSkinData.options.footerTexture = ((_d = expanded.options) == null ? void 0 : _d.footerTexture) || "";
+    this.tempSkinData.options.portraitBorder = ((_e = expanded.options) == null ? void 0 : _e.portraitBorder) || "";
+    this.tempSkinData.options.overlayTexture = ((_f = expanded.options) == null ? void 0 : _f.overlayTexture) || "";
+    this.tempSkinData.options.filter = ((_g = expanded.options) == null ? void 0 : _g.filter) || "";
     this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
-    this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_g = (_f = expanded.options) == null ? void 0 : _f.styles) == null ? void 0 : _g["--cinematic-bar-bg"]) || "#000000";
-    this.tempSkinData.options.styles["--cinematic-footer-bg"] = ((_i = (_h = expanded.options) == null ? void 0 : _h.styles) == null ? void 0 : _i["--cinematic-footer-bg"]) || "transparent";
-    this.tempSkinData.options.styles["--cinematic-portrait-name-bg"] = ((_k = (_j = expanded.options) == null ? void 0 : _j.styles) == null ? void 0 : _k["--cinematic-portrait-name-bg"]) || "none";
-    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = ((_l = expanded.options) == null ? void 0 : _l.portraitBorder) ? `url(${expanded.options.portraitBorder})` : "none";
-    const footerTexture = ((_m = expanded.options) == null ? void 0 : _m.footerTexture) || "";
+    this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_i = (_h = expanded.options) == null ? void 0 : _h.styles) == null ? void 0 : _i["--cinematic-bar-bg"]) || "#000000";
+    this.tempSkinData.options.styles["--cinematic-footer-bg"] = ((_k = (_j = expanded.options) == null ? void 0 : _j.styles) == null ? void 0 : _k["--cinematic-footer-bg"]) || "transparent";
+    this.tempSkinData.options.styles["--cinematic-portrait-name-bg"] = ((_m = (_l = expanded.options) == null ? void 0 : _l.styles) == null ? void 0 : _m["--cinematic-portrait-name-bg"]) || "none";
+    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = ((_n = expanded.options) == null ? void 0 : _n.portraitBorder) ? `url(${expanded.options.portraitBorder})` : "none";
+    const footerTexture = ((_o = expanded.options) == null ? void 0 : _o.footerTexture) || "";
     this.tempSkinData.options.styles["--cinematic-footer-texture"] = footerTexture ? `url(${footerTexture})` : "none";
-    const borderWidth = ((_n = expanded.border) == null ? void 0 : _n.width) ?? 0;
-    const borderStyle = ((_o = expanded.border) == null ? void 0 : _o.style) ?? "none";
-    const borderColor = ((_p = expanded.border) == null ? void 0 : _p.color) ?? "#000000";
+    const borderWidth = ((_p = expanded.border) == null ? void 0 : _p.width) ?? 0;
+    const borderStyle = ((_q = expanded.border) == null ? void 0 : _q.style) ?? "none";
+    const borderColor = ((_r = expanded.border) == null ? void 0 : _r.color) ?? "#000000";
     const newBorder = `${borderWidth}px ${borderStyle} ${borderColor}`;
     this.tempSkinData.options.styles["--cinematic-bar-border"] = newBorder;
     this.render();
@@ -133,8 +135,26 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
   }
+  _captureFormData() {
+    const form = this.element;
+    if (!form) return;
+    const opts = this.tempSkinData.options || {};
+    form.querySelectorAll("file-picker[name]").forEach((fp) => {
+      const name = fp.getAttribute("name");
+      const val = fp.value ?? fp.getAttribute("value") ?? "";
+      if (name === "options.barTopTexture") opts.barTopTexture = val;
+      else if (name === "options.barBottomTexture") opts.barBottomTexture = val;
+      else if (name === "options.barTexture") opts.barTexture = val;
+      else if (name === "options.footerTexture") opts.footerTexture = val;
+      else if (name === "options.overlayTexture") opts.overlayTexture = val;
+      else if (name === "options.portraitBorder") opts.portraitBorder = val;
+      else if (name === "options.filter") opts.filter = val;
+    });
+    this.tempSkinData.options = opts;
+  }
   static _onApplySkin() {
     var _a;
+    this._captureFormData();
     const skins = window.StorytellerCinema.skins;
     if (this.tempSkinData && skins) {
       skins.register(this.tempSkinData, false);
@@ -144,6 +164,7 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   }
   static _onSaveSkin() {
     var _a;
+    this._captureFormData();
     const skins = window.StorytellerCinema.skins;
     if (this.tempSkinData && skins) {
       skins.register(this.tempSkinData, true);

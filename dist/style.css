@@ -55,37 +55,23 @@
   width: 100%;
   height: 12vh;
   min-height: 100px;
-  /* Versão final equilibrada */
-  /* Um pouco mais alto para garantir cobertura */
   background-color: var(--cinematic-bar-bg, black);
-  background-image: var(--cinematic-bg-texture, none);
+  /* Fallback: tenta textura específica primeiro, depois a genérica */
   background-size: var(--cinematic-bg-size, cover);
   background-position: var(--cinematic-bg-position, center);
   background-repeat: var(--cinematic-bg-repeat, no-repeat);
   background-attachment: var(--cinematic-bg-attachment, scroll);
-  border-bottom: var(--cinematic-bar-border, none);
-  border-image-source: var(--cinematic-bar-border-image, none);
-  border-image-slice: 30 fill;
-  border-image-repeat: round;
-  /* BLOQUEIO DE CLIQUES NA BARRA:
-       Se 'auto', você não clica no que está embaixo da barra (tokens no topo/fundo).
-       Se 'none', você clica através da barra preta.
-       Geralmente 'none' é melhor para evitar frustração de "não consigo clicar no token que está meio escondido". */
   pointer-events: none;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
-  /* Special handling for bottom bar if border exists */
+}
+#storyteller-cinema-overlay .cinematic-bar.top {
+  background-image: var(--cinematic-bar-top-texture, var(--cinematic-bg-texture, none));
+  border-bottom: var(--cinematic-bar-border, none);
 }
 #storyteller-cinema-overlay .cinematic-bar.bottom {
+  background-image: var(--cinematic-bar-bottom-texture, var(--cinematic-bg-texture, none));
   border-bottom: none;
   border-top: var(--cinematic-bar-border, none);
-  border-image-source: var(--cinematic-bar-border-image, none);
-  border-image-slice: 30 fill;
-  border-image-repeat: round;
-  /* Garante que o fundo da barra de baixo também siga a configuração */
-  background-size: var(--cinematic-bg-size, cover);
-  background-position: var(--cinematic-bg-position, center);
-  background-repeat: var(--cinematic-bg-repeat, no-repeat);
-  background-attachment: var(--cinematic-bg-attachment, scroll);
 }
 #storyteller-cinema-overlay .cinematic-footer {
   position: absolute;
@@ -104,7 +90,7 @@
   box-sizing: border-box;
   /* Estilo customizado do footer independente */
   background-color: var(--cinematic-footer-bg, transparent);
-  background-image: var(--cinematic-footer-texture, none);
+  background-image: var(--cinematic-footer-texture, var(--cinematic-bar-bottom-texture, var(--cinematic-bg-texture, none)));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
