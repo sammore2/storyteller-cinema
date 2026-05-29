@@ -496,7 +496,7 @@ export class StorytellerAPI {
     private _toggleLayerVisibility(visible: boolean): void {
         const isV14 = !!(canvas as any).effects;
 
-        if ( (canvas as any).visibility ) (canvas as any).visibility.visible = visible;
+        if ( (canvas as any).visibility ) (canvas as any).visibility.visible = true;
 
         if ( isV14 ) {
             // V14 Selective Hiding
