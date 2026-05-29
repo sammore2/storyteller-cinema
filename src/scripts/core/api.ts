@@ -496,7 +496,14 @@ export class StorytellerAPI {
     private _toggleLayerVisibility(visible: boolean): void {
         const isV14 = !!(canvas as any).effects;
 
-        if ( (canvas as any).visibility ) (canvas as any).visibility.visible = true;
+        if ( (canvas as any).visibility ) (canvas as any).visibility.visible = visible;
+
+        // Hide token meshes in V14 to prevent them from showing up when visibility/fog of war is toggled
+        if ( canvas.tokens?.placeables ) {
+            for ( const t of canvas.tokens.placeables ) {
+                if ( t.mesh ) t.mesh.visible = visible ? !t.document.hidden : false;
+            }
+        }
 
         if ( isV14 ) {
             // V14 Selective Hiding

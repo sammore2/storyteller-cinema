@@ -403,8 +403,14 @@ class StorytellerAPI {
     });
   }
   _toggleLayerVisibility(visible) {
+    var _a;
     const isV14 = !!canvas.effects;
     if (canvas.visibility) canvas.visibility.visible = visible;
+    if ((_a = canvas.tokens) == null ? void 0 : _a.placeables) {
+      for (const t of canvas.tokens.placeables) {
+        if (t.mesh) t.mesh.visible = visible ? !t.document.hidden : false;
+      }
+    }
     if (isV14) {
       if (canvas.primary) {
         const p = canvas.primary;
