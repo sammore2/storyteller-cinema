@@ -75,7 +75,6 @@ export class StorytellerAPI {
             // Camera Pan
             await this._panCameraToFit(options.init || false);
 
-            // Reparent weather to stage so it renders above the cinematic background
             this._reparentWeather(true);
 
             // 3. MANIPULATE CANVAS LAYERS
@@ -88,7 +87,6 @@ export class StorytellerAPI {
             // --- DEACTIVATE ---
             this.clear(); // Clear subtitles/portraits
 
-            // Restore weather to primary before tearing down cinema
             this._reparentWeather(false);
 
             if (game.user?.isGM) {
