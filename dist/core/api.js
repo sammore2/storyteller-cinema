@@ -331,7 +331,7 @@ class StorytellerAPI {
     this._lastBackgroundPath = path;
     if (!canvas.ready) return;
     const isV14 = !!canvas.effects;
-    const parent = isV14 ? canvas.primary || canvas.rendered || canvas.stage : canvas.rendered || canvas.stage;
+    const parent = isV14 ? canvas.stage : canvas.rendered || canvas.stage;
     if (this.cinematicContainer && (this.cinematicContainer.destroyed || this.cinematicContainer.parent && this.cinematicContainer.parent !== parent)) {
       if (this.cinematicContainer.parent) {
         try {
@@ -351,14 +351,21 @@ class StorytellerAPI {
         if (weather && parent.children.includes(weather)) {
           const weatherIndex = parent.getChildIndex(weather);
           parent.setChildIndex(this.cinematicContainer, weatherIndex);
-          console.log(`Storyteller Cinema | Container layered at index ${weatherIndex} (below weather) inside parent group`);
+          console.log(`Storyteller Cinema | Container layered at index ${weatherIndex} (below weather) inside stage`);
         } else {
-          const topIndex = Math.max(0, parent.children.length - 1);
-          parent.setChildIndex(this.cinematicContainer, topIndex);
-          console.log(`Storyteller Cinema | Container layered at top index ${topIndex} of primary group`);
+          const effects = canvas.effects;
+          if (effects && parent.children.includes(effects)) {
+            const effectsIndex = parent.getChildIndex(effects);
+            parent.setChildIndex(this.cinematicContainer, effectsIndex + 1);
+            console.log(`Storyteller Cinema | Container layered above effects at index ${effectsIndex + 1} inside stage`);
+          } else {
+            const topIndex = Math.max(0, parent.children.length - 1);
+            parent.setChildIndex(this.cinematicContainer, topIndex);
+            console.log(`Storyteller Cinema | Container layered at top index ${topIndex} inside stage`);
+          }
         }
       } catch (e) {
-        console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent.", e);
+        console.warn("Storyteller Cinema | Failed to set specific layer index, staying at top of parent stage.", e);
       }
     }
     PIXI.Assets.load(path).then((tex) => {

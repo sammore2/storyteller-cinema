@@ -3,9 +3,9 @@ function registerRenderHooks() {
     var _a;
     const active = (_a = window.StorytellerCinema) == null ? void 0 : _a.active;
     if (!active) {
-      if (token.mesh) token.mesh.visible = true;
-      if (token.bars) token.bars.visible = true;
-      if (token.nameplate) token.nameplate.visible = true;
+      if (token.mesh) token.mesh.visible = token.isVisible;
+      if (token.bars) token.bars.visible = token.isVisible;
+      if (token.nameplate) token.nameplate.visible = token.isVisible;
       return;
     }
     if (token.mesh) {

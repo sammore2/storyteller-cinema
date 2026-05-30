@@ -9,9 +9,9 @@ export function registerRenderHooks(): void {
         const active = window.StorytellerCinema?.active;
         
         if (!active) {
-            if (token.mesh) token.mesh.visible = true;
-            if (token.bars) token.bars.visible = true;
-            if (token.nameplate) token.nameplate.visible = true;
+            if (token.mesh) token.mesh.visible = token.isVisible;
+            if (token.bars) token.bars.visible = token.isVisible;
+            if (token.nameplate) token.nameplate.visible = token.isVisible;
             return;
         }
 
