@@ -75,6 +75,9 @@ export class StorytellerAPI {
             // Camera Pan
             await this._panCameraToFit(options.init || false);
 
+            // Reparent weather to stage so it renders above the cinematic background
+            this._reparentWeather(true);
+
             // 3. MANIPULATE CANVAS LAYERS
             if (canvas.ready) {
                 this._refreshAllPlaceables();
@@ -84,6 +87,9 @@ export class StorytellerAPI {
         } else {
             // --- DEACTIVATE ---
             this.clear(); // Clear subtitles/portraits
+
+            // Restore weather to primary before tearing down cinema
+            this._reparentWeather(false);
 
             if (game.user?.isGM) {
                 this._ensureGhostMode(false, true);
@@ -369,6 +375,30 @@ export class StorytellerAPI {
         if (this._visionOverrideActive) {
             this._applyVisionOverride(true);
             this._toggleLayerVisibility(false);
+        }
+    }
+
+    private _reparentWeather(active: boolean): void {
+        if (!canvas.ready) return;
+        const weather = (canvas as any).weather as any;
+        if (!weather) return;
+        const primary = (canvas as any).primary as any;
+        if (!primary) return;
+
+        if (active) {
+            if (weather.parent === primary) {
+                primary.removeChild(weather);
+                canvas.stage.addChild(weather);
+                if (this.cinematicContainer && canvas.stage.children.includes(this.cinematicContainer)) {
+                    const idx = canvas.stage.getChildIndex(this.cinematicContainer);
+                    canvas.stage.setChildIndex(weather, idx + 1);
+                }
+            }
+        } else {
+            if (weather.parent === canvas.stage) {
+                canvas.stage.removeChild(weather);
+                primary.addChild(weather);
+            }
         }
     }
 

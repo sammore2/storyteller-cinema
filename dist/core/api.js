@@ -53,12 +53,14 @@ class StorytellerAPI {
         document.body.dataset.cinematicSkin = skin;
       }
       await this._panCameraToFit(options.init || false);
+      this._reparentWeather(true);
       if (canvas.ready) {
         this._refreshAllPlaceables();
         this.enforceVision();
       }
     } else {
       this.clear();
+      this._reparentWeather(false);
       if ((_b = game.user) == null ? void 0 : _b.isGM) {
         this._ensureGhostMode(false, true);
       }
@@ -296,6 +298,28 @@ class StorytellerAPI {
     if (this._visionOverrideActive) {
       this._applyVisionOverride(true);
       this._toggleLayerVisibility(false);
+    }
+  }
+  _reparentWeather(active) {
+    if (!canvas.ready) return;
+    const weather = canvas.weather;
+    if (!weather) return;
+    const primary = canvas.primary;
+    if (!primary) return;
+    if (active) {
+      if (weather.parent === primary) {
+        primary.removeChild(weather);
+        canvas.stage.addChild(weather);
+        if (this.cinematicContainer && canvas.stage.children.includes(this.cinematicContainer)) {
+          const idx = canvas.stage.getChildIndex(this.cinematicContainer);
+          canvas.stage.setChildIndex(weather, idx + 1);
+        }
+      }
+    } else {
+      if (weather.parent === canvas.stage) {
+        canvas.stage.removeChild(weather);
+        primary.addChild(weather);
+      }
     }
   }
   async _setCinematicBackground(active) {
