@@ -80,6 +80,30 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this.rendered) this.render();
       });
     }
+    const f = this.element;
+    if (!f) return;
+    const sync = () => {
+      var _a, _b, _c;
+      const bw = ((_a = f.querySelector('[name="border.width"]')) == null ? void 0 : _a.value) ?? "0";
+      const bs = ((_b = f.querySelector('[name="border.style"]')) == null ? void 0 : _b.value) ?? "none";
+      const bc = ((_c = f.querySelector('[name="border.color"]')) == null ? void 0 : _c.value) ?? "#000000";
+      const v = `${bw}px ${bs} ${bc}`;
+      this.tempSkinData.options.styles["--cinematic-bar-border"] = v;
+      document.documentElement.style.setProperty("--cinematic-bar-border", v);
+    };
+    f.querySelectorAll(".border-input").forEach((el) => el.addEventListener("change", sync));
+    const nameInput = f.querySelector('[name="name"]');
+    if (nameInput) nameInput.addEventListener("change", () => {
+      this.tempSkinData.name = nameInput.value;
+    });
+    f.querySelectorAll('file-picker[name="options.portraitBorder"]').forEach((fp) => {
+      fp.addEventListener("change", () => {
+        const val = fp.value ?? "";
+        this.tempSkinData.options.portraitBorder = val;
+        this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = val ? `url(${this._cssUrl(val)})` : "none";
+        document.documentElement.style.setProperty("--cinematic-portrait-border-image", val ? `url(${this._cssUrl(val)})` : "none");
+      });
+    });
   }
   static async _onSubmit(_event, _form, formData) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
@@ -97,14 +121,14 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     this.tempSkinData.options.styles["--cinematic-bar-bg"] = ((_i = (_h = expanded.options) == null ? void 0 : _h.styles) == null ? void 0 : _i["--cinematic-bar-bg"]) || "#000000";
     this.tempSkinData.options.styles["--cinematic-footer-bg"] = ((_k = (_j = expanded.options) == null ? void 0 : _j.styles) == null ? void 0 : _k["--cinematic-footer-bg"]) || "transparent";
     this.tempSkinData.options.styles["--cinematic-portrait-name-bg"] = ((_m = (_l = expanded.options) == null ? void 0 : _l.styles) == null ? void 0 : _m["--cinematic-portrait-name-bg"]) || "none";
-    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = ((_n = expanded.options) == null ? void 0 : _n.portraitBorder) ? `url(${expanded.options.portraitBorder})` : "none";
+    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = ((_n = expanded.options) == null ? void 0 : _n.portraitBorder) ? `url(${this._cssUrl(expanded.options.portraitBorder)})` : "none";
     const footerTexture = ((_o = expanded.options) == null ? void 0 : _o.footerTexture) || "";
     this.tempSkinData.options.styles["--cinematic-footer-texture"] = footerTexture ? `url(${footerTexture})` : "none";
-    const borderWidth = ((_p = expanded.border) == null ? void 0 : _p.width) ?? 0;
-    const borderStyle = ((_q = expanded.border) == null ? void 0 : _q.style) ?? "none";
-    const borderColor = ((_r = expanded.border) == null ? void 0 : _r.color) ?? "#000000";
-    const newBorder = `${borderWidth}px ${borderStyle} ${borderColor}`;
-    this.tempSkinData.options.styles["--cinematic-bar-border"] = newBorder;
+    const f = _form || this.element;
+    const bw = ((_p = f.querySelector('[name="border.width"]')) == null ? void 0 : _p.value) ?? "0";
+    const bs = ((_q = f.querySelector('[name="border.style"]')) == null ? void 0 : _q.value) ?? "none";
+    const bc = ((_r = f.querySelector('[name="border.color"]')) == null ? void 0 : _r.value) ?? "#000000";
+    this.tempSkinData.options.styles["--cinematic-bar-border"] = `${bw}px ${bs} ${bc}`;
     this.render();
   }
   static _onSelectSkin(_event, target) {
@@ -151,6 +175,8 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       else if (name === "options.filter") opts.filter = val;
     });
     this.tempSkinData.options = opts;
+    this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
+    this.tempSkinData.options.styles["--cinematic-portrait-border-image"] = opts.portraitBorder ? `url(${this._cssUrl(opts.portraitBorder)})` : "none";
   }
   static _onApplySkin() {
     var _a;
@@ -242,6 +268,10 @@ class SkinConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   }
   _getValue(obj, path) {
     return path.split(".").reduce((o, i) => o == null ? void 0 : o[i], obj);
+  }
+  _cssUrl(p) {
+    if (!p || p.startsWith("http") || p.startsWith("/") || p.startsWith("blob:")) return p;
+    return `/${p}`;
   }
 }
 export {

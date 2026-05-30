@@ -731,6 +731,7 @@ body.cinematic-mode #fps {
 }
 #storyteller-cinema-overlay .portraits-container {
   position: absolute;
+  z-index: 10;
   bottom: 18vh;
   left: 5%;
   right: 5%;

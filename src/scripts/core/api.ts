@@ -14,6 +14,7 @@ export class StorytellerAPI {
     private _visionOverrideActive: boolean;
     private _lastBackgroundPath: string | null = null;
     private _subtitleTimeout: any | null = null;
+    private _draggedPositions: Map<string, {x: number, y: number}> = new Map();
 
     constructor() {
         this.active = false;
@@ -76,6 +77,14 @@ export class StorytellerAPI {
             await this._panCameraToFit(options.init || false);
 
             this._reparentWeather(true);
+            try {
+                const key = 'stc_pos_' + (canvas.scene?.id || 'unknown');
+                const saved = JSON.parse(localStorage.getItem(key) || '{}');
+                for (const [id, pos] of Object.entries(saved)) {
+                    this._draggedPositions.set(id, pos as any);
+                }
+            } catch (_) {}
+            this._updateCinemaElements(true);
 
             // 3. MANIPULATE CANVAS LAYERS
             if (canvas.ready) {
@@ -85,9 +94,10 @@ export class StorytellerAPI {
 
         } else {
             // --- DEACTIVATE ---
-            this.clear(); // Clear subtitles/portraits
-
+            // Clear subtitles only; preserve stage (portraits/sceneCast)
+            this._clearSubtitles();
             this._reparentWeather(false);
+            this._updateCinemaElements(false);
 
             if (game.user?.isGM) {
                 this._ensureGhostMode(false, true);
@@ -115,8 +125,11 @@ export class StorytellerAPI {
         // 3. GLOBAL INTERACTION LOCK
         if (canvas.ready) {
             canvas.tokens!.interactiveChildren = !active;
+            canvas.tokens!.eventMode = active ? 'passive' : 'static';
             canvas.tiles!.interactiveChildren = !active;
+            canvas.tiles!.eventMode = active ? 'passive' : 'static';
             canvas.drawings!.interactiveChildren = !active;
+            canvas.drawings!.eventMode = active ? 'passive' : 'static';
         }
     }
 
@@ -311,11 +324,14 @@ export class StorytellerAPI {
         });
     }
 
-    _clearLocal(): void {
+    _clearSubtitles(): void {
         const overlay = document.getElementById('storyteller-cinema-overlay');
         if (!overlay) return;
-
         overlay.querySelector('.subtitle-container')?.classList.remove('active');
+    }
+
+    _clearLocal(): void {
+        this._clearSubtitles();
         this.refreshPortraits(null);
     }
 
@@ -396,6 +412,116 @@ export class StorytellerAPI {
             if (weather.parent === canvas.stage) {
                 canvas.stage.removeChild(weather);
                 primary.addChild(weather);
+            }
+        }
+    }
+
+    private _updateCinemaElements(active: boolean): void {
+        const overlay = document.getElementById('storyteller-cinema-overlay');
+        if (!overlay) return;
+
+        const existing = overlay.querySelector('.cinema-elements') as HTMLElement;
+        if (existing) {
+            existing.innerHTML = '';
+            if (!active) { existing.remove(); return; }
+        } else if (!active) { return; }
+
+        const elContainer = document.createElement('div');
+        elContainer.className = 'cinema-elements';
+        elContainer.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;';
+        overlay.appendChild(elContainer);
+
+        if (!canvas.ready) return;
+
+        const cr = canvas.app.view.getBoundingClientRect();
+        const ox = cr.left, oy = cr.top;
+
+        const makeDrag = (el: HTMLElement, docId: string) => {
+            el.style.cursor = 'move';
+            el.style.userSelect = 'none';
+            el.style.pointerEvents = 'auto';
+            let dragging = false, offX = 0, offY = 0;
+            const onDown = (e: MouseEvent) => {
+                dragging = true;
+                const r = el.getBoundingClientRect();
+                offX = e.clientX - r.left;
+                offY = e.clientY - r.top;
+                el.style.cursor = 'grabbing';
+                e.preventDefault();
+            };
+            const onMove = (e: MouseEvent) => {
+                if (!dragging) return;
+                el.style.left = (e.clientX - offX) + 'px';
+                el.style.top = (e.clientY - offY) + 'px';
+                e.preventDefault();
+            };
+            const onUp = () => {
+                if (!dragging) return;
+                dragging = false;
+                el.style.cursor = 'move';
+                const pos = { x: parseFloat(el.style.left), y: parseFloat(el.style.top) };
+                this._draggedPositions.set(docId, pos);
+                try {
+                    const key = 'stc_pos_' + (canvas.scene?.id || 'unknown');
+                    const all = JSON.parse(localStorage.getItem(key) || '{}');
+                    all[docId] = pos;
+                    localStorage.setItem(key, JSON.stringify(all));
+                } catch (_) {}
+            };
+            el.addEventListener('mousedown', onDown);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        };
+
+        const savedPos = (id: string) => {
+            const mem = this._draggedPositions.get(id);
+            if (mem) return mem;
+            try {
+                const key = 'stc_pos_' + (canvas.scene?.id || 'unknown');
+                const all = JSON.parse(localStorage.getItem(key) || '{}');
+                const p = all[id];
+                if (p) return p;
+            } catch (_) {}
+            return null;
+        };
+
+        if (canvas.tiles?.placeables) {
+            for (const t of canvas.tiles.placeables) {
+                const show = t.document.getFlag('storyteller-cinema', 'showInCinema') || false;
+                if (!show || t.document.hidden || !t.mesh) continue;
+                const b = t.mesh.getBounds();
+                const sp = savedPos(t.document.uuid);
+                const img = document.createElement('img');
+                img.src = t.document.texture.src;
+                img.draggable = false;
+                img.style.cssText = `position:absolute;left:${sp ? sp.x : (b.x + ox)}px;top:${sp ? sp.y : (b.y + oy)}px;width:${b.width}px;height:${b.height}px;object-fit:fill;`;
+                makeDrag(img, t.document.uuid);
+                elContainer.appendChild(img);
+            }
+        }
+
+        if (canvas.drawings?.placeables) {
+            for (const d of canvas.drawings.placeables) {
+                const show = d.document.getFlag('storyteller-cinema', 'showInCinema') || false;
+                if (!show || d.document.hidden) continue;
+                const doc = d.document;
+                const sc = canvas.stage.scale;
+                const gfx = d.text || d.shape;
+                let sx: number, sy: number;
+                if (gfx && typeof gfx.getBounds === 'function') {
+                    const b = gfx.getBounds();
+                    sx = b.x + ox; sy = b.y + oy;
+                } else {
+                    const pivot = canvas.stage.pivot;
+                    sx = (doc.x - pivot.x) * sc.x + window.innerWidth / 2;
+                    sy = (doc.y - pivot.y) * sc.y + window.innerHeight / 2;
+                }
+                const sp = savedPos(doc.uuid);
+                const div = document.createElement('div');
+                div.textContent = doc.text || '';
+                div.style.cssText = `position:absolute;left:${sp ? sp.x : sx}px;top:${sp ? sp.y : sy}px;width:${doc.width * sc.x}px;height:${doc.height * sc.y}px;color:${doc.textColor || '#fff'};font-size:${doc.fontSize || 48}px;font-family:${doc.fontFamily || 'Signika, sans-serif'};text-align:${doc.textAlign || 'left'};overflow:hidden;white-space:${doc.wrap ? 'pre-wrap' : 'nowrap'};`;
+                makeDrag(div, doc.uuid);
+                elContainer.appendChild(div);
             }
         }
     }

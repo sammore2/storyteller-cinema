@@ -222,18 +222,34 @@ class SkinManager {
     return Array.from(this.skins.values());
   }
   exportSkin(skinId) {
-    var _a2;
+    var _a2, _b2;
     const skin = this.skins.get(skinId);
     if (!skin) {
       (_a2 = ui.notifications) == null ? void 0 : _a2.error("Storyteller Cinema | Skin not found.");
       return;
     }
     const data = JSON.stringify(skin, null, 2);
+    const filename = `${skin.id}.json`;
     const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${skin.id}.json`;
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    setTimeout(() => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_) {
+      }
+    }, 1e3);
+    try {
+      navigator.clipboard.writeText(data);
+      (_b2 = ui.notifications) == null ? void 0 : _b2.info(`Storyteller Cinema | Skin exported. JSON also copied to clipboard.`);
+    } catch (_) {
+    }
   }
   async importSkin(jsonData) {
     var _a2, _b2, _c, _d, _e;

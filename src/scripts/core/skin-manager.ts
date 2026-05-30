@@ -304,11 +304,27 @@ export class SkinManager {
         }
 
         const data = JSON.stringify(skin, null, 2);
+        const filename = `${skin.id}.json`;
+
+        // Attempt download
         const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${skin.id}.json`;
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
+
+        // Also copy to clipboard as fallback
+        try {
+            navigator.clipboard.writeText(data);
+            ui.notifications?.info(`Storyteller Cinema | Skin exported. JSON also copied to clipboard.`);
+        } catch (_) {
+            // Clipboard unavailable; download is the only method
+        }
     }
 
     async importSkin(jsonData: string | object): Promise<SkinData | undefined> {

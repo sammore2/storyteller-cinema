@@ -92,6 +92,26 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
                 if (this.rendered) this.render();
             });
         }
+        const f = this.element; if (!f) return;
+        const sync = () => {
+            const bw = (f.querySelector('[name="border.width"]') as HTMLInputElement)?.value ?? '0';
+            const bs = (f.querySelector('[name="border.style"]') as HTMLSelectElement)?.value ?? 'none';
+            const bc = (f.querySelector('[name="border.color"]') as HTMLInputElement)?.value ?? '#000000';
+            const v = `${bw}px ${bs} ${bc}`;
+            this.tempSkinData.options.styles['--cinematic-bar-border'] = v;
+            document.documentElement.style.setProperty('--cinematic-bar-border', v);
+        };
+        f.querySelectorAll('.border-input').forEach((el: Element) => el.addEventListener('change', sync));
+        const nameInput = f.querySelector('[name="name"]') as HTMLInputElement;
+        if (nameInput) nameInput.addEventListener('change', () => { this.tempSkinData.name = nameInput.value; });
+        f.querySelectorAll('file-picker[name="options.portraitBorder"]').forEach((fp: any) => {
+            fp.addEventListener('change', () => {
+                const val = (fp as any).value ?? '';
+                this.tempSkinData.options.portraitBorder = val;
+                this.tempSkinData.options.styles['--cinematic-portrait-border-image'] = val ? `url(${this._cssUrl(val)})` : 'none';
+                document.documentElement.style.setProperty('--cinematic-portrait-border-image', val ? `url(${this._cssUrl(val)})` : 'none');
+            });
+        });
     }
 
     static async _onSubmit(
@@ -117,18 +137,18 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
         this.tempSkinData.options.styles['--cinematic-bar-bg'] = expanded.options?.styles?.['--cinematic-bar-bg'] || '#000000';
         this.tempSkinData.options.styles['--cinematic-footer-bg'] = expanded.options?.styles?.['--cinematic-footer-bg'] || 'transparent';
         this.tempSkinData.options.styles['--cinematic-portrait-name-bg'] = expanded.options?.styles?.['--cinematic-portrait-name-bg'] || 'none';
-        this.tempSkinData.options.styles['--cinematic-portrait-border-image'] = expanded.options?.portraitBorder ? `url(${expanded.options.portraitBorder})` : 'none';
+        this.tempSkinData.options.styles['--cinematic-portrait-border-image'] = expanded.options?.portraitBorder ? `url(${this._cssUrl(expanded.options.portraitBorder)})` : 'none';
         
         // Map Footer Texture
         const footerTexture = expanded.options?.footerTexture || '';
         this.tempSkinData.options.styles['--cinematic-footer-texture'] = footerTexture ? `url(${footerTexture})` : 'none';
 
-        // Reconstruct border string
-        const borderWidth = expanded.border?.width ?? 0;
-        const borderStyle = expanded.border?.style ?? 'none';
-        const borderColor = expanded.border?.color ?? '#000000';
-        const newBorder = `${borderWidth}px ${borderStyle} ${borderColor}`;
-        this.tempSkinData.options.styles['--cinematic-bar-border'] = newBorder;
+        // Reconstruct border string – read directly from DOM to avoid partial formData
+        const f = _form || this.element;
+        const bw = (f.querySelector('[name="border.width"]') as HTMLInputElement)?.value ?? '0';
+        const bs = (f.querySelector('[name="border.style"]') as HTMLSelectElement)?.value ?? 'none';
+        const bc = (f.querySelector('[name="border.color"]') as HTMLInputElement)?.value ?? '#000000';
+        this.tempSkinData.options.styles['--cinematic-bar-border'] = `${bw}px ${bs} ${bc}`;
 
         this.render();
     }
@@ -182,6 +202,8 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
             else if (name === 'options.filter') opts.filter = val;
         });
         this.tempSkinData.options = opts;
+        this.tempSkinData.options.styles = this.tempSkinData.options.styles || {};
+        this.tempSkinData.options.styles['--cinematic-portrait-border-image'] = opts.portraitBorder ? `url(${this._cssUrl(opts.portraitBorder)})` : 'none';
     }
 
     static _onApplySkin(this: SkinConfig): void {
@@ -281,5 +303,10 @@ export class SkinConfig extends (HandlebarsApplicationMixin(ApplicationV2) as an
 
     _getValue(obj: any, path: string): any {
         return path.split('.').reduce((o, i) => o?.[i], obj);
+    }
+
+    private _cssUrl(p: string): string {
+        if (!p || p.startsWith('http') || p.startsWith('/') || p.startsWith('blob:')) return p;
+        return `/${p}`;
     }
 }
