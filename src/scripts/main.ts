@@ -41,6 +41,20 @@ Hooks.once('init', function () {
   });
 
 
+  game.settings.register('storyteller-cinema', 'premiumKey', {
+    name: "STORYTELLER_CINEMA.Settings.premiumKey.Name",
+    hint: "STORYTELLER_CINEMA.Settings.premiumKey.Hint",
+    scope: "client",
+    config: true,
+    type: String,
+    default: "",
+    onChange: () => {
+      if (window.StorytellerCinema?.skins) {
+        window.StorytellerCinema.skins.init();
+      }
+    }
+  });
+
   game.settings.register('storyteller-cinema', 'customSkins', {
     name: "Custom Skins",
     scope: "client",

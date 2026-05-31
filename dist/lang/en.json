@@ -31,6 +31,9 @@
     "STORYTELLER_CINEMA.DirectorMode.On": "Director Mode is now ON",
     "STORYTELLER_CINEMA.DirectorMode.Off": "Director Mode is now OFF",
     "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Name": "Premium Access Token (GitHub)",
-    "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Hint": "Enter your GitHub Personal Access Token to unlock and download premium skins from The Blacksmith."
+    "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Hint": "Enter your GitHub Personal Access Token to unlock and download premium skins from The Blacksmith.",
+
+    "STORYTELLER_CINEMA.Settings.premiumKey.Name": "Premium Key",
+    "STORYTELLER_CINEMA.Settings.premiumKey.Hint": "Enter your Patreon premium key (e.g. STC-XXXXXXXX) to access premium skin packs."
 }
 

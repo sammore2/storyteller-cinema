@@ -42,55 +42,150 @@ class SkinManager {
     }
   }
   async _loadHubSkins() {
-    var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
+    var _a2, _b2, _c;
     const token = (_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumGitHubToken");
-    if (token) {
-      try {
-        const url = "https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/skins.json";
-        const response = await fetch(url, {
-          headers: {
-            "Authorization": `token ${token}`,
-            "Accept": "application/vnd.github.v3.raw"
-          }
-        });
-        if (response.ok) {
-          const data = await response.json().catch((err) => {
-            console.error("Storyteller Cinema | Failed to parse skins.json from GitHub:", err);
-            return null;
-          });
-          if (data && Array.isArray(data.skins)) {
-            for (const skin of data.skins) {
-              const mappedSkin = {
-                id: skin.id,
-                name: game.i18n.has(skin.name) ? game.i18n.localize(skin.name) : skin.name || skin.id,
-                author: skin.author || "The Blacksmith",
-                version: skin.version || "1.0.0",
-                assets: { ...skin.files || {}, ...skin.assets || {} },
-                // Merge legacy files + new assets (footer, etc.)
-                options: {
-                  theme: ((_b2 = skin.options) == null ? void 0 : _b2.theme) || "dark",
-                  filter: ((_c = skin.options) == null ? void 0 : _c.filter) || "none",
-                  barTexture: (_d = skin.options) == null ? void 0 : _d.barTexture,
-                  backgroundTexture: (_e = skin.options) == null ? void 0 : _e.backgroundTexture,
-                  overlayTexture: (_f = skin.options) == null ? void 0 : _f.overlayTexture,
-                  styles: {
-                    "--cinematic-bar-bg": ((_h = (_g = skin.options) == null ? void 0 : _g.styles) == null ? void 0 : _h["--cinematic-bar-bg"]) || "#000000",
-                    "--cinematic-bar-border": ((_j = (_i = skin.options) == null ? void 0 : _i.styles) == null ? void 0 : _j["--cinematic-bar-border"]) || "none",
-                    "--cinematic-text-color": ((_l = (_k = skin.options) == null ? void 0 : _k.styles) == null ? void 0 : _l["--cinematic-text-color"]) || "#ffffff",
-                    ...(_m = skin.options) == null ? void 0 : _m.styles
-                  }
-                }
-              };
-              await this.register(mappedSkin, false);
-            }
-            console.log("Storyteller Cinema | Premium Hub Skins loaded from private GitHub repo.");
-          }
-        } else {
-          console.warn(`Storyteller Cinema | Premium skin sync failed with HTTP status ${response.status}`);
+    if (!token) return;
+    try {
+      await this._loadPack(token, "classics");
+      const premiumKey = (_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "premiumKey");
+      if (premiumKey) {
+        const loaded = await this._loadPatronPacks(token, premiumKey);
+        if (!loaded) {
+          (_c = ui.notifications) == null ? void 0 : _c.warn("Storyteller Cinema | Premium key is invalid or expired.");
         }
-      } catch (err) {
-        console.error("Storyteller Cinema | Premium skin synchronization failed:", err);
       }
+    } catch (err) {
+      console.error("Storyteller Cinema | Hub skin synchronization failed:", err);
+    }
+  }
+  async _loadPatronPacks(token, key) {
+    const normalizedKey = key.trim().toLowerCase();
+    if (normalizedKey.startsWith("dev") || normalizedKey === "development") {
+      console.log(`Storyteller Cinema | Running in development mode with simulated key: ${key}`);
+      try {
+        const listUrl = "https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs";
+        const res = await fetch(listUrl, {
+          headers: { "Authorization": `token ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const items = await res.json();
+        if (!Array.isArray(items)) return false;
+        const folders = items.filter((item) => item.type === "dir" && item.name !== "classics");
+        const tierWeights = { "free": 0, "bronze": 1, "silver": 2, "gold": 3 };
+        let maxWeight = 3;
+        if (normalizedKey === "dev-bronze") maxWeight = 1;
+        else if (normalizedKey === "dev-silver") maxWeight = 2;
+        else if (normalizedKey === "dev-gold") maxWeight = 3;
+        for (const folder of folders) {
+          const packId = folder.name;
+          const packUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs/${packId}/pack.json`;
+          const packRes = await fetch(packUrl, {
+            headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
+          });
+          if (!packRes.ok) continue;
+          try {
+            const packData = JSON.parse(await packRes.text());
+            const packTier = (packData.tier || "free").toLowerCase();
+            const packWeight = tierWeights[packTier] !== void 0 ? tierWeights[packTier] : 1;
+            if (packWeight <= maxWeight) {
+              await this._loadPack(token, packId);
+            }
+          } catch (e) {
+            console.warn(`Storyteller Cinema | Failed to parse pack.json for ${packId} in dev mode`, e);
+          }
+        }
+        return true;
+      } catch (err) {
+        console.error("Storyteller Cinema | Failed to list packs in development mode:", err);
+        return false;
+      }
+    }
+    const keyUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/keys/${key}.txt`;
+    const keyRes = await fetch(keyUrl, {
+      headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
+    });
+    if (!keyRes.ok) {
+      console.log("Storyteller Cinema | Premium key not found or expired.");
+      return false;
+    }
+    let patronData;
+    try {
+      patronData = JSON.parse(await keyRes.text());
+    } catch {
+      console.warn("Storyteller Cinema | Invalid key file format.");
+      return false;
+    }
+    const allowedPacks = patronData.packs || [];
+    if (!allowedPacks.length) return true;
+    for (const packId of allowedPacks) {
+      await this._loadPack(token, packId);
+    }
+    console.log(`Storyteller Cinema | Patron packs loaded for tier: ${patronData.tier || "unknown"}`);
+    return true;
+  }
+  async _loadPack(token, packId) {
+    var _a2, _b2, _c, _d, _e, _f, _g;
+    const packUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs/${packId}/pack.json`;
+    const packRes = await fetch(packUrl, {
+      headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
+    });
+    if (!packRes.ok) {
+      console.warn(`Storyteller Cinema | Pack '${packId}' not found.`);
+      return;
+    }
+    let pack;
+    try {
+      pack = JSON.parse(await packRes.text());
+    } catch {
+      console.warn(`Storyteller Cinema | Invalid pack.json for '${packId}'.`);
+      return;
+    }
+    const skinIds = pack.skins || [];
+    for (const skinId of skinIds) {
+      const skinUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs/${packId}/skins/${skinId}/skin.json`;
+      const skinRes = await fetch(skinUrl, {
+        headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
+      });
+      if (!skinRes.ok) {
+        console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
+        continue;
+      }
+      let skinData;
+      try {
+        skinData = await skinRes.json();
+      } catch {
+        console.warn(`Storyteller Cinema | Invalid skin.json for '${skinId}' in pack '${packId}'.`);
+        continue;
+      }
+      const baseAssetPath = `packs/${packId}/skins/${skinId}`;
+      const assets = ((_a2 = skinData.options) == null ? void 0 : _a2.assets) || {};
+      const mappedAssets = {};
+      for (const [key, relativePath] of Object.entries(assets)) {
+        mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+      }
+      const mappedSkin = {
+        id: `${packId}-${skinData.id}`,
+        name: skinData.name || skinData.id || skinId,
+        author: skinData.author || "The Blacksmith",
+        version: skinData.version || "1.0.0",
+        pack: packId,
+        // Mark which pack this skin belongs to
+        assets: mappedAssets,
+        options: {
+          theme: ((_b2 = skinData.options) == null ? void 0 : _b2.theme) || "dark",
+          filter: ((_c = skinData.options) == null ? void 0 : _c.filter) || "none",
+          barTexture: (_d = skinData.options) == null ? void 0 : _d.barTexture,
+          backgroundTexture: (_e = skinData.options) == null ? void 0 : _e.backgroundTexture,
+          overlayTexture: (_f = skinData.options) == null ? void 0 : _f.overlayTexture,
+          styles: {
+            "--cinematic-bar-bg": "#000000",
+            "--cinematic-bar-border": "none",
+            "--cinematic-text-color": "#ffffff",
+            ...((_g = skinData.options) == null ? void 0 : _g.styles) || {}
+          }
+        }
+      };
+      await this.register(mappedSkin, false);
     }
   }
   async register(skinData, persist = false) {
