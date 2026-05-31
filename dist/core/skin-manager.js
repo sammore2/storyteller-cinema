@@ -25,9 +25,9 @@ class SkinManager {
     const savedSkin = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "activeSkin")) || "default";
     await this.apply(savedSkin);
   }
-  async _fetchAssetAsObjectURL(relativePath, premiumKey) {
+  async _fetchAssetAsObjectURL(relativePath, premiumKey, version = "1.0.0") {
     try {
-      const url = `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}`;
+      const url = `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}&v=${version}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
@@ -195,22 +195,23 @@ class SkinManager {
       const topBarPath = skin.assets.topBar;
       const bottomBarPath = skin.assets.bottomBar;
       skin.options.styles = skin.options.styles || {};
+      const skinVersion = skin.version || "1.0.0";
       if (borderPath) {
-        const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, premiumKey);
+        const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, premiumKey, skinVersion);
         if (borderObjUrl) {
           this._objectUrls.set("border", borderObjUrl);
           skin.options.styles["--cinematic-bar-border-image"] = `url("${borderObjUrl}")`;
         }
       }
       if (portraitBorderPath) {
-        const portraitBorderObjUrl = await this._fetchAssetAsObjectURL(portraitBorderPath, premiumKey);
+        const portraitBorderObjUrl = await this._fetchAssetAsObjectURL(portraitBorderPath, premiumKey, skinVersion);
         if (portraitBorderObjUrl) {
           this._objectUrls.set("portraitBorder", portraitBorderObjUrl);
           skin.options.styles["--cinematic-portrait-border-image"] = `url("${portraitBorderObjUrl}")`;
         }
       }
       if (bgPath) {
-        const bgObjUrl = await this._fetchAssetAsObjectURL(bgPath, premiumKey);
+        const bgObjUrl = await this._fetchAssetAsObjectURL(bgPath, premiumKey, skinVersion);
         if (bgObjUrl) {
           this._objectUrls.set("background", bgObjUrl);
           skin.options.backgroundTexture = bgObjUrl;
@@ -218,7 +219,7 @@ class SkinManager {
         }
       }
       if (topBarPath) {
-        const topBarObjUrl = await this._fetchAssetAsObjectURL(topBarPath, premiumKey);
+        const topBarObjUrl = await this._fetchAssetAsObjectURL(topBarPath, premiumKey, skinVersion);
         if (topBarObjUrl) {
           this._objectUrls.set("topBar", topBarObjUrl);
           skin.options.barTopTexture = topBarObjUrl;
@@ -226,7 +227,7 @@ class SkinManager {
         }
       }
       if (bottomBarPath) {
-        const bottomBarObjUrl = await this._fetchAssetAsObjectURL(bottomBarPath, premiumKey);
+        const bottomBarObjUrl = await this._fetchAssetAsObjectURL(bottomBarPath, premiumKey, skinVersion);
         if (bottomBarObjUrl) {
           this._objectUrls.set("bottomBar", bottomBarObjUrl);
           skin.options.barBottomTexture = bottomBarObjUrl;
@@ -235,7 +236,7 @@ class SkinManager {
       }
       const footerPath = skin.assets.footer;
       if (footerPath) {
-        const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, premiumKey);
+        const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, premiumKey, skinVersion);
         if (footerObjUrl) {
           this._objectUrls.set("footer", footerObjUrl);
           skin.options.footerTexture = footerObjUrl;

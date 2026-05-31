@@ -747,8 +747,8 @@ body.cinematic-mode #fps {
 }
 #storyteller-cinema-overlay .portraits-container .portrait-card {
   flex: 1 1 0;
-  max-width: 450px;
-  height: 100%;
+  max-width: var(--cinematic-portrait-max-width, 450px);
+  height: var(--cinematic-portrait-height, 100%);
   display: flex;
   flex-direction: column;
   border-radius: 8px;
@@ -771,7 +771,7 @@ body.cinematic-mode #fps {
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   width: 100%;
-  height: 100%;
+  aspect-ratio: var(--cinematic-portrait-aspect-ratio, auto);
   /* Premium Border Overlay fica restrito à área da imagem */
 }
 #storyteller-cinema-overlay .portraits-container .portrait-card .portrait-image-area::after {
