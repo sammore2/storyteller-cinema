@@ -158,10 +158,16 @@ class SkinManager {
         continue;
       }
       const baseAssetPath = `packs/${packId}/skins/${skinId}`;
-      const assets = ((_a2 = skinData.options) == null ? void 0 : _a2.assets) || {};
+      const assets = {
+        ...skinData.files || {},
+        ...skinData.assets || {},
+        ...((_a2 = skinData.options) == null ? void 0 : _a2.assets) || {}
+      };
       const mappedAssets = {};
       for (const [key, relativePath] of Object.entries(assets)) {
-        mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+        if (typeof relativePath === "string") {
+          mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+        }
       }
       const mappedSkin = {
         id: `${packId}-${skinData.id}`,
@@ -311,6 +317,7 @@ class SkinManager {
     if (((_c = game.settings) == null ? void 0 : _c.get("storyteller-cinema", "activeSkin")) !== skinId) {
       await ((_d = game.settings) == null ? void 0 : _d.set("storyteller-cinema", "activeSkin", skinId));
     }
+    Hooks.call("storyteller-cinema-skins-updated");
     console.log(`Storyteller Cinema | Applied Skin: ${skin.name}`);
   }
   getSkins() {
@@ -444,10 +451,12 @@ class SkinManager {
     }
     css += `    --cinematic-filter: ${skin.options.filter || "none"};
 `;
+    const timestamp = Date.now();
     const sanitize = (p) => {
       if (!p) return null;
-      if (p.startsWith("http") || p.startsWith("/") || p.startsWith("blob:")) return p;
-      return `/${p}`;
+      if (p.startsWith("http") || p.startsWith("blob:")) return p;
+      const cleanPath = p.startsWith("/") ? p : `/${p}`;
+      return `${cleanPath}?v=${timestamp}`;
     };
     const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
     if (barTex) {

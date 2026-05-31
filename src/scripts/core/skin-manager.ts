@@ -213,10 +213,16 @@ export class SkinManager {
 
             // Build asset paths relative to the pack structure
             const baseAssetPath = `packs/${packId}/skins/${skinId}`;
-            const assets = skinData.options?.assets || {};
+            const assets = {
+                ...(skinData.files || {}),
+                ...(skinData.assets || {}),
+                ...(skinData.options?.assets || {})
+            };
             const mappedAssets: Record<string, string> = {};
             for (const [key, relativePath] of Object.entries(assets)) {
-                mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+                if (typeof relativePath === 'string') {
+                    mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+                }
             }
 
             const mappedSkin: SkinData = {
@@ -403,6 +409,8 @@ export class SkinManager {
             await game.settings?.set('storyteller-cinema', 'activeSkin', skinId);
         }
 
+        Hooks.call('storyteller-cinema-skins-updated');
+
         console.log(`Storyteller Cinema | Applied Skin: ${skin.name}`);
     }
 
@@ -555,10 +563,14 @@ export class SkinManager {
 
         css += `    --cinematic-filter: ${skin.options.filter || 'none'};\n`;
 
+        const timestamp = Date.now();
         const sanitize = (p?: string): string | null => {
             if (!p) return null;
-            if (p.startsWith('http') || p.startsWith('/') || p.startsWith('blob:')) return p;
-            return `/${p}`;
+            if (p.startsWith('http') || p.startsWith('blob:')) return p;
+            
+            // Add cache buster for local file paths
+            const cleanPath = p.startsWith('/') ? p : `/${p}`;
+            return `${cleanPath}?v=${timestamp}`;
         };
 
         const barTex = sanitize(skin.options.barTexture || skin.options.backgroundTexture);
