@@ -26,19 +26,7 @@ Hooks.once('init', function () {
     }
   });
 
-  game.settings.register('storyteller-cinema', 'premiumGitHubToken', {
-    name: "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Name",
-    hint: "STORYTELLER_CINEMA.Settings.premiumGitHubToken.Hint",
-    scope: "world",
-    config: true,
-    type: String,
-    default: "",
-    onChange: () => {
-      if (window.StorytellerCinema?.skins) {
-        window.StorytellerCinema.skins.init();
-      }
-    }
-  });
+
 
 
   game.settings.register('storyteller-cinema', 'premiumKey', {

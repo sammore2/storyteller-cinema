@@ -740,7 +740,6 @@ body.cinematic-mode #fps {
   justify-content: flex-start;
   align-items: flex-end;
   gap: 30px;
-  pointer-events: none;
   transition: opacity 0.5s ease;
 }
 #storyteller-cinema-overlay .portraits-container.active {
@@ -750,10 +749,8 @@ body.cinematic-mode #fps {
   flex: 1 1 0;
   max-width: 450px;
   height: 100%;
-  background-image: var(--cinematic-portrait-background, none);
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: top center;
+  display: flex;
+  flex-direction: column;
   border-radius: 8px;
   border: 2px solid transparent;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 1px rgba(255, 255, 255, 0.2);
@@ -762,9 +759,22 @@ body.cinematic-mode #fps {
   transform: translateY(120px) scale(0.95);
   filter: blur(5px);
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
-  /* Premium Border Overlay */
+  /* A área do retrato (imagem e moldura premium) ocupa o espaço do topo */
 }
-#storyteller-cinema-overlay .portraits-container .portrait-card::after {
+#storyteller-cinema-overlay .portraits-container .portrait-card .portrait-image-area {
+  flex: 1;
+  position: relative;
+  background-image: var(--cinematic-portrait-background, none);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: top center;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  width: 100%;
+  height: 100%;
+  /* Premium Border Overlay fica restrito à área da imagem */
+}
+#storyteller-cinema-overlay .portraits-container .portrait-card .portrait-image-area::after {
   content: "";
   position: absolute;
   top: 0;
@@ -775,8 +785,9 @@ body.cinematic-mode #fps {
   background-image: var(--cinematic-portrait-border-image, none);
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  border-radius: 8px;
-  z-index: 1;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  z-index: 10;
 }
 #storyteller-cinema-overlay .portraits-container .portrait-card.active {
   opacity: 1;
@@ -788,15 +799,13 @@ body.cinematic-mode #fps {
   box-shadow: 0 0 20px rgba(255, 100, 0, 0.6);
   transform: translateY(-10px) scale(1.02);
 }
-#storyteller-cinema-overlay .portraits-container .portrait-card.speaking::after {
+#storyteller-cinema-overlay .portraits-container .portrait-card.speaking .portrait-image-area::after {
   filter: drop-shadow(0 0 8px rgba(255, 100, 0, 0.8));
 }
 #storyteller-cinema-overlay .portraits-container .portrait-card .portrait-name {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--cinematic-portrait-name-bg, var(--cinematic-bar-bg, rgba(0, 0, 0, 0.85)));
+  position: relative;
+  width: 100%;
+  background: var(--cinematic-portrait-name-bg, var(--cinematic-bar-bg, #000000));
   border-top: var(--cinematic-portrait-name-border-top, var(--cinematic-bar-border, 1px solid rgba(255, 255, 255, 0.1)));
   color: var(--cinematic-text-color, #ffffff);
   padding: 10px;
@@ -805,8 +814,9 @@ body.cinematic-mode #fps {
   font-size: var(--cinematic-portrait-name-font-size, 20px);
   text-transform: uppercase;
   letter-spacing: 2px;
-  border-bottom-left-radius: var(--cinematic-portrait-name-radius, 8px);
-  border-bottom-right-radius: var(--cinematic-portrait-name-radius, 8px);
+  border-bottom-left-radius: var(--cinematic-portrait-name-radius, 6px);
+  border-bottom-right-radius: var(--cinematic-portrait-name-radius, 6px);
+  margin-top: auto;
   margin-bottom: var(--cinematic-portrait-name-margin-bottom, 0px);
   box-sizing: border-box;
   z-index: 5;

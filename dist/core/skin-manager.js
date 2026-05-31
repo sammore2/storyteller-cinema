@@ -9,6 +9,7 @@ class SkinManager {
     __publicField(this, "activeSkin");
     __publicField(this, "_styleTag");
     __publicField(this, "_objectUrls", /* @__PURE__ */ new Map());
+    __publicField(this, "proxyUrl", "https://storyteller-cinema-proxy.robsammore.workers.dev");
     this.skins = /* @__PURE__ */ new Map();
     this.activeSkin = "default";
     this._styleTag = null;
@@ -24,15 +25,10 @@ class SkinManager {
     const savedSkin = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "activeSkin")) || "default";
     await this.apply(savedSkin);
   }
-  async _fetchAssetAsObjectURL(relativePath, token) {
+  async _fetchAssetAsObjectURL(relativePath, premiumKey) {
     try {
-      const url = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/${relativePath}`;
-      const response = await fetch(url, {
-        headers: {
-          "Authorization": `token ${token}`,
-          "Accept": "application/vnd.github.v3.raw"
-        }
-      });
+      const url = `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
       return URL.createObjectURL(blob);
@@ -42,93 +38,34 @@ class SkinManager {
     }
   }
   async _loadHubSkins() {
-    var _a2, _b2, _c;
-    const token = (_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumGitHubToken");
-    if (!token) return;
+    var _a2, _b2;
+    const premiumKey = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
     try {
-      await this._loadPack(token, "classics");
-      const premiumKey = (_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "premiumKey");
-      if (premiumKey) {
-        const loaded = await this._loadPatronPacks(token, premiumKey);
-        if (!loaded) {
-          (_c = ui.notifications) == null ? void 0 : _c.warn("Storyteller Cinema | Premium key is invalid or expired.");
+      await this._loadPack("classics", premiumKey);
+      const normalizedKey = premiumKey.trim().toLowerCase();
+      if (normalizedKey && normalizedKey !== "classics") {
+        const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(premiumKey)}`;
+        const res = await fetch(listUrl);
+        if (!res.ok) {
+          (_b2 = ui.notifications) == null ? void 0 : _b2.warn("Storyteller Cinema | Premium key is invalid or expired.");
+          return;
+        }
+        const data = await res.json();
+        const allowedPacks = data.packs || [];
+        for (const packId of allowedPacks) {
+          if (packId !== "classics") {
+            await this._loadPack(packId, premiumKey);
+          }
         }
       }
     } catch (err) {
       console.error("Storyteller Cinema | Hub skin synchronization failed:", err);
     }
   }
-  async _loadPatronPacks(token, key) {
-    const normalizedKey = key.trim().toLowerCase();
-    if (normalizedKey.startsWith("dev") || normalizedKey === "development") {
-      console.log(`Storyteller Cinema | Running in development mode with simulated key: ${key}`);
-      try {
-        const listUrl = "https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs";
-        const res = await fetch(listUrl, {
-          headers: { "Authorization": `token ${token}` }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const items = await res.json();
-        if (!Array.isArray(items)) return false;
-        const folders = items.filter((item) => item.type === "dir" && item.name !== "classics");
-        const tierWeights = { "free": 0, "bronze": 1, "silver": 2, "gold": 3 };
-        let maxWeight = 3;
-        if (normalizedKey === "dev-bronze") maxWeight = 1;
-        else if (normalizedKey === "dev-silver") maxWeight = 2;
-        else if (normalizedKey === "dev-gold") maxWeight = 3;
-        for (const folder of folders) {
-          const packId = folder.name;
-          const packUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs/${packId}/pack.json`;
-          const packRes = await fetch(packUrl, {
-            headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
-          });
-          if (!packRes.ok) continue;
-          try {
-            const packData = JSON.parse(await packRes.text());
-            const packTier = (packData.tier || "free").toLowerCase();
-            const packWeight = tierWeights[packTier] !== void 0 ? tierWeights[packTier] : 1;
-            if (packWeight <= maxWeight) {
-              await this._loadPack(token, packId);
-            }
-          } catch (e) {
-            console.warn(`Storyteller Cinema | Failed to parse pack.json for ${packId} in dev mode`, e);
-          }
-        }
-        return true;
-      } catch (err) {
-        console.error("Storyteller Cinema | Failed to list packs in development mode:", err);
-        return false;
-      }
-    }
-    const keyUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/keys/${key}.txt`;
-    const keyRes = await fetch(keyUrl, {
-      headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
-    });
-    if (!keyRes.ok) {
-      console.log("Storyteller Cinema | Premium key not found or expired.");
-      return false;
-    }
-    let patronData;
-    try {
-      patronData = JSON.parse(await keyRes.text());
-    } catch {
-      console.warn("Storyteller Cinema | Invalid key file format.");
-      return false;
-    }
-    const allowedPacks = patronData.packs || [];
-    if (!allowedPacks.length) return true;
-    for (const packId of allowedPacks) {
-      await this._loadPack(token, packId);
-    }
-    console.log(`Storyteller Cinema | Patron packs loaded for tier: ${patronData.tier || "unknown"}`);
-    return true;
-  }
-  async _loadPack(token, packId) {
+  async _loadPack(packId, premiumKey) {
     var _a2, _b2, _c, _d, _e, _f, _g;
-    const packUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs/${packId}/pack.json`;
-    const packRes = await fetch(packUrl, {
-      headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
-    });
+    const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/pack.json?key=${encodeURIComponent(premiumKey)}`;
+    const packRes = await fetch(packUrl);
     if (!packRes.ok) {
       console.warn(`Storyteller Cinema | Pack '${packId}' not found.`);
       return;
@@ -142,10 +79,8 @@ class SkinManager {
     }
     const skinIds = pack.skins || [];
     for (const skinId of skinIds) {
-      const skinUrl = `https://api.github.com/repos/sammore2/storyteller-cinema-hub/contents/packs/${packId}/skins/${skinId}/skin.json`;
-      const skinRes = await fetch(skinUrl, {
-        headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3.raw" }
-      });
+      const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}`;
+      const skinRes = await fetch(skinUrl);
       if (!skinRes.ok) {
         console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
         continue;
@@ -251,8 +186,8 @@ class SkinManager {
       URL.revokeObjectURL(url);
     }
     this._objectUrls.clear();
-    const token = (_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumGitHubToken");
-    if (skin.assets && token) {
+    const premiumKey = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
+    if (skin.assets) {
       (_b2 = ui.notifications) == null ? void 0 : _b2.info(`Storyteller Cinema | Loading secure premium assets for: ${skin.name}...`);
       const borderPath = skin.assets.border;
       const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
@@ -261,21 +196,21 @@ class SkinManager {
       const bottomBarPath = skin.assets.bottomBar;
       skin.options.styles = skin.options.styles || {};
       if (borderPath) {
-        const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, token);
+        const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, premiumKey);
         if (borderObjUrl) {
           this._objectUrls.set("border", borderObjUrl);
           skin.options.styles["--cinematic-bar-border-image"] = `url("${borderObjUrl}")`;
         }
       }
       if (portraitBorderPath) {
-        const portraitBorderObjUrl = await this._fetchAssetAsObjectURL(portraitBorderPath, token);
+        const portraitBorderObjUrl = await this._fetchAssetAsObjectURL(portraitBorderPath, premiumKey);
         if (portraitBorderObjUrl) {
           this._objectUrls.set("portraitBorder", portraitBorderObjUrl);
           skin.options.styles["--cinematic-portrait-border-image"] = `url("${portraitBorderObjUrl}")`;
         }
       }
       if (bgPath) {
-        const bgObjUrl = await this._fetchAssetAsObjectURL(bgPath, token);
+        const bgObjUrl = await this._fetchAssetAsObjectURL(bgPath, premiumKey);
         if (bgObjUrl) {
           this._objectUrls.set("background", bgObjUrl);
           skin.options.backgroundTexture = bgObjUrl;
@@ -283,7 +218,7 @@ class SkinManager {
         }
       }
       if (topBarPath) {
-        const topBarObjUrl = await this._fetchAssetAsObjectURL(topBarPath, token);
+        const topBarObjUrl = await this._fetchAssetAsObjectURL(topBarPath, premiumKey);
         if (topBarObjUrl) {
           this._objectUrls.set("topBar", topBarObjUrl);
           skin.options.barTopTexture = topBarObjUrl;
@@ -291,7 +226,7 @@ class SkinManager {
         }
       }
       if (bottomBarPath) {
-        const bottomBarObjUrl = await this._fetchAssetAsObjectURL(bottomBarPath, token);
+        const bottomBarObjUrl = await this._fetchAssetAsObjectURL(bottomBarPath, premiumKey);
         if (bottomBarObjUrl) {
           this._objectUrls.set("bottomBar", bottomBarObjUrl);
           skin.options.barBottomTexture = bottomBarObjUrl;
@@ -300,7 +235,7 @@ class SkinManager {
       }
       const footerPath = skin.assets.footer;
       if (footerPath) {
-        const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, token);
+        const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, premiumKey);
         if (footerObjUrl) {
           this._objectUrls.set("footer", footerObjUrl);
           skin.options.footerTexture = footerObjUrl;

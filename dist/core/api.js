@@ -241,15 +241,17 @@ class StorytellerAPI {
         card = document.createElement("div");
         card.className = "portrait-card";
         if (p.isTemp) card.classList.add("temp-speaker");
-        card.style.backgroundImage = `url("${p.img}")`;
-        card.innerHTML = `<div class="portrait-name">${p.name}</div>`;
+        card.innerHTML = `<div class="portrait-image-area" style="background-image: url('${p.img}')"></div><div class="portrait-name">${p.name}</div>`;
         container.appendChild(card);
         void card.offsetWidth;
         card.classList.add("active");
       } else {
         if (p.isTemp) card.classList.add("temp-speaker");
         else card.classList.remove("temp-speaker");
-        card.style.backgroundImage = `url("${p.img}")`;
+        const imgArea = card.querySelector(".portrait-image-area");
+        if (imgArea) {
+          imgArea.style.backgroundImage = `url("${p.img}")`;
+        }
       }
       if (speakingActor && p.name.toLowerCase() === speakingActor.name.toLowerCase()) {
         card.classList.add("speaking");

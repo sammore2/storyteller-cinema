@@ -301,10 +301,9 @@ export class StorytellerAPI {
                 card = document.createElement('div');
                 card.className = 'portrait-card';
                 if (p.isTemp) card.classList.add('temp-speaker');
-                card.style.backgroundImage = `url("${p.img}")`;
-                card.innerHTML = `<div class="portrait-name">${p.name}</div>`;
+                card.innerHTML = `<div class="portrait-image-area" style="background-image: url('${p.img}')"></div><div class="portrait-name">${p.name}</div>`;
                 container.appendChild(card);
-
+ 
                 // Force reflow and activate
                 void card.offsetWidth;
                 card.classList.add('active');
@@ -312,7 +311,10 @@ export class StorytellerAPI {
                 // Update properties of existing card
                 if (p.isTemp) card.classList.add('temp-speaker');
                 else card.classList.remove('temp-speaker');
-                card.style.backgroundImage = `url("${p.img}")`;
+                const imgArea = card.querySelector('.portrait-image-area') as HTMLElement;
+                if (imgArea) {
+                    imgArea.style.backgroundImage = `url("${p.img}")`;
+                }
             }
 
             // Update speaking class
