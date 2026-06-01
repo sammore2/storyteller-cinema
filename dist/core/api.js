@@ -581,7 +581,7 @@ class StorytellerAPI {
     if (canvas.visibility) canvas.visibility.visible = visible;
     if ((_a = canvas.tokens) == null ? void 0 : _a.placeables) {
       for (const t of canvas.tokens.placeables) {
-        if (t.mesh) t.mesh.visible = visible ? !t.document.hidden : false;
+        if (t.mesh) t.mesh.visible = visible ? t.isVisible : false;
       }
     }
     if (canvas.primary) {

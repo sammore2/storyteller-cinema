@@ -681,7 +681,7 @@ export class StorytellerAPI {
         // Hide token meshes in V14 to prevent them from showing up when visibility/fog of war is toggled
         if ( canvas.tokens?.placeables ) {
             for ( const t of canvas.tokens.placeables ) {
-                if ( t.mesh ) t.mesh.visible = visible ? !t.document.hidden : false;
+                if ( t.mesh ) t.mesh.visible = visible ? (t.isVisible) : false;
             }
         }
 

@@ -8,12 +8,7 @@ export function registerRenderHooks(): void {
     Hooks.on('refreshToken', (token: any) => {
         const active = window.StorytellerCinema?.active;
         
-        if (!active) {
-            if (token.mesh) token.mesh.visible = token.isVisible;
-            if (token.bars) token.bars.visible = token.isVisible;
-            if (token.nameplate) token.nameplate.visible = token.isVisible;
-            return;
-        }
+        if (!active) return;
 
         // Hide Mesh (Tactical Sprite)
         if (token.mesh) {
