@@ -237,6 +237,7 @@ export class SkinManager {
             const bottomBarPath = skin.assets.bottomBar;
             const footerPath = skin.assets.footer;
 
+            skin.options = skin.options || {};
             skin.options.styles = skin.options.styles || {};
             const skinVersion = skin.version || '1.0.0';
 
