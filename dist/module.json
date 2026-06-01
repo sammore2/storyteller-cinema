@@ -1,7 +1,7 @@
 {
     "id": "storyteller-cinema",
     "title": "Storyteller's Cinema",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "type": "module",
     "compatibility": {
         "minimum": "12",
@@ -31,7 +31,7 @@
     "download": "https://github.com/sammore2/storyteller-cinema/releases/download/v1.1.0/module.zip",
     "authors": [
         {
-            "name": "Sam",
+            "name": "Sammore",
             "url": "https://github.com/sammore2",
             "discord": "sammore"
         }

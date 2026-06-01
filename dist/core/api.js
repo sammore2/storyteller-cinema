@@ -55,13 +55,9 @@ class StorytellerAPI {
       }
       await this._panCameraToFit(options.init || false);
       this._reparentWeather(true);
-      try {
-        const key = "stc_pos_" + (((_b = canvas.scene) == null ? void 0 : _b.id) || "unknown");
-        const saved = JSON.parse(localStorage.getItem(key) || "{}");
-        for (const [id, pos] of Object.entries(saved)) {
-          this._draggedPositions.set(id, pos);
-        }
-      } catch (_) {
+      const saved = ((_b = canvas.scene) == null ? void 0 : _b.getFlag("storyteller-cinema", "draggedPositions")) || {};
+      for (const [id, pos] of Object.entries(saved)) {
+        this._draggedPositions.set(id, pos);
       }
       this._updateCinemaElements(true);
       if (canvas.ready) {
@@ -342,7 +338,7 @@ class StorytellerAPI {
     }
   }
   _updateCinemaElements(active) {
-    var _a, _b;
+    var _a, _b, _c;
     const overlay = document.getElementById("storyteller-cinema-overlay");
     if (!overlay) return;
     const existing = overlay.querySelector(".cinema-elements");
@@ -381,19 +377,17 @@ class StorytellerAPI {
         el.style.top = e.clientY - offY + "px";
         e.preventDefault();
       };
-      const onUp = () => {
+      const onUp = async () => {
         var _a2;
         if (!dragging) return;
         dragging = false;
         el.style.cursor = "move";
         const pos = { x: parseFloat(el.style.left), y: parseFloat(el.style.top) };
         this._draggedPositions.set(docId, pos);
-        try {
-          const key = "stc_pos_" + (((_a2 = canvas.scene) == null ? void 0 : _a2.id) || "unknown");
-          const all = JSON.parse(localStorage.getItem(key) || "{}");
-          all[docId] = pos;
-          localStorage.setItem(key, JSON.stringify(all));
-        } catch (_) {
+        if (((_a2 = game.user) == null ? void 0 : _a2.isGM) && canvas.scene) {
+          const saved = canvas.scene.getFlag("storyteller-cinema", "draggedPositions") || {};
+          const updated = { ...saved, [docId]: pos };
+          await canvas.scene.setFlag("storyteller-cinema", "draggedPositions", updated);
         }
       };
       el.addEventListener("mousedown", onDown);
@@ -404,16 +398,13 @@ class StorytellerAPI {
       var _a2;
       const mem = this._draggedPositions.get(id);
       if (mem) return mem;
-      try {
-        const key = "stc_pos_" + (((_a2 = canvas.scene) == null ? void 0 : _a2.id) || "unknown");
-        const all = JSON.parse(localStorage.getItem(key) || "{}");
-        const p = all[id];
-        if (p) return p;
-      } catch (_) {
-      }
+      const saved = ((_a2 = canvas.scene) == null ? void 0 : _a2.getFlag("storyteller-cinema", "draggedPositions")) || {};
+      const p = saved[id];
+      if (p) return p;
       return null;
     };
-    if ((_a = canvas.tiles) == null ? void 0 : _a.placeables) {
+    const canDrag = (_a = game.user) == null ? void 0 : _a.isGM;
+    if ((_b = canvas.tiles) == null ? void 0 : _b.placeables) {
       for (const t of canvas.tiles.placeables) {
         const show = t.document.getFlag("storyteller-cinema", "showInCinema") || false;
         if (!show || t.document.hidden || !t.mesh) continue;
@@ -422,12 +413,15 @@ class StorytellerAPI {
         const img = document.createElement("img");
         img.src = t.document.texture.src;
         img.draggable = false;
+        img.dataset.uuid = t.document.uuid;
         img.style.cssText = `position:absolute;left:${sp ? sp.x : b.x + ox}px;top:${sp ? sp.y : b.y + oy}px;width:${b.width}px;height:${b.height}px;object-fit:fill;`;
-        makeDrag(img, t.document.uuid);
+        if (canDrag) {
+          makeDrag(img, t.document.uuid);
+        }
         elContainer.appendChild(img);
       }
     }
-    if ((_b = canvas.drawings) == null ? void 0 : _b.placeables) {
+    if ((_c = canvas.drawings) == null ? void 0 : _c.placeables) {
       for (const d of canvas.drawings.placeables) {
         const show = d.document.getFlag("storyteller-cinema", "showInCinema") || false;
         if (!show || d.document.hidden) continue;
@@ -447,9 +441,26 @@ class StorytellerAPI {
         const sp = savedPos(doc.uuid);
         const div = document.createElement("div");
         div.textContent = doc.text || "";
+        div.dataset.uuid = doc.uuid;
         div.style.cssText = `position:absolute;left:${sp ? sp.x : sx}px;top:${sp ? sp.y : sy}px;width:${doc.width * sc.x}px;height:${doc.height * sc.y}px;color:${doc.textColor || "#fff"};font-size:${doc.fontSize || 48}px;font-family:${doc.fontFamily || "Signika, sans-serif"};text-align:${doc.textAlign || "left"};overflow:hidden;white-space:${doc.wrap ? "pre-wrap" : "nowrap"};`;
-        makeDrag(div, doc.uuid);
+        if (canDrag) {
+          makeDrag(div, doc.uuid);
+        }
         elContainer.appendChild(div);
+      }
+    }
+  }
+  syncDraggedPositions(positions) {
+    const overlay = document.getElementById("storyteller-cinema-overlay");
+    if (!overlay) return;
+    const elContainer = overlay.querySelector(".cinema-elements");
+    if (!elContainer) return;
+    for (const [id, pos] of Object.entries(positions)) {
+      this._draggedPositions.set(id, pos);
+      const el = elContainer.querySelector(`[data-uuid="${id}"]`);
+      if (el) {
+        el.style.left = pos.x + "px";
+        el.style.top = pos.y + "px";
       }
     }
   }

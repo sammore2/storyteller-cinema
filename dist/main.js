@@ -33,7 +33,7 @@ Hooks.once("init", function() {
   game.settings.register("storyteller-cinema", "premiumKey", {
     name: "STORYTELLER_CINEMA.Settings.premiumKey.Name",
     hint: "STORYTELLER_CINEMA.Settings.premiumKey.Hint",
-    scope: "client",
+    scope: "world",
     config: true,
     type: String,
     default: "",
@@ -46,7 +46,7 @@ Hooks.once("init", function() {
   });
   game.settings.register("storyteller-cinema", "customSkins", {
     name: "Custom Skins",
-    scope: "client",
+    scope: "world",
     config: false,
     type: Array,
     default: []
@@ -244,7 +244,7 @@ Hooks.on("canvasReady", () => {
   window.StorytellerCinema.toggle(shouldBeCinematic, { init: true });
 });
 Hooks.on("updateScene", async (doc, change) => {
-  var _a, _b, _c, _d, _e, _f;
+  var _a, _b, _c, _d, _e, _f, _g, _h;
   if (!doc.isView) return;
   const activeChange = (_b = (_a = change.flags) == null ? void 0 : _a["storyteller-cinema"]) == null ? void 0 : _b.active;
   if (activeChange !== void 0) {
@@ -257,6 +257,10 @@ Hooks.on("updateScene", async (doc, change) => {
     const dimChange = (_f = (_e = change.flags) == null ? void 0 : _e["storyteller-cinema"]) == null ? void 0 : _f.cinematicBgDim;
     if (flagChange !== void 0 || dimChange !== void 0) {
       window.StorytellerCinema.toggle(true);
+    }
+    const dragChange = (_h = (_g = change.flags) == null ? void 0 : _g["storyteller-cinema"]) == null ? void 0 : _h.draggedPositions;
+    if (dragChange !== void 0) {
+      window.StorytellerCinema.syncDraggedPositions(dragChange);
     }
     window.StorytellerCinema.enforceVision();
   }

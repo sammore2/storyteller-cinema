@@ -46,7 +46,7 @@ Hooks.once('init', function () {
   game.settings.register('storyteller-cinema', 'premiumKey', {
     name: "STORYTELLER_CINEMA.Settings.premiumKey.Name",
     hint: "STORYTELLER_CINEMA.Settings.premiumKey.Hint",
-    scope: "client",
+    scope: "world",
     config: true,
     type: String,
     default: "",
@@ -59,7 +59,7 @@ Hooks.once('init', function () {
 
   game.settings.register('storyteller-cinema', 'customSkins', {
     name: "Custom Skins",
-    scope: "client",
+    scope: "world",
     config: false,
     type: Array,
     default: []
@@ -299,6 +299,10 @@ Hooks.on('updateScene', async (doc: any, change: any) => {
     const dimChange = change.flags?.['storyteller-cinema']?.cinematicBgDim;
     if (flagChange !== undefined || dimChange !== undefined) {
       window.StorytellerCinema.toggle(true);
+    }
+    const dragChange = change.flags?.['storyteller-cinema']?.draggedPositions;
+    if (dragChange !== undefined) {
+      window.StorytellerCinema.syncDraggedPositions(dragChange);
     }
     window.StorytellerCinema.enforceVision();
   }

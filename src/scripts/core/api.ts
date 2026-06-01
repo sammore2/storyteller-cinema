@@ -77,13 +77,10 @@ export class StorytellerAPI {
             await this._panCameraToFit(options.init || false);
 
             this._reparentWeather(true);
-            try {
-                const key = 'stc_pos_' + (canvas.scene?.id || 'unknown');
-                const saved = JSON.parse(localStorage.getItem(key) || '{}');
-                for (const [id, pos] of Object.entries(saved)) {
-                    this._draggedPositions.set(id, pos as any);
-                }
-            } catch (_) {}
+            const saved = canvas.scene?.getFlag('storyteller-cinema', 'draggedPositions') as Record<string, {x: number, y: number}> || {};
+            for (const [id, pos] of Object.entries(saved)) {
+                this._draggedPositions.set(id, pos);
+            }
             this._updateCinemaElements(true);
 
             // 3. MANIPULATE CANVAS LAYERS
@@ -457,18 +454,18 @@ export class StorytellerAPI {
                 el.style.top = (e.clientY - offY) + 'px';
                 e.preventDefault();
             };
-            const onUp = () => {
+            const onUp = async () => {
                 if (!dragging) return;
                 dragging = false;
                 el.style.cursor = 'move';
                 const pos = { x: parseFloat(el.style.left), y: parseFloat(el.style.top) };
                 this._draggedPositions.set(docId, pos);
-                try {
-                    const key = 'stc_pos_' + (canvas.scene?.id || 'unknown');
-                    const all = JSON.parse(localStorage.getItem(key) || '{}');
-                    all[docId] = pos;
-                    localStorage.setItem(key, JSON.stringify(all));
-                } catch (_) {}
+                
+                if (game.user?.isGM && canvas.scene) {
+                    const saved = canvas.scene.getFlag('storyteller-cinema', 'draggedPositions') as Record<string, {x: number, y: number}> || {};
+                    const updated = { ...saved, [docId]: pos };
+                    await canvas.scene.setFlag('storyteller-cinema', 'draggedPositions', updated);
+                }
             };
             el.addEventListener('mousedown', onDown);
             window.addEventListener('mousemove', onMove);
@@ -478,14 +475,13 @@ export class StorytellerAPI {
         const savedPos = (id: string) => {
             const mem = this._draggedPositions.get(id);
             if (mem) return mem;
-            try {
-                const key = 'stc_pos_' + (canvas.scene?.id || 'unknown');
-                const all = JSON.parse(localStorage.getItem(key) || '{}');
-                const p = all[id];
-                if (p) return p;
-            } catch (_) {}
+            const saved = canvas.scene?.getFlag('storyteller-cinema', 'draggedPositions') as Record<string, {x: number, y: number}> || {};
+            const p = saved[id];
+            if (p) return p;
             return null;
         };
+
+        const canDrag = game.user?.isGM;
 
         if (canvas.tiles?.placeables) {
             for (const t of canvas.tiles.placeables) {
@@ -496,8 +492,11 @@ export class StorytellerAPI {
                 const img = document.createElement('img');
                 img.src = t.document.texture.src;
                 img.draggable = false;
+                img.dataset.uuid = t.document.uuid;
                 img.style.cssText = `position:absolute;left:${sp ? sp.x : (b.x + ox)}px;top:${sp ? sp.y : (b.y + oy)}px;width:${b.width}px;height:${b.height}px;object-fit:fill;`;
-                makeDrag(img, t.document.uuid);
+                if (canDrag) {
+                    makeDrag(img, t.document.uuid);
+                }
                 elContainer.appendChild(img);
             }
         }
@@ -521,9 +520,28 @@ export class StorytellerAPI {
                 const sp = savedPos(doc.uuid);
                 const div = document.createElement('div');
                 div.textContent = doc.text || '';
+                div.dataset.uuid = doc.uuid;
                 div.style.cssText = `position:absolute;left:${sp ? sp.x : sx}px;top:${sp ? sp.y : sy}px;width:${doc.width * sc.x}px;height:${doc.height * sc.y}px;color:${doc.textColor || '#fff'};font-size:${doc.fontSize || 48}px;font-family:${doc.fontFamily || 'Signika, sans-serif'};text-align:${doc.textAlign || 'left'};overflow:hidden;white-space:${doc.wrap ? 'pre-wrap' : 'nowrap'};`;
-                makeDrag(div, doc.uuid);
+                if (canDrag) {
+                    makeDrag(div, doc.uuid);
+                }
                 elContainer.appendChild(div);
+            }
+        }
+    }
+
+    syncDraggedPositions(positions: Record<string, {x: number, y: number}>): void {
+        const overlay = document.getElementById('storyteller-cinema-overlay');
+        if (!overlay) return;
+        const elContainer = overlay.querySelector('.cinema-elements') as HTMLElement;
+        if (!elContainer) return;
+
+        for (const [id, pos] of Object.entries(positions)) {
+            this._draggedPositions.set(id, pos);
+            const el = elContainer.querySelector(`[data-uuid="${id}"]`) as HTMLElement;
+            if (el) {
+                el.style.left = pos.x + 'px';
+                el.style.top = pos.y + 'px';
             }
         }
     }
