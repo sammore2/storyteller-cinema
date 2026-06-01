@@ -56,22 +56,7 @@ export class SkinManager {
     }
 
 
-    private _objectUrls: Map<string, string> = new Map();
-
     private proxyUrl = "https://storyteller-cinema-proxy.robsammore.workers.dev";
-
-    private async _fetchAssetAsObjectURL(relativePath: string, premiumKey: string, version: string = "1.0.0"): Promise<string | null> {
-        try {
-            const url = `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}&v=${version}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const blob = await response.blob();
-            return URL.createObjectURL(blob);
-        } catch (err) {
-            console.error(`Storyteller Cinema | Failed to fetch asset as Blob: ${relativePath}`, err);
-            return null;
-        }
-    }
 
     private async _loadHubSkins(): Promise<void> {
         const premiumKey = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
@@ -118,8 +103,8 @@ export class SkinManager {
 
         const skinIds = pack.skins || [];
         for (const skinId of skinIds) {
-            // Fetch each skin.json via Proxy
-            const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}`;
+            // Fetch each skin.json via Proxy with cache buster
+            const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
             const skinRes = await fetch(skinUrl);
             if (!skinRes.ok) {
                 console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
@@ -242,77 +227,43 @@ export class SkinManager {
             skin = this.skins.get('default')!;
         }
 
-        // Revoke old object URLs to release memory
-        for (const url of this._objectUrls.values()) {
-            URL.revokeObjectURL(url);
-        }
-        this._objectUrls.clear();
-
-        // If it's a premium skin and has assets, fetch them on the fly using the premiumKey
+        // Use direct secure premium assets via proxy URLs for native browser caching
         const premiumKey = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
         if (skin.assets) {
-            ui.notifications?.info(`Storyteller Cinema | Loading secure premium assets for: ${skin.name}...`);
             const borderPath = skin.assets.border;
             const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
             const bgPath = skin.assets.background;
             const topBarPath = skin.assets.topBar;
             const bottomBarPath = skin.assets.bottomBar;
+            const footerPath = skin.assets.footer;
 
             skin.options.styles = skin.options.styles || {};
-
             const skinVersion = skin.version || '1.0.0';
 
+            const getProxyUrl = (relativePath: string) => 
+                `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}&v=${skinVersion}`;
+
             if (borderPath) {
-                const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, premiumKey, skinVersion);
-                if (borderObjUrl) {
-                    this._objectUrls.set('border', borderObjUrl);
-                    skin.options.styles['--cinematic-bar-border-image'] = `url("${borderObjUrl}")`;
-                }
+                skin.options.styles['--cinematic-bar-border-image'] = `url("${getProxyUrl(borderPath)}")`;
             }
-
             if (portraitBorderPath) {
-                const portraitBorderObjUrl = await this._fetchAssetAsObjectURL(portraitBorderPath, premiumKey, skinVersion);
-                if (portraitBorderObjUrl) {
-                    this._objectUrls.set('portraitBorder', portraitBorderObjUrl);
-                    skin.options.styles['--cinematic-portrait-border-image'] = `url("${portraitBorderObjUrl}")`;
-                }
+                skin.options.styles['--cinematic-portrait-border-image'] = `url("${getProxyUrl(portraitBorderPath)}")`;
             }
-
             if (bgPath) {
-                const bgObjUrl = await this._fetchAssetAsObjectURL(bgPath, premiumKey, skinVersion);
-                if (bgObjUrl) {
-                    this._objectUrls.set('background', bgObjUrl);
-                    skin.options.backgroundTexture = bgObjUrl;
-                    skin.options.styles['--cinematic-portrait-background'] = `url("${bgObjUrl}")`;
-                }
+                skin.options.backgroundTexture = getProxyUrl(bgPath);
+                skin.options.styles['--cinematic-portrait-background'] = `url("${getProxyUrl(bgPath)}")`;
             }
-
             if (topBarPath) {
-                const topBarObjUrl = await this._fetchAssetAsObjectURL(topBarPath, premiumKey, skinVersion);
-                if (topBarObjUrl) {
-                    this._objectUrls.set('topBar', topBarObjUrl);
-                    skin.options.barTopTexture = topBarObjUrl;
-                    skin.options.styles['--cinematic-bar-top-texture'] = `url("${topBarObjUrl}")`;
-                }
+                skin.options.barTopTexture = getProxyUrl(topBarPath);
+                skin.options.styles['--cinematic-bar-top-texture'] = `url("${getProxyUrl(topBarPath)}")`;
             }
-
             if (bottomBarPath) {
-                const bottomBarObjUrl = await this._fetchAssetAsObjectURL(bottomBarPath, premiumKey, skinVersion);
-                if (bottomBarObjUrl) {
-                    this._objectUrls.set('bottomBar', bottomBarObjUrl);
-                    skin.options.barBottomTexture = bottomBarObjUrl;
-                    skin.options.styles['--cinematic-bar-bottom-texture'] = `url("${bottomBarObjUrl}")`;
-                }
+                skin.options.barBottomTexture = getProxyUrl(bottomBarPath);
+                skin.options.styles['--cinematic-bar-bottom-texture'] = `url("${getProxyUrl(bottomBarPath)}")`;
             }
-
-            const footerPath = skin.assets.footer;
             if (footerPath) {
-                const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, premiumKey, skinVersion);
-                if (footerObjUrl) {
-                    this._objectUrls.set('footer', footerObjUrl);
-                    skin.options.footerTexture = footerObjUrl;
-                    skin.options.styles['--cinematic-footer-texture'] = `url("${footerObjUrl}")`;
-                }
+                skin.options.footerTexture = getProxyUrl(footerPath);
+                skin.options.styles['--cinematic-footer-texture'] = `url("${getProxyUrl(footerPath)}")`;
             }
         }
 

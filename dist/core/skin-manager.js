@@ -8,7 +8,6 @@ class SkinManager {
     __publicField(this, "skins");
     __publicField(this, "activeSkin");
     __publicField(this, "_styleTag");
-    __publicField(this, "_objectUrls", /* @__PURE__ */ new Map());
     __publicField(this, "proxyUrl", "https://storyteller-cinema-proxy.robsammore.workers.dev");
     this.skins = /* @__PURE__ */ new Map();
     this.activeSkin = "default";
@@ -24,18 +23,6 @@ class SkinManager {
     await this._loadHubSkins();
     const savedSkin = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "activeSkin")) || "default";
     await this.apply(savedSkin);
-  }
-  async _fetchAssetAsObjectURL(relativePath, premiumKey, version = "1.0.0") {
-    try {
-      const url = `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}&v=${version}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
-    } catch (err) {
-      console.error(`Storyteller Cinema | Failed to fetch asset as Blob: ${relativePath}`, err);
-      return null;
-    }
   }
   async _loadHubSkins() {
     var _a2, _b2;
@@ -79,7 +66,7 @@ class SkinManager {
     }
     const skinIds = pack.skins || [];
     for (const skinId of skinIds) {
-      const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}`;
+      const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
       const skinRes = await fetch(skinUrl);
       if (!skinRes.ok) {
         console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
@@ -175,73 +162,45 @@ class SkinManager {
     Hooks.call("storyteller-cinema-skins-updated");
   }
   async apply(skinId) {
-    var _a2, _b2, _c, _d;
+    var _a2, _b2, _c;
     let skin = this.skins.get(skinId);
     if (!skin) {
       console.warn(`Storyteller Cinema | Skin '${skinId}' not found. Reverting to default.`);
       skinId = "default";
       skin = this.skins.get("default");
     }
-    for (const url of this._objectUrls.values()) {
-      URL.revokeObjectURL(url);
-    }
-    this._objectUrls.clear();
     const premiumKey = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
     if (skin.assets) {
-      (_b2 = ui.notifications) == null ? void 0 : _b2.info(`Storyteller Cinema | Loading secure premium assets for: ${skin.name}...`);
       const borderPath = skin.assets.border;
       const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
       const bgPath = skin.assets.background;
       const topBarPath = skin.assets.topBar;
       const bottomBarPath = skin.assets.bottomBar;
+      const footerPath = skin.assets.footer;
       skin.options.styles = skin.options.styles || {};
       const skinVersion = skin.version || "1.0.0";
+      const getProxyUrl = (relativePath) => `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}&v=${skinVersion}`;
       if (borderPath) {
-        const borderObjUrl = await this._fetchAssetAsObjectURL(borderPath, premiumKey, skinVersion);
-        if (borderObjUrl) {
-          this._objectUrls.set("border", borderObjUrl);
-          skin.options.styles["--cinematic-bar-border-image"] = `url("${borderObjUrl}")`;
-        }
+        skin.options.styles["--cinematic-bar-border-image"] = `url("${getProxyUrl(borderPath)}")`;
       }
       if (portraitBorderPath) {
-        const portraitBorderObjUrl = await this._fetchAssetAsObjectURL(portraitBorderPath, premiumKey, skinVersion);
-        if (portraitBorderObjUrl) {
-          this._objectUrls.set("portraitBorder", portraitBorderObjUrl);
-          skin.options.styles["--cinematic-portrait-border-image"] = `url("${portraitBorderObjUrl}")`;
-        }
+        skin.options.styles["--cinematic-portrait-border-image"] = `url("${getProxyUrl(portraitBorderPath)}")`;
       }
       if (bgPath) {
-        const bgObjUrl = await this._fetchAssetAsObjectURL(bgPath, premiumKey, skinVersion);
-        if (bgObjUrl) {
-          this._objectUrls.set("background", bgObjUrl);
-          skin.options.backgroundTexture = bgObjUrl;
-          skin.options.styles["--cinematic-portrait-background"] = `url("${bgObjUrl}")`;
-        }
+        skin.options.backgroundTexture = getProxyUrl(bgPath);
+        skin.options.styles["--cinematic-portrait-background"] = `url("${getProxyUrl(bgPath)}")`;
       }
       if (topBarPath) {
-        const topBarObjUrl = await this._fetchAssetAsObjectURL(topBarPath, premiumKey, skinVersion);
-        if (topBarObjUrl) {
-          this._objectUrls.set("topBar", topBarObjUrl);
-          skin.options.barTopTexture = topBarObjUrl;
-          skin.options.styles["--cinematic-bar-top-texture"] = `url("${topBarObjUrl}")`;
-        }
+        skin.options.barTopTexture = getProxyUrl(topBarPath);
+        skin.options.styles["--cinematic-bar-top-texture"] = `url("${getProxyUrl(topBarPath)}")`;
       }
       if (bottomBarPath) {
-        const bottomBarObjUrl = await this._fetchAssetAsObjectURL(bottomBarPath, premiumKey, skinVersion);
-        if (bottomBarObjUrl) {
-          this._objectUrls.set("bottomBar", bottomBarObjUrl);
-          skin.options.barBottomTexture = bottomBarObjUrl;
-          skin.options.styles["--cinematic-bar-bottom-texture"] = `url("${bottomBarObjUrl}")`;
-        }
+        skin.options.barBottomTexture = getProxyUrl(bottomBarPath);
+        skin.options.styles["--cinematic-bar-bottom-texture"] = `url("${getProxyUrl(bottomBarPath)}")`;
       }
-      const footerPath = skin.assets.footer;
       if (footerPath) {
-        const footerObjUrl = await this._fetchAssetAsObjectURL(footerPath, premiumKey, skinVersion);
-        if (footerObjUrl) {
-          this._objectUrls.set("footer", footerObjUrl);
-          skin.options.footerTexture = footerObjUrl;
-          skin.options.styles["--cinematic-footer-texture"] = `url("${footerObjUrl}")`;
-        }
+        skin.options.footerTexture = getProxyUrl(footerPath);
+        skin.options.styles["--cinematic-footer-texture"] = `url("${getProxyUrl(footerPath)}")`;
       }
     }
     this.activeSkin = skinId;
@@ -250,8 +209,8 @@ class SkinManager {
     document.body.classList.add(`cinematic-skin-${skinId}`);
     document.body.dataset.cinematicSkin = skinId;
     this._injectCSS(skin);
-    if (((_c = game.settings) == null ? void 0 : _c.get("storyteller-cinema", "activeSkin")) !== skinId) {
-      await ((_d = game.settings) == null ? void 0 : _d.set("storyteller-cinema", "activeSkin", skinId));
+    if (((_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "activeSkin")) !== skinId) {
+      await ((_c = game.settings) == null ? void 0 : _c.set("storyteller-cinema", "activeSkin", skinId));
     }
     Hooks.call("storyteller-cinema-skins-updated");
     console.log(`Storyteller Cinema | Applied Skin: ${skin.name}`);
