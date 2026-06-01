@@ -420,6 +420,7 @@ export class SkinManager {
     private _injectCSS(skin: SkinData): void {
         if (!this._styleTag) this._createStyleTag();
 
+        skin.options = skin.options || {};
         let css = `:root { \n`;
 
         if (skin.options.styles) {

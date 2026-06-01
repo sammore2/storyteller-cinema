@@ -12,6 +12,20 @@ import './lib/shim.js'; // Import libWrapper Shim
 Hooks.once('init', function () {
   console.log('Storyteller Cinema | Initializing...');
 
+  // Safe fallback for PIXI.Sprite.prototype to prevent errors in third-party modules (e.g. monks-active-tiles)
+  const PIXI = (window as any).PIXI;
+  if (PIXI && PIXI.Sprite) {
+    const proto = PIXI.Sprite.prototype as any;
+    const dummyMethods = ['clear', 'beginFill', 'lineStyle', 'drawRect', 'drawRoundedRect', 'drawCircle', 'endFill'];
+    for (const method of dummyMethods) {
+      if (typeof proto[method] !== 'function') {
+        proto[method] = function(this: any) {
+          return this;
+        };
+      }
+    }
+  }
+
   // 1. REGISTER SETTINGS
   game.settings.register('storyteller-cinema', 'activeSkin', {
     name: "Active Skin",

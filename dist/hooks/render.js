@@ -29,6 +29,10 @@ function registerRenderHooks() {
   });
   Hooks.on("refreshTile", (tile) => {
     var _a;
+    if (tile.bg && typeof tile.bg.clear !== "function") {
+      tile.bg.clear = () => {
+      };
+    }
     const active = (_a = window.StorytellerCinema) == null ? void 0 : _a.active;
     if (!active) {
       if (tile.mesh) tile.mesh.visible = !tile.document.hidden;
@@ -37,6 +41,12 @@ function registerRenderHooks() {
     const showInCinema = tile.document.getFlag("storyteller-cinema", "showInCinema") || false;
     if (tile.mesh) {
       tile.mesh.visible = showInCinema && !tile.document.hidden;
+    }
+  });
+  Hooks.on("drawTile", (tile) => {
+    if (tile.bg && typeof tile.bg.clear !== "function") {
+      tile.bg.clear = () => {
+      };
     }
   });
   Hooks.on("renderDrawingConfig", (app, html) => {

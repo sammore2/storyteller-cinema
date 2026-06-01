@@ -5,6 +5,18 @@ import { r as registerRenderHooks } from "./hooks/render.js";
 import { r as registerChatHooks } from "./hooks/chat.js";
 Hooks.once("init", function() {
   console.log("Storyteller Cinema | Initializing...");
+  const PIXI = window.PIXI;
+  if (PIXI && PIXI.Sprite) {
+    const proto = PIXI.Sprite.prototype;
+    const dummyMethods = ["clear", "beginFill", "lineStyle", "drawRect", "drawRoundedRect", "drawCircle", "endFill"];
+    for (const method of dummyMethods) {
+      if (typeof proto[method] !== "function") {
+        proto[method] = function() {
+          return this;
+        };
+      }
+    }
+  }
   game.settings.register("storyteller-cinema", "activeSkin", {
     name: "Active Skin",
     scope: "world",

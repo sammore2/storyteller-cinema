@@ -329,6 +329,7 @@ class SkinManager {
   }
   _injectCSS(skin) {
     if (!this._styleTag) this._createStyleTag();
+    skin.options = skin.options || {};
     let css = `:root { 
 `;
     if (skin.options.styles) {

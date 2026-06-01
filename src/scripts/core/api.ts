@@ -667,19 +667,27 @@ export class StorytellerAPI {
             }
         }
 
-        if ( isV14 ) {
-            // V14 Selective Hiding
-            if ( (canvas as any).primary ) {
-                const p = (canvas as any).primary;
-                p.visible = true; // Keep primary group visible so weather can render
-                for ( const child of p.children ) {
-                    if ( child === (canvas as any).weather || child === this.cinematicContainer ) {
-                        continue;
-                    }
+        // Hide primary canvas group children (background, tiles, template meshes, etc.) in all versions (V11-V14)
+        if ( (canvas as any).primary ) {
+            const p = (canvas as any).primary;
+            p.visible = true; // Keep primary group visible so weather can render
+            if ( p.background ) p.background.visible = visible;
+            for ( const child of p.children ) {
+                if ( child === (canvas as any).weather || child === this.cinematicContainer || child === p.background ) {
+                    continue;
+                }
+                const isTile = child.object?.document?.documentName === "Tile" || child.placeable?.document?.documentName === "Tile" || child.constructor.name === "Tile";
+                if (isTile) {
+                    child.alpha = visible ? (child.object?.document?.alpha ?? 1) : 0;
+                    child.visible = visible ? !child.object?.document?.hidden : true;
+                } else {
                     child.visible = visible;
                 }
             }
+        }
 
+        if ( isV14 ) {
+            // V14 Selective Hiding
             if ( (canvas as any).effects ) {
                 (canvas as any).effects.visible = visible;
             }
@@ -695,7 +703,7 @@ export class StorytellerAPI {
         } else {
             // V13 and Legacy Fallback
             if (canvas.grid) canvas.grid.visible = visible;
-            const layers = ["walls", "sounds", "notes", "lighting", "tokens", "templates"];
+            const layers = ["background", "foreground", "walls", "sounds", "notes", "lighting", "tokens", "templates"];
             for ( const l of layers ) {
                 if ( (canvas as any)[l] ) (canvas as any)[l].visible = visible;
             }
@@ -708,8 +716,12 @@ export class StorytellerAPI {
             canvas.tiles.visible = true;
             if ( canvas.tiles.placeables ) {
                 for ( const t of canvas.tiles.placeables ) {
-                    const showInCinema = t.document.getFlag("storyteller-cinema", "showInCinema") || false;
-                    if (t.mesh) t.mesh.visible = visible ? !t.document.hidden : (showInCinema && !t.document.hidden);
+                    if (t.mesh) {
+                        t.mesh.visible = visible ? !t.document.hidden : true;
+                        t.mesh.alpha = visible ? (t.document.alpha ?? 1) : 0;
+                    }
+                    t.visible = visible ? !t.document.hidden : true;
+                    t.alpha = visible ? (t.document.alpha ?? 1) : 0;
                 }
             }
         }
@@ -719,8 +731,7 @@ export class StorytellerAPI {
             canvas.drawings.visible = true;
             if ( canvas.drawings.placeables ) {
                 for ( const d of canvas.drawings.placeables ) {
-                    const showInCinema = d.document.getFlag("storyteller-cinema", "showInCinema") || false;
-                    d.visible = visible ? !d.document.hidden : (showInCinema && !d.document.hidden);
+                    d.visible = visible ? !d.document.hidden : false;
                 }
             }
         }
