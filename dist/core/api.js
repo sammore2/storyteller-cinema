@@ -182,7 +182,7 @@ class StorytellerAPI {
     const activeIds = game.settings.get("storyteller-cinema", "activePortraits") || [];
     const portraitsToShow = [];
     activeIds.forEach((id) => {
-      var _a, _b;
+      var _a, _b, _c, _d;
       let img = "icons/svg/book.svg";
       let name = "Narrator";
       if (id !== "narrator") {
@@ -194,7 +194,8 @@ class StorytellerAPI {
           return;
         }
       } else {
-        img = ((_b = game.user) == null ? void 0 : _b.avatar) || "icons/svg/book.svg";
+        const activeGM = ((_b = game.users) == null ? void 0 : _b.activeGM) || ((_c = game.users) == null ? void 0 : _c.find((u) => u.isGM && u.active)) || ((_d = game.users) == null ? void 0 : _d.find((u) => u.isGM));
+        img = (activeGM == null ? void 0 : activeGM.avatar) || "icons/svg/book.svg";
       }
       portraitsToShow.push({ name, img });
     });

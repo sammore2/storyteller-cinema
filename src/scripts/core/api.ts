@@ -245,7 +245,8 @@ export class StorytellerAPI {
                     return;
                 }
             } else {
-                img = (game.user as any)?.avatar || 'icons/svg/book.svg';
+                const activeGM = game.users?.activeGM || game.users?.find((u: any) => u.isGM && u.active) || game.users?.find((u: any) => u.isGM);
+                img = activeGM?.avatar || 'icons/svg/book.svg';
             }
             portraitsToShow.push({ name, img });
         });
