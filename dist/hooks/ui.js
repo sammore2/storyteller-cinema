@@ -193,9 +193,9 @@ function registerUIHooks() {
     const patreonBtn = document.createElement("button");
     patreonBtn.type = "button";
     patreonBtn.className = "patreon-connect-btn";
-    patreonBtn.innerHTML = '<i class="fab fa-patreon"></i> Conectar Patreon';
-    patreonBtn.style.background = "#FF424D";
-    patreonBtn.style.color = "#FFFFFF";
+    patreonBtn.innerHTML = '<i class="fas fa-key"></i> Gerenciar Premium';
+    patreonBtn.style.background = "#e9c46a";
+    patreonBtn.style.color = "#121212";
     patreonBtn.style.border = "none";
     patreonBtn.style.padding = "12px 24px";
     patreonBtn.style.fontSize = "14px";
@@ -205,10 +205,10 @@ function registerUIHooks() {
     patreonBtn.style.transition = "background 0.2s, transform 0.1s";
     patreonBtn.style.boxShadow = "0 4px 10px rgba(0,0,0,0.4)";
     patreonBtn.onmouseover = () => {
-      patreonBtn.style.background = "#e63b44";
+      patreonBtn.style.background = "#f4a261";
     };
     patreonBtn.onmouseout = () => {
-      patreonBtn.style.background = "#FF424D";
+      patreonBtn.style.background = "#e9c46a";
     };
     patreonBtn.onmousedown = () => {
       patreonBtn.style.transform = "scale(0.95)";
@@ -216,33 +216,10 @@ function registerUIHooks() {
     patreonBtn.onmouseup = () => {
       patreonBtn.style.transform = "scale(1)";
     };
-    patreonBtn.onclick = (e) => {
+    patreonBtn.onclick = async (e) => {
       e.preventDefault();
-      const width = 600;
-      const height = 700;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      const popup = window.open(
-        "https://storyteller-cinema-proxy.robsammore.workers.dev/oauth/login",
-        "PatreonLogin",
-        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes`
-      );
-      if (popup) {
-        const messageListener = async (event) => {
-          var _a, _b;
-          if (event.origin !== "https://storyteller-cinema-proxy.robsammore.workers.dev") return;
-          if (((_a = event.data) == null ? void 0 : _a.type) === "PATREON_KEY_ACTIVATED" && ((_b = event.data) == null ? void 0 : _b.key)) {
-            const keyInput = stcGroup.querySelector('input[name="storyteller-cinema.premiumKey"]');
-            if (keyInput) {
-              keyInput.value = event.data.key;
-              keyInput.dispatchEvent(new Event("change", { bubbles: true }));
-              ui.notifications.info("Storyteller Cinema | Licença Premium ativada com sucesso!");
-            }
-            window.removeEventListener("message", messageListener);
-          }
-        };
-        window.addEventListener("message", messageListener);
-      }
+      const { KeyManager } = await import("../apps/key-manager.js");
+      new KeyManager().render(true, { focus: true });
     };
     bannerContainer.appendChild(patreonBtn);
     stcGroup.prepend(bannerContainer);

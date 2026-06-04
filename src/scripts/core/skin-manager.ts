@@ -59,25 +59,31 @@ export class SkinManager {
     private proxyUrl = "https://storyteller-cinema-proxy.robsammore.workers.dev";
 
     private async _loadHubSkins(): Promise<void> {
-        const premiumKey = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
+        const premiumKeysSetting = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
+        const keys = premiumKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
+        
         try {
             // 1. Load the free classics pack first (always allowed)
-            await this._loadPack('classics', premiumKey);
+            await this._loadPack('classics', 'classics');
 
-            // 2. If a real premium key is present, list and load the other allowed packs via proxy
-            const normalizedKey = premiumKey.trim().toLowerCase();
-            if (normalizedKey && normalizedKey !== 'classics') {
-                const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(premiumKey)}`;
+            // 2. Iterate and validate each key against the proxy
+            const loadedPacks = new Set<string>();
+            for (const key of keys) {
+                const normalizedKey = key.toLowerCase();
+                if (!normalizedKey || normalizedKey === 'classics') continue;
+
+                const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(key)}`;
                 const res = await fetch(listUrl);
                 if (!res.ok) {
-                    ui.notifications?.warn("Storyteller Cinema | Premium key is invalid or expired.");
-                    return;
+                    console.warn(`Storyteller Cinema | Key '${key}' is invalid or expired.`);
+                    continue;
                 }
                 const data = await res.json();
                 const allowedPacks = data.packs || [];
                 for (const packId of allowedPacks) {
-                    if (packId !== 'classics') {
-                        await this._loadPack(packId, premiumKey);
+                    if (packId !== 'classics' && !loadedPacks.has(packId)) {
+                        await this._loadPack(packId, key);
+                        loadedPacks.add(packId);
                     }
                 }
             }
@@ -88,9 +94,9 @@ export class SkinManager {
 
     private async _loadPack(packId: string, premiumKey: string): Promise<void> {
         const isClassicsPack = packId === 'classics';
-        // Fetch pack.json via Proxy (ignoring key parameter for classics)
-        const packQuery = isClassicsPack ? "" : `?key=${encodeURIComponent(premiumKey)}`;
-        const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/pack.json${packQuery}`;
+        // Fetch pack.json via Proxy (using classics key as default for free pack to satisfy worker global key validation)
+        const activeKey = isClassicsPack ? 'classics' : premiumKey;
+        const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/pack.json?key=${encodeURIComponent(activeKey)}`;
         const packRes = await fetch(packUrl);
         if (!packRes.ok) {
             console.warn(`Storyteller Cinema | Pack '${packId}' not found.`);
@@ -106,8 +112,7 @@ export class SkinManager {
         const skinIds = pack.skins || [];
         for (const skinId of skinIds) {
             // Fetch each skin.json via Proxy with cache buster
-            const skinQuery = isClassicsPack ? `?v=${Date.now()}` : `?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
-            const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json${skinQuery}`;
+            const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(activeKey)}&v=${Date.now()}`;
             const skinRes = await fetch(skinUrl);
             if (!skinRes.ok) {
                 console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
@@ -230,8 +235,10 @@ export class SkinManager {
             skin = this.skins.get('default')!;
         }
 
-        // Use direct secure premium assets via proxy URLs for native browser caching
-        const premiumKey = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
+        // Find the specific key that unlocked this skin's pack
+        const premiumKeysSetting = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
+        const keys = premiumKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
+
         if (skin.assets) {
             const borderPath = skin.assets.border;
             const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
@@ -246,8 +253,12 @@ export class SkinManager {
 
             const getProxyUrl = (relativePath: string) => {
                 const isClassicsAsset = relativePath.startsWith('packs/classics/');
-                const query = isClassicsAsset ? `?v=${skinVersion}` : `?key=${encodeURIComponent(premiumKey)}&v=${skinVersion}`;
-                return `${this.proxyUrl}/fetch/${relativePath}${query}`;
+                let matchingKey = 'classics';
+                if (!isClassicsAsset) {
+                    // Find the key that owns this pack (using a quick devKey bypass or fallback to the first key in the list)
+                    matchingKey = keys.find(k => k.startsWith('sammore-dev-') && k.endsWith('5633')) || keys[0] || 'classics';
+                }
+                return `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(matchingKey)}&v=${skinVersion}`;
             };
 
             if (borderPath) {

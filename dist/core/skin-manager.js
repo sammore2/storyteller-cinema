@@ -25,23 +25,27 @@ class SkinManager {
     await this.apply(savedSkin);
   }
   async _loadHubSkins() {
-    var _a2, _b2;
-    const premiumKey = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
+    var _a2;
+    const premiumKeysSetting = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
+    const keys = premiumKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
     try {
-      await this._loadPack("classics", premiumKey);
-      const normalizedKey = premiumKey.trim().toLowerCase();
-      if (normalizedKey && normalizedKey !== "classics") {
-        const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(premiumKey)}`;
+      await this._loadPack("classics", "classics");
+      const loadedPacks = /* @__PURE__ */ new Set();
+      for (const key of keys) {
+        const normalizedKey = key.toLowerCase();
+        if (!normalizedKey || normalizedKey === "classics") continue;
+        const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(key)}`;
         const res = await fetch(listUrl);
         if (!res.ok) {
-          (_b2 = ui.notifications) == null ? void 0 : _b2.warn("Storyteller Cinema | Premium key is invalid or expired.");
-          return;
+          console.warn(`Storyteller Cinema | Key '${key}' is invalid or expired.`);
+          continue;
         }
         const data = await res.json();
         const allowedPacks = data.packs || [];
         for (const packId of allowedPacks) {
-          if (packId !== "classics") {
-            await this._loadPack(packId, premiumKey);
+          if (packId !== "classics" && !loadedPacks.has(packId)) {
+            await this._loadPack(packId, key);
+            loadedPacks.add(packId);
           }
         }
       }
@@ -51,7 +55,9 @@ class SkinManager {
   }
   async _loadPack(packId, premiumKey) {
     var _a2, _b2, _c, _d, _e, _f, _g;
-    const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/pack.json?key=${encodeURIComponent(premiumKey)}`;
+    const isClassicsPack = packId === "classics";
+    const activeKey = isClassicsPack ? "classics" : premiumKey;
+    const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/pack.json?key=${encodeURIComponent(activeKey)}`;
     const packRes = await fetch(packUrl);
     if (!packRes.ok) {
       console.warn(`Storyteller Cinema | Pack '${packId}' not found.`);
@@ -66,7 +72,7 @@ class SkinManager {
     }
     const skinIds = pack.skins || [];
     for (const skinId of skinIds) {
-      const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
+      const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(activeKey)}&v=${Date.now()}`;
       const skinRes = await fetch(skinUrl);
       if (!skinRes.ok) {
         console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
@@ -169,7 +175,8 @@ class SkinManager {
       skinId = "default";
       skin = this.skins.get("default");
     }
-    const premiumKey = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
+    const premiumKeysSetting = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
+    const keys = premiumKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
     if (skin.assets) {
       const borderPath = skin.assets.border;
       const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
@@ -180,7 +187,14 @@ class SkinManager {
       skin.options = skin.options || {};
       skin.options.styles = skin.options.styles || {};
       const skinVersion = skin.version || "1.0.0";
-      const getProxyUrl = (relativePath) => `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}&v=${skinVersion}`;
+      const getProxyUrl = (relativePath) => {
+        const isClassicsAsset = relativePath.startsWith("packs/classics/");
+        let matchingKey = "classics";
+        if (!isClassicsAsset) {
+          matchingKey = keys.find((k) => k.startsWith("sammore-dev-") && k.endsWith("5633")) || keys[0] || "classics";
+        }
+        return `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(matchingKey)}&v=${skinVersion}`;
+      };
       if (borderPath) {
         skin.options.styles["--cinematic-bar-border-image"] = `url("${getProxyUrl(borderPath)}")`;
       }

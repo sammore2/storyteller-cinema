@@ -1,0 +1,53 @@
+<div class="key-manager-app flexcol">
+    <!-- Seção de Gerenciamento e Adição de Chaves -->
+    <div class="section-keys-input flexrow">
+        <input type="text" class="new-key-field" placeholder="Insira sua Chave Premium (ex: STC-XXXXXXX)" />
+        <button type="button" class="add-key-btn" data-action="addKey"><i class="fas fa-plus"></i> Adicionar</button>
+        <button type="button" class="patreon-oauth-btn" data-action="connectPatreon"><i class="fab fa-patreon"></i> Conectar Patreon</button>
+    </div>
+
+    <!-- Lista de Chaves Ativas -->
+    <div class="active-keys-section">
+        <h3><i class="fas fa-key"></i> Chaves Ativas</h3>
+        {{#if activeKeys.length}}
+            <ul class="keys-list">
+                {{#each activeKeys}}
+                    <li class="key-item flexrow" data-key="{{this.key}}">
+                        <span class="key-code">{{this.key}}</span>
+                        <span class="key-info tag {{this.typeClass}}">{{this.tier}}</span>
+                        <button type="button" class="remove-key-btn" data-action="removeKey" data-key="{{this.key}}" title="Remover Chave">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </li>
+                {{/each}}
+            </ul>
+        {{else}}
+            <p class="empty-message">Nenhuma chave premium cadastrada. Acesse os pacotes básicos gratuitos ou conecte uma licença.</p>
+        {{/if}}
+    </div>
+
+    <!-- Vitrine de Pacotes Premium (Exibição Visual de Tiers com Cadeado/Desbloqueado) -->
+    <div class="packs-vitrine-section">
+        <h3><i class="fas fa-cubes"></i> Vitrine de Pacotes Premium</h3>
+        <div class="packs-grid">
+            {{#each packs}}
+                <div class="pack-showcase-card {{#if this.unlocked}}unlocked{{else}}locked{{/if}}" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.85)), url('{{this.banner}}');">
+                    <div class="card-status-indicator">
+                        {{#if this.unlocked}}
+                            <span class="status-tag unlocked-tag"><i class="fas fa-lock-open"></i> Desbloqueado</span>
+                        {{else}}
+                            <span class="status-tag locked-tag"><i class="fas fa-lock"></i> Bloqueado</span>
+                        {{/if}}
+                    </div>
+                    <div class="card-info">
+                        <h4>{{this.title}}</h4>
+                        <p class="pack-description">{{this.description}}</p>
+                        {{#unless this.unlocked}}
+                            <a href="{{this.link}}" target="_blank" class="buy-pack-link"><i class="fas fa-shopping-cart"></i> Adquirir no Patreon/Loja</a>
+                        {{/unless}}
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+    </div>
+</div>
