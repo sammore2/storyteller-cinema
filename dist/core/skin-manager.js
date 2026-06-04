@@ -105,7 +105,7 @@ const _SkinManager = class _SkinManager {
       const mappedAssets = {};
       for (const [key, relativePath] of Object.entries(assets)) {
         if (typeof relativePath === "string") {
-          mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+          mappedAssets[key] = relativePath.startsWith("packs/") ? relativePath : `${baseAssetPath}/${relativePath}`;
         }
       }
       const mappedSkin = {
@@ -157,7 +157,7 @@ const _SkinManager = class _SkinManager {
     const mappedAssets = {};
     for (const [key, relativePath] of Object.entries(assets)) {
       if (typeof relativePath === "string") {
-        mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+        mappedAssets[key] = relativePath.startsWith("packs/") ? relativePath : `${baseAssetPath}/${relativePath}`;
       }
     }
     const mappedSkin = {

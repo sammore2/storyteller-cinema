@@ -154,7 +154,7 @@ export class SkinManager {
             const mappedAssets: Record<string, string> = {};
             for (const [key, relativePath] of Object.entries(assets)) {
                 if (typeof relativePath === 'string') {
-                    mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+                    mappedAssets[key] = relativePath.startsWith('packs/') ? relativePath : `${baseAssetPath}/${relativePath}`;
                 }
             }
 
@@ -208,7 +208,7 @@ export class SkinManager {
         const mappedAssets: Record<string, string> = {};
         for (const [key, relativePath] of Object.entries(assets)) {
             if (typeof relativePath === 'string') {
-                mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+                mappedAssets[key] = relativePath.startsWith('packs/') ? relativePath : `${baseAssetPath}/${relativePath}`;
             }
         }
 
