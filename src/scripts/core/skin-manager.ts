@@ -87,8 +87,10 @@ export class SkinManager {
     }
 
     private async _loadPack(packId: string, premiumKey: string): Promise<void> {
-        // Fetch pack.json via Proxy
-        const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/pack.json?key=${encodeURIComponent(premiumKey)}`;
+        const isClassicsPack = packId === 'classics';
+        // Fetch pack.json via Proxy (ignoring key parameter for classics)
+        const packQuery = isClassicsPack ? "" : `?key=${encodeURIComponent(premiumKey)}`;
+        const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/pack.json${packQuery}`;
         const packRes = await fetch(packUrl);
         if (!packRes.ok) {
             console.warn(`Storyteller Cinema | Pack '${packId}' not found.`);
@@ -104,7 +106,8 @@ export class SkinManager {
         const skinIds = pack.skins || [];
         for (const skinId of skinIds) {
             // Fetch each skin.json via Proxy with cache buster
-            const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
+            const skinQuery = isClassicsPack ? `?v=${Date.now()}` : `?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
+            const skinUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json${skinQuery}`;
             const skinRes = await fetch(skinUrl);
             if (!skinRes.ok) {
                 console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
@@ -241,8 +244,11 @@ export class SkinManager {
             skin.options.styles = skin.options.styles || {};
             const skinVersion = skin.version || '1.0.0';
 
-            const getProxyUrl = (relativePath: string) => 
-                `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(premiumKey)}&v=${skinVersion}`;
+            const getProxyUrl = (relativePath: string) => {
+                const isClassicsAsset = relativePath.startsWith('packs/classics/');
+                const query = isClassicsAsset ? `?v=${skinVersion}` : `?key=${encodeURIComponent(premiumKey)}&v=${skinVersion}`;
+                return `${this.proxyUrl}/fetch/${relativePath}${query}`;
+            };
 
             if (borderPath) {
                 skin.options.styles['--cinematic-bar-border-image'] = `url("${getProxyUrl(borderPath)}")`;

@@ -170,6 +170,83 @@ function registerUIHooks() {
       }
     });
   });
+  Hooks.on("renderSettingsConfig", (_app, html) => {
+    let root = html instanceof HTMLElement ? html : html[0];
+    if (!(root instanceof HTMLElement)) return;
+    const stcGroup = root.querySelector('.tab[data-tab="storyteller-cinema"]') || root.querySelector('[data-category="storyteller-cinema"]');
+    if (!stcGroup) return;
+    if (stcGroup.querySelector(".storyteller-cinema-premium-banner")) return;
+    const bannerContainer = document.createElement("div");
+    bannerContainer.className = "storyteller-cinema-premium-banner";
+    bannerContainer.style.background = 'url("/modules/storyteller-cinema/assets/premium-banner/premium-banner.png") no-repeat center center';
+    bannerContainer.style.backgroundSize = "cover";
+    bannerContainer.style.width = "100%";
+    bannerContainer.style.aspectRatio = "10 / 3";
+    bannerContainer.style.borderRadius = "5px";
+    bannerContainer.style.display = "flex";
+    bannerContainer.style.alignItems = "center";
+    bannerContainer.style.justifyContent = "flex-end";
+    bannerContainer.style.padding = "0 30px";
+    bannerContainer.style.marginBottom = "15px";
+    bannerContainer.style.position = "relative";
+    bannerContainer.style.boxSizing = "border-box";
+    const patreonBtn = document.createElement("button");
+    patreonBtn.type = "button";
+    patreonBtn.className = "patreon-connect-btn";
+    patreonBtn.innerHTML = '<i class="fab fa-patreon"></i> Conectar Patreon';
+    patreonBtn.style.background = "#FF424D";
+    patreonBtn.style.color = "#FFFFFF";
+    patreonBtn.style.border = "none";
+    patreonBtn.style.padding = "12px 24px";
+    patreonBtn.style.fontSize = "14px";
+    patreonBtn.style.fontWeight = "bold";
+    patreonBtn.style.borderRadius = "4px";
+    patreonBtn.style.cursor = "pointer";
+    patreonBtn.style.transition = "background 0.2s, transform 0.1s";
+    patreonBtn.style.boxShadow = "0 4px 10px rgba(0,0,0,0.4)";
+    patreonBtn.onmouseover = () => {
+      patreonBtn.style.background = "#e63b44";
+    };
+    patreonBtn.onmouseout = () => {
+      patreonBtn.style.background = "#FF424D";
+    };
+    patreonBtn.onmousedown = () => {
+      patreonBtn.style.transform = "scale(0.95)";
+    };
+    patreonBtn.onmouseup = () => {
+      patreonBtn.style.transform = "scale(1)";
+    };
+    patreonBtn.onclick = (e) => {
+      e.preventDefault();
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      const popup = window.open(
+        "https://storyteller-cinema-proxy.robsammore.workers.dev/oauth/login",
+        "PatreonLogin",
+        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes`
+      );
+      if (popup) {
+        const messageListener = async (event) => {
+          var _a, _b;
+          if (event.origin !== "https://storyteller-cinema-proxy.robsammore.workers.dev") return;
+          if (((_a = event.data) == null ? void 0 : _a.type) === "PATREON_KEY_ACTIVATED" && ((_b = event.data) == null ? void 0 : _b.key)) {
+            const keyInput = stcGroup.querySelector('input[name="storyteller-cinema.premiumKey"]');
+            if (keyInput) {
+              keyInput.value = event.data.key;
+              keyInput.dispatchEvent(new Event("change", { bubbles: true }));
+              ui.notifications.info("Storyteller Cinema | Licença Premium ativada com sucesso!");
+            }
+            window.removeEventListener("message", messageListener);
+          }
+        };
+        window.addEventListener("message", messageListener);
+      }
+    };
+    bannerContainer.appendChild(patreonBtn);
+    stcGroup.prepend(bannerContainer);
+  });
 }
 function createHUDButton() {
   var _a, _b;
