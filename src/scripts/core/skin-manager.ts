@@ -31,6 +31,10 @@ export class SkinManager {
     activeSkin: string;
     private _styleTag: HTMLStyleElement | null;
 
+    private static SKIN_TO_PACK: Record<string, string> = {
+        'blood-moon': 'the-umbra'
+    };
+
     constructor() {
         this.skins = new Map();
         this.activeSkin = 'default';
@@ -39,6 +43,7 @@ export class SkinManager {
 
     async init(): Promise<void> {
         console.log("Storyteller Cinema | Initializing Skin Manager...");
+        this.skins.clear();
         this._createStyleTag();
         this._registerDefaultSkins();
 
@@ -59,9 +64,12 @@ export class SkinManager {
     private proxyUrl = "https://storyteller-cinema-proxy.robsammore.workers.dev";
 
     private async _loadHubSkins(): Promise<void> {
-        const premiumKeysSetting = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
-        const keys = premiumKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
-        
+        const ignoreDev = game.settings?.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
+        let keys = game.settings?.get('storyteller-cinema', 'premiumKeys') as string[] || [];
+        if (ignoreDev) {
+            keys = keys.filter(k => !(k.startsWith('sammore-dev-') && k.endsWith('5633')));
+        }
+
         try {
             // 1. Load the free classics pack first (always allowed)
             await this._loadPack('classics', 'classics');
@@ -79,11 +87,22 @@ export class SkinManager {
                     continue;
                 }
                 const data = await res.json();
+                
+                // 2a. Carregar pacotes inteiros autorizados
                 const allowedPacks = data.packs || [];
                 for (const packId of allowedPacks) {
                     if (packId !== 'classics' && !loadedPacks.has(packId)) {
                         await this._loadPack(packId, key);
                         loadedPacks.add(packId);
+                    }
+                }
+
+                // 2b. Carregar skins avulsas/individuais autorizadas
+                const allowedSkins = data.skins || [];
+                for (const skinId of allowedSkins) {
+                    const packId = SkinManager.SKIN_TO_PACK[skinId];
+                    if (packId && !this.skins.has(`${packId}-${skinId}`)) {
+                        await this._loadSingleSkin(packId, skinId, key);
                     }
                 }
             }
@@ -165,6 +184,59 @@ export class SkinManager {
         }
     }
 
+    private async _loadSingleSkin(packId: string, skinId: string, premiumKey: string): Promise<void> {
+        const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
+        const skinRes = await fetch(packUrl);
+        if (!skinRes.ok) {
+            console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
+            return;
+        }
+
+        let skinData: any;
+        try { skinData = await skinRes.json(); } catch {
+            console.warn(`Storyteller Cinema | Invalid skin.json for '${skinId}' in pack '${packId}'.`);
+            return;
+        }
+
+        // Build asset paths relative to the pack structure
+        const baseAssetPath = `packs/${packId}/skins/${skinId}`;
+        const assets = {
+            ...(skinData.files || {}),
+            ...(skinData.assets || {}),
+            ...(skinData.options?.assets || {})
+        };
+        const mappedAssets: Record<string, string> = {};
+        for (const [key, relativePath] of Object.entries(assets)) {
+            if (typeof relativePath === 'string') {
+                mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+            }
+        }
+
+        const mappedSkin: SkinData = {
+            id: `${packId}-${skinData.id}`,
+            name: skinData.name || skinData.id || skinId,
+            author: skinData.author || 'The Blacksmith',
+            version: skinData.version || '1.0.0',
+            pack: packId,
+            assets: mappedAssets,
+            options: {
+                theme: skinData.options?.theme || 'dark',
+                filter: skinData.options?.filter || 'none',
+                barTexture: skinData.options?.barTexture,
+                backgroundTexture: skinData.options?.backgroundTexture,
+                overlayTexture: skinData.options?.overlayTexture,
+                styles: {
+                    '--cinematic-bar-bg': '#000000',
+                    '--cinematic-bar-border': 'none',
+                    '--cinematic-text-color': '#ffffff',
+                    ...(skinData.options?.styles || {})
+                }
+            }
+        };
+
+        await this.register(mappedSkin, false);
+    }
+
 
 
 
@@ -236,8 +308,11 @@ export class SkinManager {
         }
 
         // Find the specific key that unlocked this skin's pack
-        const premiumKeysSetting = game.settings?.get('storyteller-cinema', 'premiumKey') as string || 'classics';
-        const keys = premiumKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
+        const ignoreDev = game.settings?.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
+        let keys = game.settings?.get('storyteller-cinema', 'premiumKeys') as string[] || [];
+        if (ignoreDev) {
+            keys = keys.filter(k => !(k.startsWith('sammore-dev-') && k.endsWith('5633')));
+        }
 
         if (skin.assets) {
             const borderPath = skin.assets.border;
@@ -330,7 +405,7 @@ export class SkinManager {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) { } }, 1000);
 
         // Also copy to clipboard as fallback
         try {
@@ -380,6 +455,9 @@ export class SkinManager {
     }
 
     private async _ensureDirectory(path: string): Promise<void> {
+        // Apenas o narrador (GM) tem acesso para navegar/criar pastas no sistema de arquivos do servidor
+        if (!game.user?.isGM) return;
+
         const source = 'data';
         const parts = path.split('/');
         let currentPath = "";
@@ -460,7 +538,7 @@ export class SkinManager {
         const sanitize = (p?: string): string | null => {
             if (!p) return null;
             if (p.startsWith('http') || p.startsWith('blob:')) return p;
-            
+
             // Add cache buster for local file paths
             const cleanPath = p.startsWith('/') ? p : `/${p}`;
             return `${cleanPath}?v=${timestamp}`;

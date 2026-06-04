@@ -30,7 +30,8 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
       actions: {
         addKey: KeyManager._onAddKey,
         removeKey: KeyManager._onRemoveKey,
-        connectPatreon: KeyManager._onConnectPatreon
+        connectPatreon: KeyManager._onConnectPatreon,
+        toggleIgnoreDev: KeyManager._onToggleIgnoreDev
       }
     };
   }
@@ -43,12 +44,13 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
   }
   async _prepareContext(_options) {
     var _a, _b, _c, _d;
-    const premiumKeysSetting = game.settings.get("storyteller-cinema", "premiumKey") || "";
-    const keysArray = premiumKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
+    const keysArray = game.settings.get("storyteller-cinema", "premiumKeys") || [];
     const activeKeysList = [];
     const unlockedPacks = /* @__PURE__ */ new Set(["classics"]);
+    const ignoreDevKeys = game.settings.get("storyteller-cinema", "ignoreDevKeys") || false;
+    const hasDevKey = keysArray.some((key) => key.startsWith("sammore-dev-") && key.endsWith("5633"));
     for (const key of keysArray) {
-      const isDev = key.startsWith("sammore-dev-") && key.endsWith("5633");
+      const isDev = !ignoreDevKeys && key.startsWith("sammore-dev-") && key.endsWith("5633");
       let tier = "Avulsa/Promocional";
       let typeClass = "promo";
       if (isDev) {
@@ -115,7 +117,9 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     ];
     return {
       activeKeys: activeKeysList,
-      packs: packsShowcase
+      packs: packsShowcase,
+      ignoreDevKeys,
+      hasDevKey
     };
   }
   _onRender(_context, _options) {
@@ -138,14 +142,13 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
       (_b = ui.notifications) == null ? void 0 : _b.warn("Storyteller Cinema | Digite uma chave premium para adicionar.");
       return;
     }
-    const currentKeysSetting = game.settings.get("storyteller-cinema", "premiumKey") || "";
-    const keysList = currentKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
+    const keysList = game.settings.get("storyteller-cinema", "premiumKeys") || [];
     if (keysList.includes(newKey)) {
       (_c = ui.notifications) == null ? void 0 : _c.info("Storyteller Cinema | Esta chave já está cadastrada.");
       return;
     }
     keysList.push(newKey);
-    await game.settings.set("storyteller-cinema", "premiumKey", keysList.join(","));
+    await game.settings.set("storyteller-cinema", "premiumKeys", keysList);
     (_d = ui.notifications) == null ? void 0 : _d.info("Storyteller Cinema | Chave adicionada com sucesso!");
     input.value = "";
     if ((_e = window.StorytellerCinema) == null ? void 0 : _e.skins) {
@@ -158,10 +161,9 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault();
     const keyToRemove = ((_b = (_a = event.currentTarget) == null ? void 0 : _a.dataset) == null ? void 0 : _b.key) || ((_c = _target == null ? void 0 : _target.dataset) == null ? void 0 : _c.key);
     if (!keyToRemove) return;
-    const currentKeysSetting = game.settings.get("storyteller-cinema", "premiumKey") || "";
-    const keysList = currentKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
+    const keysList = game.settings.get("storyteller-cinema", "premiumKeys") || [];
     const filteredKeys = keysList.filter((k) => k !== keyToRemove);
-    await game.settings.set("storyteller-cinema", "premiumKey", filteredKeys.join(","));
+    await game.settings.set("storyteller-cinema", "premiumKeys", filteredKeys);
     (_d = ui.notifications) == null ? void 0 : _d.info("Storyteller Cinema | Chave removida.");
     if ((_e = window.StorytellerCinema) == null ? void 0 : _e.skins) {
       await window.StorytellerCinema.skins.init();
@@ -185,11 +187,10 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
         if (e.origin !== "https://storyteller-cinema-proxy.robsammore.workers.dev") return;
         if (((_a = e.data) == null ? void 0 : _a.type) === "PATREON_KEY_ACTIVATED" && ((_b = e.data) == null ? void 0 : _b.key)) {
           const newKey = e.data.key;
-          const currentKeysSetting = game.settings.get("storyteller-cinema", "premiumKey") || "";
-          const keysList = currentKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
+          const keysList = game.settings.get("storyteller-cinema", "premiumKeys") || [];
           if (!keysList.includes(newKey)) {
             keysList.push(newKey);
-            await game.settings.set("storyteller-cinema", "premiumKey", keysList.join(","));
+            await game.settings.set("storyteller-cinema", "premiumKeys", keysList);
             (_c = ui.notifications) == null ? void 0 : _c.info("Storyteller Cinema | Patreon conectado e chave premium ativada!");
             if ((_d = window.StorytellerCinema) == null ? void 0 : _d.skins) {
               await window.StorytellerCinema.skins.init();
@@ -201,6 +202,17 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
       };
       window.addEventListener("message", messageListener);
     }
+  }
+  static async _onToggleIgnoreDev(event, _target) {
+    var _a, _b;
+    event.preventDefault();
+    const currentVal = game.settings.get("storyteller-cinema", "ignoreDevKeys") || false;
+    await game.settings.set("storyteller-cinema", "ignoreDevKeys", !currentVal);
+    (_a = ui.notifications) == null ? void 0 : _a.info(`Storyteller Cinema | Modo de teste ${!currentVal ? "ativado" : "desativado"} (chaves de dev ${!currentVal ? "ignoradas" : "ativas"}).`);
+    if ((_b = window.StorytellerCinema) == null ? void 0 : _b.skins) {
+      await window.StorytellerCinema.skins.init();
+    }
+    this.render();
   }
 }
 export {

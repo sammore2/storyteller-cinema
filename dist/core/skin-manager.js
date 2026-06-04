@@ -3,7 +3,7 @@ var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { en
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 var _a, _b;
 const FilePickerClass = ((_b = (_a = foundry.applications) == null ? void 0 : _a.apps) == null ? void 0 : _b.FilePicker) || FilePicker;
-class SkinManager {
+const _SkinManager = class _SkinManager {
   constructor() {
     __publicField(this, "skins");
     __publicField(this, "activeSkin");
@@ -16,6 +16,7 @@ class SkinManager {
   async init() {
     var _a2;
     console.log("Storyteller Cinema | Initializing Skin Manager...");
+    this.skins.clear();
     this._createStyleTag();
     this._registerDefaultSkins();
     this._ensureDirectory("storyteller-cinema").catch((err) => console.warn("Storyteller Cinema | Root folder error:", err));
@@ -25,9 +26,12 @@ class SkinManager {
     await this.apply(savedSkin);
   }
   async _loadHubSkins() {
-    var _a2;
-    const premiumKeysSetting = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
-    const keys = premiumKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
+    var _a2, _b2;
+    const ignoreDev = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "ignoreDevKeys")) || false;
+    let keys = ((_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "premiumKeys")) || [];
+    if (ignoreDev) {
+      keys = keys.filter((k) => !(k.startsWith("sammore-dev-") && k.endsWith("5633")));
+    }
     try {
       await this._loadPack("classics", "classics");
       const loadedPacks = /* @__PURE__ */ new Set();
@@ -46,6 +50,13 @@ class SkinManager {
           if (packId !== "classics" && !loadedPacks.has(packId)) {
             await this._loadPack(packId, key);
             loadedPacks.add(packId);
+          }
+        }
+        const allowedSkins = data.skins || [];
+        for (const skinId of allowedSkins) {
+          const packId = _SkinManager.SKIN_TO_PACK[skinId];
+          if (packId && !this.skins.has(`${packId}-${skinId}`)) {
+            await this._loadSingleSkin(packId, skinId, key);
           }
         }
       }
@@ -122,6 +133,56 @@ class SkinManager {
       await this.register(mappedSkin, false);
     }
   }
+  async _loadSingleSkin(packId, skinId, premiumKey) {
+    var _a2, _b2, _c, _d, _e, _f, _g;
+    const packUrl = `${this.proxyUrl}/fetch/packs/${packId}/skins/${skinId}/skin.json?key=${encodeURIComponent(premiumKey)}&v=${Date.now()}`;
+    const skinRes = await fetch(packUrl);
+    if (!skinRes.ok) {
+      console.warn(`Storyteller Cinema | Skin '${skinId}' in pack '${packId}' not found.`);
+      return;
+    }
+    let skinData;
+    try {
+      skinData = await skinRes.json();
+    } catch {
+      console.warn(`Storyteller Cinema | Invalid skin.json for '${skinId}' in pack '${packId}'.`);
+      return;
+    }
+    const baseAssetPath = `packs/${packId}/skins/${skinId}`;
+    const assets = {
+      ...skinData.files || {},
+      ...skinData.assets || {},
+      ...((_a2 = skinData.options) == null ? void 0 : _a2.assets) || {}
+    };
+    const mappedAssets = {};
+    for (const [key, relativePath] of Object.entries(assets)) {
+      if (typeof relativePath === "string") {
+        mappedAssets[key] = `${baseAssetPath}/${relativePath}`;
+      }
+    }
+    const mappedSkin = {
+      id: `${packId}-${skinData.id}`,
+      name: skinData.name || skinData.id || skinId,
+      author: skinData.author || "The Blacksmith",
+      version: skinData.version || "1.0.0",
+      pack: packId,
+      assets: mappedAssets,
+      options: {
+        theme: ((_b2 = skinData.options) == null ? void 0 : _b2.theme) || "dark",
+        filter: ((_c = skinData.options) == null ? void 0 : _c.filter) || "none",
+        barTexture: (_d = skinData.options) == null ? void 0 : _d.barTexture,
+        backgroundTexture: (_e = skinData.options) == null ? void 0 : _e.backgroundTexture,
+        overlayTexture: (_f = skinData.options) == null ? void 0 : _f.overlayTexture,
+        styles: {
+          "--cinematic-bar-bg": "#000000",
+          "--cinematic-bar-border": "none",
+          "--cinematic-text-color": "#ffffff",
+          ...((_g = skinData.options) == null ? void 0 : _g.styles) || {}
+        }
+      }
+    };
+    await this.register(mappedSkin, false);
+  }
   async register(skinData, persist = false) {
     if (!skinData.id) {
       console.error("Storyteller Cinema | Skin missing ID:", skinData);
@@ -168,15 +229,18 @@ class SkinManager {
     Hooks.call("storyteller-cinema-skins-updated");
   }
   async apply(skinId) {
-    var _a2, _b2, _c;
+    var _a2, _b2, _c, _d;
     let skin = this.skins.get(skinId);
     if (!skin) {
       console.warn(`Storyteller Cinema | Skin '${skinId}' not found. Reverting to default.`);
       skinId = "default";
       skin = this.skins.get("default");
     }
-    const premiumKeysSetting = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKey")) || "classics";
-    const keys = premiumKeysSetting.split(",").map((k) => k.trim()).filter(Boolean);
+    const ignoreDev = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "ignoreDevKeys")) || false;
+    let keys = ((_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "premiumKeys")) || [];
+    if (ignoreDev) {
+      keys = keys.filter((k) => !(k.startsWith("sammore-dev-") && k.endsWith("5633")));
+    }
     if (skin.assets) {
       const borderPath = skin.assets.border;
       const portraitBorderPath = skin.assets.portraitBorder || skin.assets.cardBorder;
@@ -224,8 +288,8 @@ class SkinManager {
     document.body.classList.add(`cinematic-skin-${skinId}`);
     document.body.dataset.cinematicSkin = skinId;
     this._injectCSS(skin);
-    if (((_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "activeSkin")) !== skinId) {
-      await ((_c = game.settings) == null ? void 0 : _c.set("storyteller-cinema", "activeSkin", skinId));
+    if (((_c = game.settings) == null ? void 0 : _c.get("storyteller-cinema", "activeSkin")) !== skinId) {
+      await ((_d = game.settings) == null ? void 0 : _d.set("storyteller-cinema", "activeSkin", skinId));
     }
     Hooks.call("storyteller-cinema-skins-updated");
     console.log(`Storyteller Cinema | Applied Skin: ${skin.name}`);
@@ -296,6 +360,8 @@ class SkinManager {
     return skin;
   }
   async _ensureDirectory(path) {
+    var _a2;
+    if (!((_a2 = game.user) == null ? void 0 : _a2.isGM)) return;
     const source = "data";
     const parts = path.split("/");
     let currentPath = "";
@@ -454,7 +520,11 @@ class SkinManager {
       }
     });
   }
-}
+};
+__publicField(_SkinManager, "SKIN_TO_PACK", {
+  "blood-moon": "the-umbra"
+});
+let SkinManager = _SkinManager;
 export {
   SkinManager as S
 };

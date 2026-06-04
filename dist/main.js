@@ -30,13 +30,25 @@ Hooks.once("init", function() {
       }
     }
   });
-  game.settings.register("storyteller-cinema", "premiumKey", {
-    name: "STORYTELLER_CINEMA.Settings.premiumKey.Name",
-    hint: "STORYTELLER_CINEMA.Settings.premiumKey.Hint",
+  game.settings.register("storyteller-cinema", "premiumKeys", {
+    name: "Premium Keys",
     scope: "world",
-    config: true,
-    type: String,
-    default: "",
+    config: false,
+    type: Array,
+    default: [],
+    onChange: () => {
+      var _a;
+      if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {
+        window.StorytellerCinema.skins.init();
+      }
+    }
+  });
+  game.settings.register("storyteller-cinema", "ignoreDevKeys", {
+    name: "Ignore Developer Keys",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false,
     onChange: () => {
       var _a;
       if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {

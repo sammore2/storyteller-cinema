@@ -19,7 +19,7 @@ Hooks.once('init', function () {
     const dummyMethods = ['clear', 'beginFill', 'lineStyle', 'drawRect', 'drawRoundedRect', 'drawCircle', 'endFill'];
     for (const method of dummyMethods) {
       if (typeof proto[method] !== 'function') {
-        proto[method] = function(this: any) {
+        proto[method] = function (this: any) {
           return this;
         };
       }
@@ -43,13 +43,25 @@ Hooks.once('init', function () {
 
 
 
-  game.settings.register('storyteller-cinema', 'premiumKey', {
-    name: "STORYTELLER_CINEMA.Settings.premiumKey.Name",
-    hint: "STORYTELLER_CINEMA.Settings.premiumKey.Hint",
+  game.settings.register('storyteller-cinema', 'premiumKeys', {
+    name: "Premium Keys",
     scope: "world",
-    config: true,
-    type: String,
-    default: "",
+    config: false,
+    type: Array,
+    default: [],
+    onChange: () => {
+      if (window.StorytellerCinema?.skins) {
+        window.StorytellerCinema.skins.init();
+      }
+    }
+  });
+
+  game.settings.register('storyteller-cinema', 'ignoreDevKeys', {
+    name: "Ignore Developer Keys",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false,
     onChange: () => {
       if (window.StorytellerCinema?.skins) {
         window.StorytellerCinema.skins.init();
@@ -167,7 +179,7 @@ Hooks.once('init', function () {
     default: 0.4,
     range: { min: 0.1, max: 1.0, step: 0.1 },
     onChange: (value: number) => {
-        document.documentElement.style.setProperty('--tray-idle-opacity', value.toString());
+      document.documentElement.style.setProperty('--tray-idle-opacity', value.toString());
     }
   });
 
@@ -208,10 +220,10 @@ Hooks.once('init', function () {
   Hooks.on('updateActor', (actor: any) => {
     const tray = (window as any).StorytellerCinema.cinemaTray;
     if (tray) {
-        const castIds = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
-        if (castIds.includes(actor.id)) {
-            tray.render();
-        }
+      const castIds = (game.settings.get('storyteller-cinema', 'sceneCast') as string[]) || [];
+      if (castIds.includes(actor.id)) {
+        tray.render();
+      }
     }
   });
 

@@ -8,7 +8,15 @@
 
     <!-- Lista de Chaves Ativas -->
     <div class="active-keys-section">
-        <h3><i class="fas fa-key"></i> Chaves Ativas</h3>
+        <div class="flexrow active-keys-header" style="justify-content: space-between; align-items: center;">
+            <h3><i class="fas fa-key"></i> Chaves Ativas</h3>
+            {{#if hasDevKey}}
+                <label class="dev-simulate-toggle flexrow" style="align-items: center; gap: 6px; cursor: pointer; font-size: 11px; color: var(--color-text-light-heading);">
+                    <input type="checkbox" data-action="toggleIgnoreDev" {{#if ignoreDevKeys}}checked{{/if}} style="margin: 0; cursor: pointer;" />
+                    Simular User Premium (Ignorar Chave Dev)
+                </label>
+            {{/if}}
+        </div>
         {{#if activeKeys.length}}
             <ul class="keys-list">
                 {{#each activeKeys}}

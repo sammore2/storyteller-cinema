@@ -35,7 +35,8 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
             actions: {
                 addKey: KeyManager._onAddKey,
                 removeKey: KeyManager._onRemoveKey,
-                connectPatreon: KeyManager._onConnectPatreon
+                connectPatreon: KeyManager._onConnectPatreon,
+                toggleIgnoreDev: KeyManager._onToggleIgnoreDev
             }
         };
     }
@@ -49,16 +50,19 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
     }
 
     async _prepareContext(_options: any): Promise<any> {
-        // Puxar chaves configuradas (armazenadas como array ou string separada por vírgulas)
-        const premiumKeysSetting = game.settings.get('storyteller-cinema', 'premiumKey') as string || '';
-        const keysArray = premiumKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
+        // Puxar chaves configuradas (armazenadas como array)
+        const keysArray = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
 
         // Validar e detalhar as chaves ativas a partir do que o SkinManager carregou
         const activeKeysList = [];
         const unlockedPacks = new Set<string>(['classics']);
 
+        const ignoreDevKeys = game.settings.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
+        const hasDevKey = keysArray.some(key => key.startsWith('sammore-dev-') && key.endsWith('5633'));
+        
         for (const key of keysArray) {
-            const isDev = key.startsWith('sammore-dev-') && key.endsWith('5633');
+            // Se ignoreDevKeys for verdadeiro, a chave de dev é tratada como chave comum (não ativará isDev)
+            const isDev = !ignoreDevKeys && key.startsWith('sammore-dev-') && key.endsWith('5633');
             let tier = "Avulsa/Promocional";
             let typeClass = "promo";
 
@@ -132,7 +136,9 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
 
         return {
             activeKeys: activeKeysList,
-            packs: packsShowcase
+            packs: packsShowcase,
+            ignoreDevKeys,
+            hasDevKey
         };
     }
 
@@ -160,16 +166,15 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
             return;
         }
 
-        const currentKeysSetting = game.settings.get('storyteller-cinema', 'premiumKey') as string || '';
-        const keysList = currentKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
-
+        const keysList = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
+ 
         if (keysList.includes(newKey)) {
             ui.notifications?.info("Storyteller Cinema | Esta chave já está cadastrada.");
             return;
         }
-
+ 
         keysList.push(newKey);
-        await game.settings.set('storyteller-cinema', 'premiumKey', keysList.join(','));
+        await game.settings.set('storyteller-cinema', 'premiumKeys', keysList);
         ui.notifications?.info("Storyteller Cinema | Chave adicionada com sucesso!");
         input.value = "";
         
@@ -186,11 +191,10 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
         const keyToRemove = event.currentTarget?.dataset?.key || _target?.dataset?.key;
         if (!keyToRemove) return;
 
-        const currentKeysSetting = game.settings.get('storyteller-cinema', 'premiumKey') as string || '';
-        const keysList = currentKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
+        const keysList = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
         const filteredKeys = keysList.filter(k => k !== keyToRemove);
-
-        await game.settings.set('storyteller-cinema', 'premiumKey', filteredKeys.join(','));
+ 
+        await game.settings.set('storyteller-cinema', 'premiumKeys', filteredKeys);
         ui.notifications?.info("Storyteller Cinema | Chave removida.");
 
         // Disparar recarga de skins
@@ -219,12 +223,11 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
                 
                 if (e.data?.type === 'PATREON_KEY_ACTIVATED' && e.data?.key) {
                     const newKey = e.data.key;
-                    const currentKeysSetting = game.settings.get('storyteller-cinema', 'premiumKey') as string || '';
-                    const keysList = currentKeysSetting.split(',').map(k => k.trim()).filter(Boolean);
-
+                    const keysList = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
+ 
                     if (!keysList.includes(newKey)) {
                         keysList.push(newKey);
-                        await game.settings.set('storyteller-cinema', 'premiumKey', keysList.join(','));
+                        await game.settings.set('storyteller-cinema', 'premiumKeys', keysList);
                         ui.notifications?.info("Storyteller Cinema | Patreon conectado e chave premium ativada!");
                         
                         if (window.StorytellerCinema?.skins) {
@@ -237,5 +240,18 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
             };
             window.addEventListener('message', messageListener);
         }
+    }
+
+    static async _onToggleIgnoreDev(this: KeyManager, event: Event, _target: HTMLElement) {
+        event.preventDefault();
+        const currentVal = game.settings.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
+        await game.settings.set('storyteller-cinema', 'ignoreDevKeys', !currentVal);
+        ui.notifications?.info(`Storyteller Cinema | Modo de teste ${!currentVal ? 'ativado' : 'desativado'} (chaves de dev ${!currentVal ? 'ignoradas' : 'ativas'}).`);
+        
+        // Atualizar skins imediatamente
+        if (window.StorytellerCinema?.skins) {
+            await window.StorytellerCinema.skins.init();
+        }
+        this.render();
     }
 }
