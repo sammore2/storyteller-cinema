@@ -270,27 +270,53 @@ body.cinematic-mode #fps {
   list-style: none;
   padding: 5px 0;
   margin: 0;
-  min-width: 150px;
+  min-width: 170px;
+  max-height: 400px;
+  overflow-y: auto;
   z-index: 200;
+  /* Custom Scrollbar */
 }
-#storyteller-cinema-toggle .custom-skin-select .dropdown-options li {
-  padding: 10px 15px;
-  /* GENEROUS PADDING HERE! */
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options::-webkit-scrollbar {
+  width: 4px;
+}
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options::-webkit-scrollbar-thumb {
+  background: #ff6400;
+  border-radius: 2px;
+}
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options .dropdown-group-header {
+  padding: 8px 12px 4px 12px;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #777;
+  font-weight: bold;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options .dropdown-group-header:first-child {
+  border-top: none;
+  padding-top: 6px;
+}
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options .dropdown-item {
+  padding: 8px 15px 8px 22px;
   color: #e0e0e0;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   white-space: nowrap;
   text-align: left;
 }
-#storyteller-cinema-toggle .custom-skin-select .dropdown-options li:hover {
-  background: #333;
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options .dropdown-item:hover {
+  background: #222;
   color: #fff;
 }
-#storyteller-cinema-toggle .custom-skin-select .dropdown-options li.selected {
+#storyteller-cinema-toggle .custom-skin-select .dropdown-options .dropdown-item.selected {
   color: #ff6400;
   font-weight: bold;
-  background: rgba(255, 100, 0, 0.1);
+  background: rgba(255, 100, 0, 0.05);
 }
 @keyframes fadeIn {
   from {

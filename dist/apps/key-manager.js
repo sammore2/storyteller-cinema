@@ -57,6 +57,9 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
         tier = "Desenvolvedor";
         typeClass = "dev";
         unlockedPacks.add("the-umbra");
+        unlockedPacks.add("cyberpunk-neon");
+        unlockedPacks.add("eldritch-abyss");
+        unlockedPacks.add("steampunk-gears");
       } else if (key.toLowerCase() === "classics") {
         tier = "Gratuito";
         typeClass = "free";

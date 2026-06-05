@@ -274,10 +274,38 @@ function createHUDButton() {
     const activeId = ((_d = (_c = window.StorytellerCinema) == null ? void 0 : _c.skins) == null ? void 0 : _d.activeSkin) || "default";
     const activeSkin = skins.find((s) => s.id === activeId);
     currentValueSpan.textContent = activeSkin ? activeSkin.name : game.i18n.localize("STORYTELLER_CINEMA.HUD.SelectSkin");
-    optionsList.innerHTML = skins.map((s) => `
-            <li data-value="${s.id}" class="${s.id === activeId ? "selected" : ""}">${s.name}</li>
-        `).join("");
-    optionsList.querySelectorAll("li").forEach((li) => {
+    const packNames = {
+      "system": "Skins Padrão",
+      "classics": "Classics Pack",
+      "the-umbra": "The Umbra Pack",
+      "cyberpunk-neon": "Cyberpunk Neon",
+      "eldritch-abyss": "Eldritch Abyss",
+      "steampunk-gears": "Steampunk Gears",
+      "custom": "Customizadas"
+    };
+    const grouped = {};
+    for (const s of skins) {
+      let category = "system";
+      if (s.pack) {
+        category = s.pack;
+      } else if (s.id.startsWith("custom-")) {
+        category = "custom";
+      }
+      if (!grouped[category]) grouped[category] = [];
+      grouped[category].push(s);
+    }
+    let htmlContent = "";
+    for (const [catKey, catSkins] of Object.entries(grouped)) {
+      const catName = packNames[catKey] || catKey.charAt(0).toUpperCase() + catKey.slice(1);
+      htmlContent += `<li class="dropdown-group-header">${catName}</li>`;
+      for (const s of catSkins) {
+        htmlContent += `
+                    <li data-value="${s.id}" class="dropdown-item ${s.id === activeId ? "selected" : ""}">${s.name}</li>
+                `;
+      }
+    }
+    optionsList.innerHTML = htmlContent;
+    optionsList.querySelectorAll("li[data-value]").forEach((li) => {
       li.onclick = (e) => {
         var _a3;
         e.stopPropagation();
