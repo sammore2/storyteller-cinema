@@ -102,7 +102,7 @@ export class SkinManager {
                         continue;
                     }
                 }
-                
+
                 // 2a. Carregar pacotes inteiros autorizados
                 for (const packId of allowedPacks) {
                     if (packId !== 'classics' && !loadedPacks.has(packId)) {

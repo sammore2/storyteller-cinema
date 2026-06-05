@@ -171,6 +171,7 @@ class StorytellerAPI {
     }, 100);
   }
   refreshPortraits(speakingActor = null) {
+    var _a, _b, _c, _d, _e, _f, _g;
     const overlay = document.getElementById("storyteller-cinema-overlay");
     if (!overlay) return;
     let container = overlay.querySelector(".portraits-container");
@@ -182,11 +183,11 @@ class StorytellerAPI {
     const activeIds = game.settings.get("storyteller-cinema", "activePortraits") || [];
     const portraitsToShow = [];
     activeIds.forEach((id) => {
-      var _a, _b, _c, _d;
+      var _a2, _b2, _c2, _d2;
       let img = "icons/svg/book.svg";
       let name = "Narrator";
       if (id !== "narrator") {
-        const actor = (_a = game.actors) == null ? void 0 : _a.get(id);
+        const actor = (_a2 = game.actors) == null ? void 0 : _a2.get(id);
         if (actor) {
           img = actor.img || "";
           name = actor.name || "";
@@ -194,7 +195,7 @@ class StorytellerAPI {
           return;
         }
       } else {
-        const activeGM = ((_b = game.users) == null ? void 0 : _b.activeGM) || ((_c = game.users) == null ? void 0 : _c.find((u) => u.isGM && u.active)) || ((_d = game.users) == null ? void 0 : _d.find((u) => u.isGM));
+        const activeGM = ((_b2 = game.users) == null ? void 0 : _b2.activeGM) || ((_c2 = game.users) == null ? void 0 : _c2.find((u) => u.isGM && u.active)) || ((_d2 = game.users) == null ? void 0 : _d2.find((u) => u.isGM));
         img = (activeGM == null ? void 0 : activeGM.avatar) || "icons/svg/book.svg";
       }
       portraitsToShow.push({ name, img });
@@ -220,25 +221,51 @@ class StorytellerAPI {
     container.classList.add("active");
     const existingCards = Array.from(container.querySelectorAll(".portrait-card"));
     existingCards.forEach((card) => {
-      var _a;
-      const cardName = ((_a = card.querySelector(".portrait-name")) == null ? void 0 : _a.textContent) || "";
+      var _a2;
+      const cardName = ((_a2 = card.querySelector(".portrait-name")) == null ? void 0 : _a2.textContent) || "";
       const stillExists = portraitsToShow.some((p) => p.name.toLowerCase() === cardName.toLowerCase());
       if (!stillExists) {
         card.classList.remove("active");
         setTimeout(() => card.remove(), 800);
       }
     });
+    const activeSkinId = ((_b = (_a = window.StorytellerCinema) == null ? void 0 : _a.skins) == null ? void 0 : _b.activeSkin) || "default";
+    const activeSkin = (_e = (_d = (_c = window.StorytellerCinema) == null ? void 0 : _c.skins) == null ? void 0 : _d.skins) == null ? void 0 : _e.get(activeSkinId);
+    let borderUrl = "";
+    const borderStyleVal = (_g = (_f = activeSkin == null ? void 0 : activeSkin.options) == null ? void 0 : _f.styles) == null ? void 0 : _g["--cinematic-portrait-border-image"];
+    if (borderStyleVal && borderStyleVal !== "none") {
+      const match = borderStyleVal.match(/url\((['"]?)(.*?)\1\)/);
+      if (match) borderUrl = match[2];
+    }
+    const cleanBorderUrl = borderUrl.split("?")[0];
+    const isBorderVideo = cleanBorderUrl.endsWith(".webm") || cleanBorderUrl.endsWith(".mp4") || cleanBorderUrl.endsWith(".m4v");
     portraitsToShow.forEach((p) => {
       let card = existingCards.find((c) => {
-        var _a;
-        const cardName = ((_a = c.querySelector(".portrait-name")) == null ? void 0 : _a.textContent) || "";
+        var _a2;
+        const cardName = ((_a2 = c.querySelector(".portrait-name")) == null ? void 0 : _a2.textContent) || "";
         return cardName.toLowerCase() === p.name.toLowerCase();
       });
       if (!card) {
         card = document.createElement("div");
         card.className = "portrait-card";
         if (p.isTemp) card.classList.add("temp-speaker");
-        card.innerHTML = `<div class="portrait-image-area" style="background-image: url('${p.img}')"></div><div class="portrait-name">${p.name}</div>`;
+        const isVideo = p.img.split("?")[0].endsWith(".webm") || p.img.split("?")[0].endsWith(".mp4") || p.img.split("?")[0].endsWith(".m4v");
+        let innerHTML = "";
+        if (isVideo) {
+          innerHTML += `<video class="portrait-character-video" src="${p.img}" autoplay loop muted playsinline style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1;"></video>`;
+        }
+        if (isBorderVideo) {
+          innerHTML += `<video class="portrait-border-video" src="${borderUrl}" autoplay loop muted playsinline style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: fill; z-index: 3; pointer-events: none;"></video>`;
+          card.style.setProperty("--cinematic-portrait-border-image", "none");
+        } else {
+          card.style.removeProperty("--cinematic-portrait-border-image");
+        }
+        card.innerHTML = `
+                    <div class="portrait-image-area" style="${isVideo ? "" : `background-image: url('${p.img}')`}">
+                        ${innerHTML}
+                    </div>
+                    <div class="portrait-name">${p.name}</div>
+                `;
         container.appendChild(card);
         void card.offsetWidth;
         card.classList.add("active");
@@ -247,7 +274,51 @@ class StorytellerAPI {
         else card.classList.remove("temp-speaker");
         const imgArea = card.querySelector(".portrait-image-area");
         if (imgArea) {
-          imgArea.style.backgroundImage = `url("${p.img}")`;
+          const isVideo = p.img.split("?")[0].endsWith(".webm") || p.img.split("?")[0].endsWith(".mp4") || p.img.split("?")[0].endsWith(".m4v");
+          let charVideo = imgArea.querySelector(".portrait-character-video");
+          if (isVideo) {
+            imgArea.style.backgroundImage = "none";
+            if (!charVideo) {
+              charVideo = document.createElement("video");
+              charVideo.className = "portrait-character-video";
+              charVideo.autoplay = true;
+              charVideo.loop = true;
+              charVideo.muted = true;
+              charVideo.playsInline = true;
+              charVideo.style.cssText = "position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1;";
+              imgArea.appendChild(charVideo);
+            }
+            if (charVideo.src !== p.img) {
+              charVideo.src = p.img;
+              charVideo.play().catch(() => {
+              });
+            }
+          } else {
+            if (charVideo) charVideo.remove();
+            imgArea.style.backgroundImage = `url("${p.img}")`;
+          }
+          let borderVideo = imgArea.querySelector(".portrait-border-video");
+          if (isBorderVideo) {
+            card.style.setProperty("--cinematic-portrait-border-image", "none");
+            if (!borderVideo) {
+              borderVideo = document.createElement("video");
+              borderVideo.className = "portrait-border-video";
+              borderVideo.autoplay = true;
+              borderVideo.loop = true;
+              borderVideo.muted = true;
+              borderVideo.playsInline = true;
+              borderVideo.style.cssText = "position: absolute; top:0; left:0; width:100%; height:100%; object-fit: fill; z-index: 3; pointer-events: none;";
+              imgArea.appendChild(borderVideo);
+            }
+            if (borderVideo.src !== borderUrl) {
+              borderVideo.src = borderUrl;
+              borderVideo.play().catch(() => {
+              });
+            }
+          } else {
+            if (borderVideo) borderVideo.remove();
+            card.style.removeProperty("--cinematic-portrait-border-image");
+          }
         }
       }
       if (speakingActor && p.name.toLowerCase() === speakingActor.name.toLowerCase()) {

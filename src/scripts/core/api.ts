@@ -288,6 +288,19 @@ export class StorytellerAPI {
         });
 
         // Render / Update portraits
+        const activeSkinId = window.StorytellerCinema?.skins?.activeSkin || 'default';
+        const activeSkin = window.StorytellerCinema?.skins?.skins?.get(activeSkinId);
+        
+        let borderUrl = '';
+        const borderStyleVal = activeSkin?.options?.styles?.['--cinematic-portrait-border-image'];
+        if (borderStyleVal && borderStyleVal !== 'none') {
+            const match = borderStyleVal.match(/url\((['"]?)(.*?)\1\)/);
+            if (match) borderUrl = match[2];
+        }
+        
+        const cleanBorderUrl = borderUrl.split('?')[0];
+        const isBorderVideo = cleanBorderUrl.endsWith('.webm') || cleanBorderUrl.endsWith('.mp4') || cleanBorderUrl.endsWith('.m4v');
+
         portraitsToShow.forEach(p => {
             let card = existingCards.find(c => {
                 const cardName = c.querySelector('.portrait-name')?.textContent || "";
@@ -299,7 +312,26 @@ export class StorytellerAPI {
                 card = document.createElement('div');
                 card.className = 'portrait-card';
                 if (p.isTemp) card.classList.add('temp-speaker');
-                card.innerHTML = `<div class="portrait-image-area" style="background-image: url('${p.img}')"></div><div class="portrait-name">${p.name}</div>`;
+                
+                const isVideo = p.img.split('?')[0].endsWith('.webm') || p.img.split('?')[0].endsWith('.mp4') || p.img.split('?')[0].endsWith('.m4v');
+                
+                let innerHTML = '';
+                if (isVideo) {
+                    innerHTML += `<video class="portrait-character-video" src="${p.img}" autoplay loop muted playsinline style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1;"></video>`;
+                }
+                if (isBorderVideo) {
+                    innerHTML += `<video class="portrait-border-video" src="${borderUrl}" autoplay loop muted playsinline style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: fill; z-index: 3; pointer-events: none;"></video>`;
+                    card.style.setProperty('--cinematic-portrait-border-image', 'none');
+                } else {
+                    card.style.removeProperty('--cinematic-portrait-border-image');
+                }
+
+                card.innerHTML = `
+                    <div class="portrait-image-area" style="${isVideo ? '' : `background-image: url('${p.img}')`}">
+                        ${innerHTML}
+                    </div>
+                    <div class="portrait-name">${p.name}</div>
+                `;
                 container.appendChild(card);
  
                 // Force reflow and activate
@@ -309,9 +341,56 @@ export class StorytellerAPI {
                 // Update properties of existing card
                 if (p.isTemp) card.classList.add('temp-speaker');
                 else card.classList.remove('temp-speaker');
+                
                 const imgArea = card.querySelector('.portrait-image-area') as HTMLElement;
                 if (imgArea) {
-                    imgArea.style.backgroundImage = `url("${p.img}")`;
+                    const isVideo = p.img.split('?')[0].endsWith('.webm') || p.img.split('?')[0].endsWith('.mp4') || p.img.split('?')[0].endsWith('.m4v');
+                    
+                    // 1. Manage character video
+                    let charVideo = imgArea.querySelector('.portrait-character-video') as HTMLVideoElement;
+                    if (isVideo) {
+                        imgArea.style.backgroundImage = 'none';
+                        if (!charVideo) {
+                            charVideo = document.createElement('video');
+                            charVideo.className = 'portrait-character-video';
+                            charVideo.autoplay = true;
+                            charVideo.loop = true;
+                            charVideo.muted = true;
+                            charVideo.playsInline = true;
+                            charVideo.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1;';
+                            imgArea.appendChild(charVideo);
+                        }
+                        if (charVideo.src !== p.img) {
+                            charVideo.src = p.img;
+                            charVideo.play().catch(() => {});
+                        }
+                    } else {
+                        if (charVideo) charVideo.remove();
+                        imgArea.style.backgroundImage = `url("${p.img}")`;
+                    }
+
+                    // 2. Manage border video
+                    let borderVideo = imgArea.querySelector('.portrait-border-video') as HTMLVideoElement;
+                    if (isBorderVideo) {
+                        card.style.setProperty('--cinematic-portrait-border-image', 'none');
+                        if (!borderVideo) {
+                            borderVideo = document.createElement('video');
+                            borderVideo.className = 'portrait-border-video';
+                            borderVideo.autoplay = true;
+                            borderVideo.loop = true;
+                            borderVideo.muted = true;
+                            borderVideo.playsInline = true;
+                            borderVideo.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; object-fit: fill; z-index: 3; pointer-events: none;';
+                            imgArea.appendChild(borderVideo);
+                        }
+                        if (borderVideo.src !== borderUrl) {
+                            borderVideo.src = borderUrl;
+                            borderVideo.play().catch(() => {});
+                        }
+                    } else {
+                        if (borderVideo) borderVideo.remove();
+                        card.style.removeProperty('--cinematic-portrait-border-image');
+                    }
                 }
             }
 
