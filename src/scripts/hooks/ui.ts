@@ -314,11 +314,41 @@ function createHUDButton(): void {
         const activeSkin = skins.find(s => s.id === activeId);
         currentValueSpan.textContent = activeSkin ? activeSkin.name : game.i18n.localize('STORYTELLER_CINEMA.HUD.SelectSkin');
 
-        optionsList.innerHTML = skins.map(s => `
-            <li data-value="${s.id}" class="${s.id === activeId ? 'selected' : ''}">${s.name}</li>
-        `).join('');
+        const packNames: Record<string, string> = {
+            'system': 'Skins Padrão',
+            'classics': 'Classics Pack',
+            'the-umbra': 'The Umbra Pack',
+            'cyberpunk-neon': 'Cyberpunk Neon',
+            'eldritch-abyss': 'Eldritch Abyss',
+            'steampunk-gears': 'Steampunk Gears',
+            'custom': 'Customizadas'
+        };
 
-        optionsList.querySelectorAll('li').forEach(li => {
+        const grouped: Record<string, typeof skins> = {};
+        for (const s of skins) {
+            let category = 'system';
+            if (s.pack) {
+                category = s.pack;
+            } else if (s.id.startsWith('custom-')) {
+                category = 'custom';
+            }
+            if (!grouped[category]) grouped[category] = [];
+            grouped[category].push(s);
+        }
+
+        let htmlContent = '';
+        for (const [catKey, catSkins] of Object.entries(grouped)) {
+            const catName = packNames[catKey] || catKey.charAt(0).toUpperCase() + catKey.slice(1);
+            htmlContent += `<li class="dropdown-group-header">${catName}</li>`;
+            for (const s of catSkins) {
+                htmlContent += `
+                    <li data-value="${s.id}" class="dropdown-item ${s.id === activeId ? 'selected' : ''}">${s.name}</li>
+                `;
+            }
+        }
+        optionsList.innerHTML = htmlContent;
+
+        optionsList.querySelectorAll('li[data-value]').forEach(li => {
             (li as HTMLElement).onclick = (e) => {
                 e.stopPropagation();
                 const skinId = (li as HTMLElement).dataset.value!;

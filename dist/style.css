@@ -151,7 +151,8 @@ body.cinematic-mode {
   transition: background-color 1.5s ease-in-out;
   /* Isolar o filtro apenas para o que é visual/cenográfico */
 }
-body.cinematic-mode #board, body.cinematic-mode #storyteller-cinema-overlay {
+body.cinematic-mode #board,
+body.cinematic-mode #storyteller-cinema-overlay {
   filter: var(--cinematic-filter, none);
 }
 body.cinematic-mode {
