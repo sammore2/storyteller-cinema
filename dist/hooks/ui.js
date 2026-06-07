@@ -35,29 +35,44 @@ function registerUIHooks() {
     }
   });
   Hooks.on("renderSceneConfig", (app, html) => {
-    var _a, _b;
+    var _a, _b, _c, _d;
     const scene = app.document ?? app.object;
     if (!scene) return;
     let root = html instanceof HTMLElement ? html : html[0];
     if (!(root instanceof HTMLElement)) return;
-    const submitBtn = root.querySelector('button[type="submit"]');
-    if (submitBtn) {
-      if (root.querySelector(".storyteller-cinema-config")) return;
-      const flags = ((_a = scene.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
-      const bgValue = flags.cinematicBg || "";
-      const viewMode = flags.viewMode || "battlemap";
-      const bgDimValue = flags.cinematicBgDim ?? 0;
-      const container = document.createElement("div");
-      container.className = "storyteller-cinema-config";
-      container.style.borderTop = "1px solid var(--color-border-light-2)";
-      container.style.paddingTop = "10px";
-      container.style.marginTop = "10px";
-      const appearanceTab = root.querySelector('.tab[data-tab="appearance"]') || root.querySelector('.tab[data-tab="basic"]');
-      const targetContainer = appearanceTab || ((_b = submitBtn.closest(".form-footer")) == null ? void 0 : _b.previousElementSibling);
-      if (!targetContainer) return;
-      container.innerHTML = `
-                <hr>
-                <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
+    const tabsNav = root.querySelector('.sheet-tabs, nav[data-group="main"], nav[data-group="sheet"]');
+    if (!tabsNav) return;
+    const flags = ((_a = scene.flags) == null ? void 0 : _a["storyteller-cinema"]) || {};
+    const bgValue = flags.cinematicBg || "";
+    const viewMode = flags.viewMode || "battlemap";
+    const bgDimValue = flags.cinematicBgDim ?? 0;
+    if ((_b = app.options.tabs) == null ? void 0 : _b.sheet) {
+      const hasTab = app.options.tabs.sheet.tabs.some((t) => t.id === "storyteller-cinema");
+      if (!hasTab) {
+        app.options.tabs.sheet.tabs.push({
+          id: "storyteller-cinema",
+          icon: "fas fa-film",
+          label: "STORYTELLER_CINEMA.Scene.TabName"
+        });
+      }
+    }
+    let tabLink = tabsNav.querySelector('a[data-tab="storyteller-cinema"]');
+    if (!tabLink) {
+      tabLink = document.createElement("a");
+      tabLink.className = "item";
+      tabLink.dataset.tab = "storyteller-cinema";
+      tabLink.dataset.group = "sheet";
+      tabLink.innerHTML = `<i class="fas fa-film"></i> ${game.i18n.localize("STORYTELLER_CINEMA.Scene.TabName") || "STC"}`;
+      tabsNav.appendChild(tabLink);
+    }
+    let tabContainer = root.querySelector('.tab[data-tab="storyteller-cinema"]');
+    if (!tabContainer) {
+      tabContainer = document.createElement("div");
+      tabContainer.className = "tab";
+      tabContainer.dataset.tab = "storyteller-cinema";
+      tabContainer.dataset.group = "sheet";
+      tabContainer.style.padding = "20px 10px 40px 10px";
+      tabContainer.innerHTML = `
                 <div class="form-group">
                     <label>${game.i18n.localize("STORYTELLER_CINEMA.Scene.ViewModeLabel")}</label>
                     <div class="form-fields">
@@ -84,44 +99,56 @@ function registerUIHooks() {
                     </div>
                 </div>
             `;
-      targetContainer.appendChild(container);
-      const rangeInput = container.querySelector("input[name='flags.storyteller-cinema.cinematicBgDim']");
-      const rangeValueSpan = container.querySelector(".range-value");
-      if (rangeInput) {
-        rangeInput.oninput = () => {
-          if (rangeValueSpan) rangeValueSpan.textContent = `${Math.round(Number(rangeInput.value) * 100)}%`;
-        };
-        rangeInput.onchange = async () => {
-          await scene.setFlag("storyteller-cinema", "cinematicBgDim", Number(rangeInput.value));
-        };
+      const formFooter = root.querySelector(".form-footer") || ((_c = root.querySelector('button[type="submit"]')) == null ? void 0 : _c.parentElement);
+      if (formFooter) {
+        (_d = formFooter.parentNode) == null ? void 0 : _d.insertBefore(tabContainer, formFooter);
+      } else {
+        root.appendChild(tabContainer);
       }
-      const bgInput = container.querySelector("input[name='flags.storyteller-cinema.cinematicBg']");
-      if (bgInput) {
-        bgInput.onchange = async () => {
-          await scene.setFlag("storyteller-cinema", "cinematicBg", bgInput.value);
-        };
-      }
-      const btn = container.querySelector("button.file-picker");
-      if (btn) {
-        btn.onclick = (event) => {
-          var _a2, _b2;
-          event.preventDefault();
-          const FilePickerClass = ((_b2 = (_a2 = foundry.applications) == null ? void 0 : _a2.apps) == null ? void 0 : _b2.FilePicker) || FilePicker;
-          const fp = new FilePickerClass({
-            type: "image",
-            current: bgValue,
-            callback: async (path) => {
-              if (bgInput) {
-                bgInput.value = path;
-                bgInput.dispatchEvent(new Event("change", { bubbles: true }));
-              }
-            }
-          });
-          return fp.browse();
-        };
-      }
-      app.setPosition({ height: "auto" });
     }
+    tabLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof app.changeTab === "function") {
+        app.changeTab("storyteller-cinema", "sheet");
+      }
+    });
+    const rangeInput = tabContainer.querySelector("input[name='flags.storyteller-cinema.cinematicBgDim']");
+    const rangeValueSpan = tabContainer.querySelector(".range-value");
+    if (rangeInput) {
+      rangeInput.oninput = () => {
+        if (rangeValueSpan) rangeValueSpan.textContent = `${Math.round(Number(rangeInput.value) * 100)}%`;
+      };
+      rangeInput.onchange = async () => {
+        await scene.setFlag("storyteller-cinema", "cinematicBgDim", Number(rangeInput.value));
+      };
+    }
+    const bgInput = tabContainer.querySelector("input[name='flags.storyteller-cinema.cinematicBg']");
+    if (bgInput) {
+      bgInput.onchange = async () => {
+        await scene.setFlag("storyteller-cinema", "cinematicBg", bgInput.value);
+      };
+    }
+    const btn = tabContainer.querySelector("button.file-picker");
+    if (btn) {
+      btn.onclick = (event) => {
+        var _a2, _b2;
+        event.preventDefault();
+        const FilePickerClass = ((_b2 = (_a2 = foundry.applications) == null ? void 0 : _a2.apps) == null ? void 0 : _b2.FilePicker) || FilePicker;
+        const fp = new FilePickerClass({
+          type: "image",
+          current: bgValue,
+          callback: async (path) => {
+            if (bgInput) {
+              bgInput.value = path;
+              bgInput.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          }
+        });
+        return fp.browse();
+      };
+    }
+    app.setPosition({ height: "auto" });
   });
   Hooks.on("getActorContextOptions", (_app, options) => {
     console.log(">>> STORYTELLER CINEMA V14 - CONTEXT MENU HOOK <<<", options);
@@ -184,9 +211,9 @@ function registerUIHooks() {
     bannerContainer.style.aspectRatio = "10 / 3";
     bannerContainer.style.borderRadius = "5px";
     bannerContainer.style.display = "flex";
-    bannerContainer.style.alignItems = "center";
-    bannerContainer.style.justifyContent = "flex-end";
-    bannerContainer.style.padding = "0 30px";
+    bannerContainer.style.alignItems = "flex-end";
+    bannerContainer.style.justifyContent = "flex-start";
+    bannerContainer.style.padding = "0 30px 15px 30px";
     bannerContainer.style.marginBottom = "15px";
     bannerContainer.style.position = "relative";
     bannerContainer.style.boxSizing = "border-box";

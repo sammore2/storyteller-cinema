@@ -49,30 +49,47 @@ export function registerUIHooks(): void {
         let root = html instanceof HTMLElement ? html : html[0];
         if (!(root instanceof HTMLElement)) return;
 
-        const submitBtn = root.querySelector('button[type="submit"]');
+        const tabsNav = root.querySelector('.sheet-tabs, nav[data-group="main"], nav[data-group="sheet"]');
+        if (!tabsNav) return;
 
-        if (submitBtn) {
-            if (root.querySelector('.storyteller-cinema-config')) return;
+        const flags = (scene.flags?.['storyteller-cinema'] as any) || {};
+        const bgValue = flags.cinematicBg || "";
+        const viewMode = flags.viewMode || "battlemap";
+        const bgDimValue = flags.cinematicBgDim ?? 0;
 
-            const flags = (scene.flags?.['storyteller-cinema'] as any) || {};
-            const bgValue = flags.cinematicBg || "";
-            const viewMode = flags.viewMode || "battlemap";
-            const bgDimValue = flags.cinematicBgDim ?? 0;
+        // Registrar a aba no sistema de abas nativo da aplicação se ainda não estiver presente
+        if (app.options.tabs?.sheet) {
+            const hasTab = app.options.tabs.sheet.tabs.some((t: any) => t.id === 'storyteller-cinema');
+            if (!hasTab) {
+                app.options.tabs.sheet.tabs.push({
+                    id: 'storyteller-cinema',
+                    icon: 'fas fa-film',
+                    label: 'STORYTELLER_CINEMA.Scene.TabName'
+                });
+            }
+        }
 
-            const container = document.createElement('div');
-            container.className = 'storyteller-cinema-config';
-            container.style.borderTop = "1px solid var(--color-border-light-2)";
-            container.style.paddingTop = "10px";
-            container.style.marginTop = "10px";
+        // 1. Adicionar o botão da aba na navegação (se ainda não existir)
+        let tabLink = tabsNav.querySelector('a[data-tab="storyteller-cinema"]') as HTMLAnchorElement;
+        if (!tabLink) {
+            tabLink = document.createElement('a');
+            tabLink.className = 'item';
+            tabLink.dataset.tab = 'storyteller-cinema';
+            tabLink.dataset.group = 'sheet';
+            tabLink.innerHTML = `<i class="fas fa-film"></i> ${game.i18n.localize('STORYTELLER_CINEMA.Scene.TabName') || 'STC'}`;
+            tabsNav.appendChild(tabLink);
+        }
 
-            const appearanceTab = root.querySelector('.tab[data-tab="appearance"]') || root.querySelector('.tab[data-tab="basic"]');
-            const targetContainer = appearanceTab || submitBtn.closest('.form-footer')?.previousElementSibling;
+        // 2. Adicionar o container da aba com os campos (se ainda não existir)
+        let tabContainer = root.querySelector('.tab[data-tab="storyteller-cinema"]') as HTMLDivElement;
+        if (!tabContainer) {
+            tabContainer = document.createElement('div');
+            tabContainer.className = 'tab';
+            tabContainer.dataset.tab = 'storyteller-cinema';
+            tabContainer.dataset.group = 'sheet';
+            tabContainer.style.padding = '20px 10px 40px 10px'; // Prevenir que o botão de salvar encoste nos inputs
 
-            if (!targetContainer) return;
-
-            container.innerHTML = `
-                <hr>
-                <h3 class="form-header" style="color: white; font-size: 13px;"><i class="fas fa-film"></i> Storyteller Cinema</h3>
+            tabContainer.innerHTML = `
                 <div class="form-group">
                     <label>${game.i18n.localize('STORYTELLER_CINEMA.Scene.ViewModeLabel')}</label>
                     <div class="form-fields">
@@ -100,47 +117,63 @@ export function registerUIHooks(): void {
                 </div>
             `;
 
-            targetContainer.appendChild(container);
-
-            const rangeInput = container.querySelector("input[name='flags.storyteller-cinema.cinematicBgDim']") as HTMLInputElement;
-            const rangeValueSpan = container.querySelector(".range-value") as HTMLElement;
-            if (rangeInput) {
-                rangeInput.oninput = () => {
-                    if (rangeValueSpan) rangeValueSpan.textContent = `${Math.round(Number(rangeInput.value) * 100)}%`;
-                };
-                rangeInput.onchange = async () => {
-                    await scene.setFlag('storyteller-cinema', 'cinematicBgDim', Number(rangeInput.value));
-                };
+            // Colocar a nova aba antes do footer do formulário
+            const formFooter = root.querySelector('.form-footer') || root.querySelector('button[type="submit"]')?.parentElement;
+            if (formFooter) {
+                formFooter.parentNode?.insertBefore(tabContainer, formFooter);
+            } else {
+                root.appendChild(tabContainer);
             }
-
-            const bgInput = container.querySelector("input[name='flags.storyteller-cinema.cinematicBg']") as HTMLInputElement;
-            if (bgInput) {
-                bgInput.onchange = async () => {
-                    await scene.setFlag('storyteller-cinema', 'cinematicBg', bgInput.value);
-                };
-            }
-
-            const btn = container.querySelector("button.file-picker") as HTMLButtonElement;
-            if (btn) {
-                btn.onclick = (event) => {
-                    event.preventDefault();
-                    const FilePickerClass = (foundry as any).applications?.apps?.FilePicker || FilePicker;
-                    const fp = new FilePickerClass({
-                        type: "image",
-                        current: bgValue,
-                        callback: async (path: string) => {
-                            if (bgInput) {
-                                bgInput.value = path;
-                                bgInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                        }
-                    });
-                    return fp.browse();
-                };
-            }
-
-            app.setPosition({ height: "auto" });
         }
+
+        // 3. Registrar o clique de mudança para nossa aba usando a API nativa
+        tabLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof app.changeTab === 'function') {
+                app.changeTab('storyteller-cinema', 'sheet');
+            }
+        });
+
+        // 4. Listeners dos inputs
+        const rangeInput = tabContainer.querySelector("input[name='flags.storyteller-cinema.cinematicBgDim']") as HTMLInputElement;
+        const rangeValueSpan = tabContainer.querySelector(".range-value") as HTMLElement;
+        if (rangeInput) {
+            rangeInput.oninput = () => {
+                if (rangeValueSpan) rangeValueSpan.textContent = `${Math.round(Number(rangeInput.value) * 100)}%`;
+            };
+            rangeInput.onchange = async () => {
+                await scene.setFlag('storyteller-cinema', 'cinematicBgDim', Number(rangeInput.value));
+            };
+        }
+
+        const bgInput = tabContainer.querySelector("input[name='flags.storyteller-cinema.cinematicBg']") as HTMLInputElement;
+        if (bgInput) {
+            bgInput.onchange = async () => {
+                await scene.setFlag('storyteller-cinema', 'cinematicBg', bgInput.value);
+            };
+        }
+
+        const btn = tabContainer.querySelector("button.file-picker") as HTMLButtonElement;
+        if (btn) {
+            btn.onclick = (event) => {
+                event.preventDefault();
+                const FilePickerClass = (foundry as any).applications?.apps?.FilePicker || FilePicker;
+                const fp = new FilePickerClass({
+                    type: "image",
+                    current: bgValue,
+                    callback: async (path: string) => {
+                        if (bgInput) {
+                            bgInput.value = path;
+                            bgInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                });
+                return fp.browse();
+            };
+        }
+
+        app.setPosition({ height: "auto" });
     });
 
     // --- CONTEXT MENU: ACTOR DIRECTORY ---
@@ -212,9 +245,9 @@ export function registerUIHooks(): void {
         bannerContainer.style.aspectRatio = '10 / 3';
         bannerContainer.style.borderRadius = '5px';
         bannerContainer.style.display = 'flex';
-        bannerContainer.style.alignItems = 'center';
-        bannerContainer.style.justifyContent = 'flex-end';
-        bannerContainer.style.padding = '0 30px';
+        bannerContainer.style.alignItems = 'flex-end';
+        bannerContainer.style.justifyContent = 'flex-start';
+        bannerContainer.style.padding = '0 30px 15px 30px';
         bannerContainer.style.marginBottom = '15px';
         bannerContainer.style.position = 'relative';
         bannerContainer.style.boxSizing = 'border-box';

@@ -45,7 +45,7 @@ Hooks.once('init', function () {
 
   game.settings.register('storyteller-cinema', 'premiumKeys', {
     name: "Premium Keys",
-    scope: "world",
+    scope: "client",
     config: false,
     type: Array,
     default: [],
@@ -58,7 +58,7 @@ Hooks.once('init', function () {
 
   game.settings.register('storyteller-cinema', 'ignoreDevKeys', {
     name: "Ignore Developer Keys",
-    scope: "world",
+    scope: "client",
     config: false,
     type: Boolean,
     default: false,
@@ -242,17 +242,57 @@ Hooks.once('init', function () {
   });
 });
 
-// Skin manager init (async) moved to setup hook to avoid blocking init
-Hooks.once('setup', async () => {
+// Inicialização das skins, migração de chaves e patch do Drawing após o jogo estar pronto
+Hooks.once('ready', async () => {
+  // 1. Migração de chaves do World para o Client
+  if (game.user?.isGM) {
+    try {
+      const worldStorage = game.settings.storage.get("world");
+      const worldKeys = worldStorage?.getItem("storyteller-cinema.premiumKeys");
+      
+      if (worldKeys) {
+        let parsedWorldKeys: string[] = [];
+        try {
+          const parsed = JSON.parse(worldKeys);
+          parsedWorldKeys = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (_) {
+          if (typeof worldKeys === "string" && worldKeys.trim()) {
+            parsedWorldKeys = [worldKeys.trim()];
+          }
+        }
+
+        if (parsedWorldKeys.length > 0) {
+          const clientKeys = (game.settings.get('storyteller-cinema', 'premiumKeys') as string[]) || [];
+          const mergedKeys = Array.from(new Set([...clientKeys, ...parsedWorldKeys]));
+          
+          await game.settings.set('storyteller-cinema', 'premiumKeys', mergedKeys);
+          worldStorage.removeItem("storyteller-cinema.premiumKeys");
+
+          const worldIgnoreDev = worldStorage.getItem("storyteller-cinema.ignoreDevKeys");
+          if (worldIgnoreDev !== null) {
+            let ignoreDevVal = false;
+            try {
+              ignoreDevVal = !!JSON.parse(worldIgnoreDev);
+            } catch (_) {
+              ignoreDevVal = worldIgnoreDev === "true";
+            }
+            await game.settings.set('storyteller-cinema', 'ignoreDevKeys', ignoreDevVal);
+            worldStorage.removeItem("storyteller-cinema.ignoreDevKeys");
+          }
+          console.log("Storyteller Cinema | Chaves premium migradas do World para o Client.");
+        }
+      }
+    } catch (err) {
+      console.error("Storyteller Cinema | Erro ao migrar chaves do escopo world:", err);
+    }
+  }
+
+  // 2. Inicializar Skin Manager
   if (window.StorytellerCinema?.skins) {
     await window.StorytellerCinema.skins.init();
   }
-});
 
-// Patch Drawing.prototype.isVisible ONCE, after Foundry is ready.
-// Cannot use libWrapper because Drawing is not exported in a libWrapper-discoverable namespace.
-// CONFIG.Drawing.objectClass is the canonical reference to the Drawing class in V13/V14.
-Hooks.once('ready', () => {
+  // 3. Patch Drawing.prototype.isVisible
   const DrawingClass = (CONFIG as any).Drawing?.objectClass;
   if (!DrawingClass) {
     console.warn('Storyteller Cinema | Could not find Drawing class via CONFIG.Drawing.objectClass');

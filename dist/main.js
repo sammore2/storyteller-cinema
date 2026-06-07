@@ -32,7 +32,7 @@ Hooks.once("init", function() {
   });
   game.settings.register("storyteller-cinema", "premiumKeys", {
     name: "Premium Keys",
-    scope: "world",
+    scope: "client",
     config: false,
     type: Array,
     default: [],
@@ -45,7 +45,7 @@ Hooks.once("init", function() {
   });
   game.settings.register("storyteller-cinema", "ignoreDevKeys", {
     name: "Ignore Developer Keys",
-    scope: "world",
+    scope: "client",
     config: false,
     type: Boolean,
     default: false,
@@ -210,15 +210,49 @@ Hooks.once("init", function() {
     restricted: false
   });
 });
-Hooks.once("setup", async () => {
-  var _a;
-  if ((_a = window.StorytellerCinema) == null ? void 0 : _a.skins) {
+Hooks.once("ready", async () => {
+  var _a, _b, _c;
+  if ((_a = game.user) == null ? void 0 : _a.isGM) {
+    try {
+      const worldStorage = game.settings.storage.get("world");
+      const worldKeys = worldStorage == null ? void 0 : worldStorage.getItem("storyteller-cinema.premiumKeys");
+      if (worldKeys) {
+        let parsedWorldKeys = [];
+        try {
+          const parsed = JSON.parse(worldKeys);
+          parsedWorldKeys = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (_) {
+          if (typeof worldKeys === "string" && worldKeys.trim()) {
+            parsedWorldKeys = [worldKeys.trim()];
+          }
+        }
+        if (parsedWorldKeys.length > 0) {
+          const clientKeys = game.settings.get("storyteller-cinema", "premiumKeys") || [];
+          const mergedKeys = Array.from(/* @__PURE__ */ new Set([...clientKeys, ...parsedWorldKeys]));
+          await game.settings.set("storyteller-cinema", "premiumKeys", mergedKeys);
+          worldStorage.removeItem("storyteller-cinema.premiumKeys");
+          const worldIgnoreDev = worldStorage.getItem("storyteller-cinema.ignoreDevKeys");
+          if (worldIgnoreDev !== null) {
+            let ignoreDevVal = false;
+            try {
+              ignoreDevVal = !!JSON.parse(worldIgnoreDev);
+            } catch (_) {
+              ignoreDevVal = worldIgnoreDev === "true";
+            }
+            await game.settings.set("storyteller-cinema", "ignoreDevKeys", ignoreDevVal);
+            worldStorage.removeItem("storyteller-cinema.ignoreDevKeys");
+          }
+          console.log("Storyteller Cinema | Chaves premium migradas do World para o Client.");
+        }
+      }
+    } catch (err) {
+      console.error("Storyteller Cinema | Erro ao migrar chaves do escopo world:", err);
+    }
+  }
+  if ((_b = window.StorytellerCinema) == null ? void 0 : _b.skins) {
     await window.StorytellerCinema.skins.init();
   }
-});
-Hooks.once("ready", () => {
-  var _a;
-  const DrawingClass = (_a = CONFIG.Drawing) == null ? void 0 : _a.objectClass;
+  const DrawingClass = (_c = CONFIG.Drawing) == null ? void 0 : _c.objectClass;
   if (!DrawingClass) {
     console.warn("Storyteller Cinema | Could not find Drawing class via CONFIG.Drawing.objectClass");
     return;
@@ -233,9 +267,9 @@ Hooks.once("ready", () => {
   if (originalDescriptor == null ? void 0 : originalDescriptor.get) {
     Object.defineProperty(proto, "isVisible", {
       get() {
-        var _a2, _b, _c;
+        var _a2, _b2, _c2;
         if ((_a2 = window.StorytellerCinema) == null ? void 0 : _a2.active) {
-          const showInCinema = ((_c = (_b = this.document) == null ? void 0 : _b.getFlag) == null ? void 0 : _c.call(_b, "storyteller-cinema", "showInCinema")) || false;
+          const showInCinema = ((_c2 = (_b2 = this.document) == null ? void 0 : _b2.getFlag) == null ? void 0 : _c2.call(_b2, "storyteller-cinema", "showInCinema")) || false;
           if (!showInCinema) return false;
         }
         return originalDescriptor.get.call(this);
