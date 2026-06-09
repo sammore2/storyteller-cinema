@@ -1,0 +1,42 @@
+{
+  "servers": {
+    "arquivos-vscode": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/Users/ROCK NIGHT LIVE/.gemini/antigravity/servers/arquivos_vscode_readonly.mjs",
+        "C:/Users/ROCK NIGHT LIVE",
+        "D:/modules"
+      ]
+    },
+    "foundry-v13-docs": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/Users/ROCK NIGHT LIVE/.gemini/antigravity/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js",
+        "D:/modules"
+      ]
+    },
+    "foundry-cli": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/Users/ROCK NIGHT LIVE/.gemini/antigravity/servers/foundry_cli_mcp.mjs"
+      ]
+    },
+    "gsd-tools": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/Users/ROCK NIGHT LIVE/.gemini/antigravity/servers/gsd_tools_mcp.mjs"
+      ]
+    },
+    "foundry-api-docs": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/Users/ROCK NIGHT LIVE/.gemini/antigravity/servers/foundry_api_docs_mcp.mjs"
+      ]
+    }
+  }
+}

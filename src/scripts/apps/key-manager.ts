@@ -1,7 +1,5 @@
-/**
- * Key Manager Application
- * Handles multiple licensing keys and features a premium packs showcase.
- */
+import { savePremiumKeysToServer } from "../main";
+
 // @ts-ignore
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -178,6 +176,7 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
  
         keysList.push(newKey);
         await game.settings.set('storyteller-cinema', 'premiumKeys', keysList);
+        await savePremiumKeysToServer(keysList);
         ui.notifications?.info("Storyteller Cinema | Chave adicionada com sucesso!");
         input.value = "";
         
@@ -198,6 +197,7 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
         const filteredKeys = keysList.filter(k => k !== keyToRemove);
  
         await game.settings.set('storyteller-cinema', 'premiumKeys', filteredKeys);
+        await savePremiumKeysToServer(filteredKeys);
         ui.notifications?.info("Storyteller Cinema | Chave removida.");
 
         // Disparar recarga de skins
@@ -231,6 +231,7 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
                     if (!keysList.includes(newKey)) {
                         keysList.push(newKey);
                         await game.settings.set('storyteller-cinema', 'premiumKeys', keysList);
+                        await savePremiumKeysToServer(keysList);
                         ui.notifications?.info("Storyteller Cinema | Patreon conectado e chave premium ativada!");
                         
                         if (window.StorytellerCinema?.skins) {

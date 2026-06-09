@@ -282,6 +282,21 @@ export function registerUIHooks(): void {
         stcGroup.prepend(bannerContainer);
     });
 
+    // --- ECOSYSTEM: recebe templates de módulos externos (ex: journal-css) ---
+    const _registeredExternalTemplates: Record<string, any[]> = {};
+
+    Hooks.on('registerStorytellerCinemaTemplates', (data: {
+        moduleId: string;
+        label: string;
+        icon: string;
+        templates: { id: string; name: string; moduleId: string; tier: string }[];
+    }) => {
+        if (!data?.moduleId || !Array.isArray(data.templates)) return;
+        _registeredExternalTemplates[data.moduleId] = data.templates;
+        (window as any).StorytellerCinema._externalTemplates = _registeredExternalTemplates;
+        Hooks.callAll('storyteller-cinema-external-templates-updated', _registeredExternalTemplates);
+    });
+
     // --- SIDEBAR AWARENESS (Handled natively by injection into #chat-notifications) ---
 
 

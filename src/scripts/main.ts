@@ -242,49 +242,80 @@ Hooks.once('init', function () {
   });
 });
 
-// Inicialização das skins, migração de chaves e patch do Drawing após o jogo estar pronto
-Hooks.once('ready', async () => {
-  // 1. Migração de chaves do World para o Client
-  if (game.user?.isGM) {
-    try {
-      const worldStorage = game.settings.storage.get("world");
-      const worldKeys = worldStorage?.getItem("storyteller-cinema.premiumKeys");
-      
-      if (worldKeys) {
-        let parsedWorldKeys: string[] = [];
-        try {
-          const parsed = JSON.parse(worldKeys);
-          parsedWorldKeys = Array.isArray(parsed) ? parsed : [parsed];
-        } catch (_) {
-          if (typeof worldKeys === "string" && worldKeys.trim()) {
-            parsedWorldKeys = [worldKeys.trim()];
-          }
-        }
-
-        if (parsedWorldKeys.length > 0) {
-          const clientKeys = (game.settings.get('storyteller-cinema', 'premiumKeys') as string[]) || [];
-          const mergedKeys = Array.from(new Set([...clientKeys, ...parsedWorldKeys]));
-          
-          await game.settings.set('storyteller-cinema', 'premiumKeys', mergedKeys);
-          worldStorage.removeItem("storyteller-cinema.premiumKeys");
-
-          const worldIgnoreDev = worldStorage.getItem("storyteller-cinema.ignoreDevKeys");
-          if (worldIgnoreDev !== null) {
-            let ignoreDevVal = false;
-            try {
-              ignoreDevVal = !!JSON.parse(worldIgnoreDev);
-            } catch (_) {
-              ignoreDevVal = worldIgnoreDev === "true";
-            }
-            await game.settings.set('storyteller-cinema', 'ignoreDevKeys', ignoreDevVal);
-            worldStorage.removeItem("storyteller-cinema.ignoreDevKeys");
-          }
-          console.log("Storyteller Cinema | Chaves premium migradas do World para o Client.");
-        }
-      }
-    } catch (err) {
-      console.error("Storyteller Cinema | Erro ao migrar chaves do escopo world:", err);
+// Carregar chaves do arquivo local no servidor
+export async function loadPremiumKeysFromServer(): Promise<string[]> {
+  try {
+    const res = await fetch("/storyteller-cinema/keys.json?v=" + Date.now());
+    if (res.ok) {
+      const keys = await res.json();
+      if (Array.isArray(keys)) return keys;
     }
+  } catch (err) {
+    console.warn("Storyteller Cinema | Não foi possível ler storyteller-cinema/keys.json do servidor:", err);
+  }
+  return [];
+}
+
+// Salvar chaves no arquivo local no servidor
+export async function savePremiumKeysToServer(keys: string[]): Promise<boolean> {
+  if (!game.user?.isGM) return false;
+  try {
+    // @ts-ignore
+    const FilePickerClass = foundry.applications?.apps?.FilePicker || FilePicker;
+    const source = 'data';
+    try {
+      await FilePickerClass.browse(source, "storyteller-cinema");
+    } catch {
+      try {
+        await FilePickerClass.createDirectory(source, "storyteller-cinema");
+      } catch (err) {
+        console.error("Storyteller Cinema | Falha ao criar pasta de armazenamento das chaves:", err);
+      }
+    }
+
+    const data = JSON.stringify(keys, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const file = new File([blob], "keys.json", { type: 'application/json' });
+
+    // @ts-ignore
+    await FilePickerClass.upload(source, "storyteller-cinema", file);
+    console.log("Storyteller Cinema | Chaves salvas com sucesso no servidor em storyteller-cinema/keys.json");
+    return true;
+  } catch (err) {
+    console.error("Storyteller Cinema | Falha ao salvar chaves no servidor:", err);
+    return false;
+  }
+}
+
+Hooks.once('ready', async () => {
+  try {
+    let serverKeys = await loadPremiumKeysFromServer();
+    if (game.user?.isGM) {
+      let fileExists = false;
+      // @ts-ignore
+      const FilePickerClass = foundry.applications?.apps?.FilePicker || FilePicker;
+      try {
+        const browse = await FilePickerClass.browse('data', 'storyteller-cinema');
+        fileExists = browse.files.some((f: string) => f.endsWith("keys.json"));
+      } catch (err) {}
+
+      const clientKeys = (game.settings.get('storyteller-cinema', 'premiumKeys') as string[]) || [];
+      if (serverKeys.length === 0 && clientKeys.length > 0) {
+        await savePremiumKeysToServer(clientKeys);
+        serverKeys = clientKeys;
+      } else if (!fileExists && clientKeys.length === 0) {
+        await savePremiumKeysToServer([]);
+      }
+    }
+
+    if (serverKeys.length > 0) {
+      await game.settings.set('storyteller-cinema', 'premiumKeys', serverKeys);
+      console.log("Storyteller Cinema | Chaves carregadas e sincronizadas do servidor.");
+      // @ts-ignore
+      Hooks.callAll('storyteller-cinema-keys-updated', serverKeys);
+    }
+  } catch (err) {
+    console.error("Storyteller Cinema | Erro ao inicializar sincronização de chaves no servidor:", err);
   }
 
   // 2. Inicializar Skin Manager

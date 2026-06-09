@@ -245,11 +245,18 @@ function registerUIHooks() {
     };
     patreonBtn.onclick = async (e) => {
       e.preventDefault();
-      const { KeyManager } = await import("../apps/key-manager.js");
+      const { KeyManager } = await import("../apps/key-manager.js").then((n) => n.k);
       new KeyManager().render(true, { focus: true });
     };
     bannerContainer.appendChild(patreonBtn);
     stcGroup.prepend(bannerContainer);
+  });
+  const _registeredExternalTemplates = {};
+  Hooks.on("registerStorytellerCinemaTemplates", (data) => {
+    if (!(data == null ? void 0 : data.moduleId) || !Array.isArray(data.templates)) return;
+    _registeredExternalTemplates[data.moduleId] = data.templates;
+    window.StorytellerCinema._externalTemplates = _registeredExternalTemplates;
+    Hooks.callAll("storyteller-cinema-external-templates-updated", _registeredExternalTemplates);
   });
 }
 function createHUDButton() {
