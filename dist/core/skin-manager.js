@@ -26,29 +26,38 @@ const _SkinManager = class _SkinManager {
     await this.apply(savedSkin);
   }
   async _loadHubSkins() {
-    var _a2;
-    let keys = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "premiumKeys")) || [];
+    var _a2, _b2;
+    const ignoreDev = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "ignoreDevKeys")) || false;
+    let keys = ((_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "premiumKeys")) || [];
+    if (ignoreDev) {
+      keys = keys.filter((k) => !(k.startsWith("sammore-dev-") && k.endsWith("5633")));
+    }
     try {
       await this._loadPack("classics", "classics");
       const loadedPacks = /* @__PURE__ */ new Set();
       for (const key of keys) {
         const normalizedKey = key.toLowerCase();
         if (!normalizedKey || normalizedKey === "classics") continue;
+        const isDev = !ignoreDev && key.startsWith("sammore-dev-") && key.endsWith("5633");
         let allowedPacks = [];
         let allowedSkins = [];
-        const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(key)}`;
-        const res = await fetch(listUrl);
-        if (!res.ok) {
-          console.warn(`Storyteller Cinema | Key '${key}' is invalid or expired.`);
-          continue;
-        }
-        try {
-          const data = await res.json();
-          allowedPacks = data.packs || [];
-          allowedSkins = data.skins || [];
-        } catch (err) {
-          console.error("Storyteller Cinema | Failed to parse key info:", err);
-          continue;
+        if (isDev) {
+          allowedPacks = ["the-umbra", "cyberpunk-neon", "eldritch-abyss", "steampunk-gears"];
+        } else {
+          const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(key)}`;
+          const res = await fetch(listUrl);
+          if (!res.ok) {
+            console.warn(`Storyteller Cinema | Key '${key}' is invalid or expired.`);
+            continue;
+          }
+          try {
+            const data = await res.json();
+            allowedPacks = data.packs || [];
+            allowedSkins = data.skins || [];
+          } catch (err) {
+            console.error("Storyteller Cinema | Failed to parse key info:", err);
+            continue;
+          }
         }
         for (const packId of allowedPacks) {
           if (packId !== "classics" && !loadedPacks.has(packId)) {
@@ -254,7 +263,7 @@ const _SkinManager = class _SkinManager {
         const isClassicsAsset = relativePath.startsWith("packs/classics/");
         let matchingKey = "classics";
         if (!isClassicsAsset) {
-          matchingKey = keys[0] || "classics";
+          matchingKey = keys.find((k) => k.startsWith("sammore-dev-") && k.endsWith("5633")) || keys[0] || "classics";
         }
         return `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(matchingKey)}&v=${skinVersion}`;
       };

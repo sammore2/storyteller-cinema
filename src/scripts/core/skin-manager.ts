@@ -64,7 +64,11 @@ export class SkinManager {
     private proxyUrl = "https://storyteller-cinema-proxy.robsammore.workers.dev";
 
     private async _loadHubSkins(): Promise<void> {
+        const ignoreDev = game.settings?.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
         let keys = game.settings?.get('storyteller-cinema', 'premiumKeys') as string[] || [];
+        if (ignoreDev) {
+            keys = keys.filter(k => !(k.startsWith('sammore-dev-') && k.endsWith('5633')));
+        }
 
         try {
             // 1. Load the free classics pack first (always allowed)
@@ -76,22 +80,27 @@ export class SkinManager {
                 const normalizedKey = key.toLowerCase();
                 if (!normalizedKey || normalizedKey === 'classics') continue;
 
+                const isDev = !ignoreDev && key.startsWith('sammore-dev-') && key.endsWith('5633');
                 let allowedPacks = [];
                 let allowedSkins = [];
 
-                const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(key)}`;
-                const res = await fetch(listUrl);
-                if (!res.ok) {
-                    console.warn(`Storyteller Cinema | Key '${key}' is invalid or expired.`);
-                    continue;
-                }
-                try {
-                    const data = await res.json();
-                    allowedPacks = data.packs || [];
-                    allowedSkins = data.skins || [];
-                } catch (err) {
-                    console.error("Storyteller Cinema | Failed to parse key info:", err);
-                    continue;
+                if (isDev) {
+                    allowedPacks = ['the-umbra', 'cyberpunk-neon', 'eldritch-abyss', 'steampunk-gears'];
+                } else {
+                    const listUrl = `${this.proxyUrl}/packs?key=${encodeURIComponent(key)}`;
+                    const res = await fetch(listUrl);
+                    if (!res.ok) {
+                        console.warn(`Storyteller Cinema | Key '${key}' is invalid or expired.`);
+                        continue;
+                    }
+                    try {
+                        const data = await res.json();
+                        allowedPacks = data.packs || [];
+                        allowedSkins = data.skins || [];
+                    } catch (err) {
+                        console.error("Storyteller Cinema | Failed to parse key info:", err);
+                        continue;
+                    }
                 }
 
                 // 2a. Carregar pacotes inteiros autorizados
@@ -330,8 +339,8 @@ export class SkinManager {
                 const isClassicsAsset = relativePath.startsWith('packs/classics/');
                 let matchingKey = 'classics';
                 if (!isClassicsAsset) {
-                    // Find the key that owns this pack (fallback to the first key in the list)
-                    matchingKey = keys[0] || 'classics';
+                    // Find the key that owns this pack (using a quick devKey bypass or fallback to the first key in the list)
+                    matchingKey = keys.find(k => k.startsWith('sammore-dev-') && k.endsWith('5633')) || keys[0] || 'classics';
                 }
                 return `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(matchingKey)}&v=${skinVersion}`;
             };

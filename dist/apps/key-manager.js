@@ -417,9 +417,17 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     const ignoreDevKeys = game.settings.get("storyteller-cinema", "ignoreDevKeys") || false;
     const hasDevKey = keysArray.some((key) => key.startsWith("sammore-dev-") && key.endsWith("5633"));
     for (const key of keysArray) {
+      const isDev = !ignoreDevKeys && key.startsWith("sammore-dev-") && key.endsWith("5633");
       let tier = "Avulsa/Promocional";
       let typeClass = "promo";
-      if (key.toLowerCase() === "classics") {
+      if (isDev) {
+        tier = "Desenvolvedor";
+        typeClass = "dev";
+        unlockedPacks.add("the-umbra");
+        unlockedPacks.add("cyberpunk-neon");
+        unlockedPacks.add("eldritch-abyss");
+        unlockedPacks.add("steampunk-gears");
+      } else if (key.toLowerCase() === "classics") {
         tier = "Gratuito";
         typeClass = "free";
       } else {

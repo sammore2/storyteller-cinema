@@ -48,17 +48,30 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
     }
 
     async _prepareContext(_options: any): Promise<any> {
+        // Puxar chaves configuradas (armazenadas como array)
         const keysArray = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
+
+        // Validar e detalhar as chaves ativas a partir do que o SkinManager carregou
         const activeKeysList = [];
         const unlockedPacks = new Set<string>(['classics']);
+
         const ignoreDevKeys = game.settings.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
         const hasDevKey = keysArray.some(key => key.startsWith('sammore-dev-') && key.endsWith('5633'));
-
+        
         for (const key of keysArray) {
+            // Se ignoreDevKeys for verdadeiro, a chave de dev é tratada como chave comum (não ativará isDev)
+            const isDev = !ignoreDevKeys && key.startsWith('sammore-dev-') && key.endsWith('5633');
             let tier = "Avulsa/Promocional";
             let typeClass = "promo";
 
-            if (key.toLowerCase() === 'classics') {
+            if (isDev) {
+                tier = "Desenvolvedor";
+                typeClass = "dev";
+                unlockedPacks.add('the-umbra');
+                unlockedPacks.add('cyberpunk-neon');
+                unlockedPacks.add('eldritch-abyss');
+                unlockedPacks.add('steampunk-gears');
+            } else if (key.toLowerCase() === 'classics') {
                 tier = "Gratuito";
                 typeClass = "free";
             } else {
@@ -68,7 +81,7 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
                     if (res.ok) {
                         const data = await res.json();
                         (data.packs || []).forEach((p: string) => unlockedPacks.add(p));
-                        
+
                         // Inferir o tier baseado nos pacotes
                         if (data.tier === 'Developer') {
                             tier = "Desenvolvedor";
@@ -158,18 +171,18 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
         }
 
         const keysList = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
- 
+
         if (keysList.includes(newKey)) {
             ui.notifications?.info("Storyteller Cinema | Esta chave já está cadastrada.");
             return;
         }
- 
+
         keysList.push(newKey);
         await game.settings.set('storyteller-cinema', 'premiumKeys', keysList);
         await savePremiumKeysToServer(keysList);
         ui.notifications?.info("Storyteller Cinema | Chave adicionada com sucesso!");
         input.value = "";
-        
+
         // Disparar recarga de skins
         if (window.StorytellerCinema?.skins) {
             await window.StorytellerCinema.skins.init();
@@ -185,7 +198,7 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
 
         const keysList = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
         const filteredKeys = keysList.filter(k => k !== keyToRemove);
- 
+
         await game.settings.set('storyteller-cinema', 'premiumKeys', filteredKeys);
         await savePremiumKeysToServer(filteredKeys);
         ui.notifications?.info("Storyteller Cinema | Chave removida.");
@@ -203,7 +216,7 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
         const height = 700;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
-        
+
         const popup = window.open(
             'https://storyteller-cinema-proxy.robsammore.workers.dev/oauth/login',
             'PatreonLogin',
@@ -213,17 +226,17 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
         if (popup) {
             const messageListener = async (e: MessageEvent) => {
                 if (e.origin !== 'https://storyteller-cinema-proxy.robsammore.workers.dev') return;
-                
+
                 if (e.data?.type === 'PATREON_KEY_ACTIVATED' && e.data?.key) {
                     const newKey = e.data.key;
                     const keysList = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
- 
+
                     if (!keysList.includes(newKey)) {
                         keysList.push(newKey);
                         await game.settings.set('storyteller-cinema', 'premiumKeys', keysList);
                         await savePremiumKeysToServer(keysList);
                         ui.notifications?.info("Storyteller Cinema | Patreon conectado e chave premium ativada!");
-                        
+
                         if (window.StorytellerCinema?.skins) {
                             await window.StorytellerCinema.skins.init();
                         }
@@ -241,7 +254,7 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
         const currentVal = game.settings.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
         await game.settings.set('storyteller-cinema', 'ignoreDevKeys', !currentVal);
         ui.notifications?.info(`Storyteller Cinema | Modo de teste ${!currentVal ? 'ativado' : 'desativado'} (chaves de dev ${!currentVal ? 'ignoradas' : 'ativas'}).`);
-        
+
         // Atualizar skins imediatamente
         if (window.StorytellerCinema?.skins) {
             await window.StorytellerCinema.skins.init();
