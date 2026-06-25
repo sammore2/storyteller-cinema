@@ -415,9 +415,9 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     const activeKeysList = [];
     const unlockedPacks = /* @__PURE__ */ new Set(["classics"]);
     const ignoreDevKeys = game.settings.get("storyteller-cinema", "ignoreDevKeys") || false;
-    const hasDevKey = keysArray.some((key) => key.startsWith("sammore-dev-") && key.endsWith("5633"));
+    const hasDevKey = keysArray.some((key) => SkinManager.isDevKey(key));
     for (const key of keysArray) {
-      const isDev = !ignoreDevKeys && key.startsWith("sammore-dev-") && key.endsWith("5633");
+      const isDev = !ignoreDevKeys && SkinManager.isDevKey(key);
       let tier = "Avulsa/Promocional";
       let typeClass = "promo";
       if (isDev) {

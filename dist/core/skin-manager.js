@@ -13,6 +13,73 @@ const _SkinManager = class _SkinManager {
     this.activeSkin = "default";
     this._styleTag = null;
   }
+  static sha256(ascii) {
+    function rightRotate(value, amount) {
+      return value >>> amount | value << 32 - amount;
+    }
+    const mathPow = Math.pow;
+    const maxWord = mathPow(2, 32);
+    const lengthProperty = "length";
+    let i, j;
+    let result = "";
+    const words = [];
+    const asciiLength = ascii[lengthProperty];
+    let hash = [];
+    const k = [];
+    let primeCounter = 0;
+    const isComposite = {};
+    for (let candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (i = 0; i < 313; i += candidate) {
+          isComposite[i] = candidate;
+        }
+        hash[primeCounter] = mathPow(candidate, 0.5) * maxWord | 0;
+        k[primeCounter++] = mathPow(candidate, 1 / 3) * maxWord | 0;
+      }
+    }
+    ascii += "";
+    while (ascii[lengthProperty] % 64 - 56) ascii += "\0";
+    for (i = 0; i < ascii[lengthProperty]; i++) {
+      j = ascii.charCodeAt(i);
+      if (j >> 8) return "";
+      words[i >> 2] |= j << (3 - i % 4) * 8;
+    }
+    words[words[lengthProperty]] = asciiLength * 8 / maxWord | 0;
+    words[words[lengthProperty]] = asciiLength * 8 | 0;
+    for (j = 0; j < words[lengthProperty]; ) {
+      const w = words.slice(j, j += 16);
+      const oldHash = hash.slice(0);
+      for (i = 0; i < 64; i++) {
+        const wItem = w[i];
+        if (i >= 16) {
+          const s0 = rightRotate(w[i - 15], 7) ^ rightRotate(w[i - 15], 18) ^ w[i - 15] >>> 3;
+          const s1 = rightRotate(w[i - 2], 17) ^ rightRotate(w[i - 2], 19) ^ w[i - 2] >>> 10;
+          w[i] = w[i - 16] + s0 + w[i - 7] + s1 | 0;
+        }
+        const ch = hash[4] & hash[5] ^ ~hash[4] & hash[6];
+        const maj = hash[0] & hash[1] ^ hash[0] & hash[2] ^ hash[1] & hash[2];
+        const temp1 = hash[7] + (rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25)) + ch + k[i] + (w[i] !== void 0 ? w[i] : wItem) | 0;
+        const temp2 = (rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22)) + maj | 0;
+        hash = [temp1 + temp2 | 0].concat(hash);
+        hash[4] = hash[4] + temp1 | 0;
+        hash.length = 8;
+      }
+      for (i = 0; i < 8; i++) {
+        hash[i] = hash[i] + oldHash[i] | 0;
+      }
+    }
+    for (i = 0; i < 8; i++) {
+      for (j = 3; j + 1; j--) {
+        const b = hash[i] >> j * 8 & 255;
+        result += (b < 16 ? "0" : "") + b.toString(16);
+      }
+    }
+    return result;
+  }
+  static isDevKey(key) {
+    if (!key) return false;
+    return this.sha256(key.trim()) === this.DEV_HASH;
+  }
   async init() {
     var _a2;
     console.log("Storyteller Cinema | Initializing Skin Manager...");
@@ -30,7 +97,7 @@ const _SkinManager = class _SkinManager {
     const ignoreDev = ((_a2 = game.settings) == null ? void 0 : _a2.get("storyteller-cinema", "ignoreDevKeys")) || false;
     let keys = ((_b2 = game.settings) == null ? void 0 : _b2.get("storyteller-cinema", "premiumKeys")) || [];
     if (ignoreDev) {
-      keys = keys.filter((k) => !(k.startsWith("sammore-dev-") && k.endsWith("5633")));
+      keys = keys.filter((k) => !_SkinManager.isDevKey(k));
     }
     try {
       await this._loadPack("classics", "classics");
@@ -38,7 +105,7 @@ const _SkinManager = class _SkinManager {
       for (const key of keys) {
         const normalizedKey = key.toLowerCase();
         if (!normalizedKey || normalizedKey === "classics") continue;
-        const isDev = !ignoreDev && key.startsWith("sammore-dev-") && key.endsWith("5633");
+        const isDev = !ignoreDev && _SkinManager.isDevKey(key);
         let allowedPacks = [];
         let allowedSkins = [];
         if (isDev) {
@@ -263,7 +330,7 @@ const _SkinManager = class _SkinManager {
         const isClassicsAsset = relativePath.startsWith("packs/classics/");
         let matchingKey = "classics";
         if (!isClassicsAsset) {
-          matchingKey = keys.find((k) => k.startsWith("sammore-dev-") && k.endsWith("5633")) || keys[0] || "classics";
+          matchingKey = keys.find((k) => _SkinManager.isDevKey(k)) || keys[0] || "classics";
         }
         return `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(matchingKey)}&v=${skinVersion}`;
       };
@@ -532,6 +599,7 @@ const _SkinManager = class _SkinManager {
 __publicField(_SkinManager, "SKIN_TO_PACK", {
   "blood-moon": "the-umbra"
 });
+__publicField(_SkinManager, "DEV_HASH", "d15d20f977293ef0df82cffd9591f0092734266d9ef0ed7cbba58650ba820773");
 let SkinManager = _SkinManager;
 export {
   SkinManager as S

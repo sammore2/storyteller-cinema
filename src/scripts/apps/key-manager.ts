@@ -1,4 +1,5 @@
 import { savePremiumKeysToServer } from "../main";
+import { SkinManager } from "../core/skin-manager";
 
 // @ts-ignore
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -56,11 +57,11 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
         const unlockedPacks = new Set<string>(['classics']);
 
         const ignoreDevKeys = game.settings.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
-        const hasDevKey = keysArray.some(key => key.startsWith('sammore-dev-') && key.endsWith('5633'));
+        const hasDevKey = keysArray.some(key => SkinManager.isDevKey(key));
         
         for (const key of keysArray) {
             // Se ignoreDevKeys for verdadeiro, a chave de dev é tratada como chave comum (não ativará isDev)
-            const isDev = !ignoreDevKeys && key.startsWith('sammore-dev-') && key.endsWith('5633');
+            const isDev = !ignoreDevKeys && SkinManager.isDevKey(key);
             let tier = "Avulsa/Promocional";
             let typeClass = "promo";
 

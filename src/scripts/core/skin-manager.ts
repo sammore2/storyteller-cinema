@@ -35,6 +35,77 @@ export class SkinManager {
         'blood-moon': 'the-umbra'
     };
 
+    private static DEV_HASH = 'd15d20f977293ef0df82cffd9591f0092734266d9ef0ed7cbba58650ba820773';
+
+    static sha256(ascii: string): string {
+        function rightRotate(value: number, amount: number): number {
+            return (value >>> amount) | (value << (32 - amount));
+        }
+        const mathPow = Math.pow;
+        const maxWord = mathPow(2, 32);
+        const lengthProperty = 'length';
+        let i: number, j: number;
+        let result = '';
+        const words: number[] = [];
+        const asciiLength = ascii[lengthProperty];
+        let hash: number[] = [];
+        const k: number[] = [];
+        let primeCounter = 0;
+        const isComposite: Record<number, number> = {};
+        for (let candidate = 2; primeCounter < 64; candidate++) {
+            if (!isComposite[candidate]) {
+                for (i = 0; i < 313; i += candidate) {
+                    isComposite[i] = candidate;
+                }
+                hash[primeCounter] = (mathPow(candidate, .5) * maxWord) | 0;
+                k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+            }
+        }
+        ascii += '\x80';
+        while (ascii[lengthProperty] % 64 - 56) ascii += '\x00';
+        for (i = 0; i < ascii[lengthProperty]; i++) {
+            j = ascii.charCodeAt(i);
+            if (j >> 8) return ''; // keep it simple
+            words[i >> 2] |= j << ((3 - i % 4) * 8);
+        }
+        words[words[lengthProperty]] = ((asciiLength * 8) / maxWord) | 0;
+        words[words[lengthProperty]] = (asciiLength * 8) | 0;
+        for (j = 0; j < words[lengthProperty];) {
+            const w = words.slice(j, j += 16);
+            const oldHash = hash.slice(0);
+            for (i = 0; i < 64; i++) {
+                const wItem = w[i];
+                if (i >= 16) {
+                    const s0 = rightRotate(w[i - 15], 7) ^ rightRotate(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+                    const s1 = rightRotate(w[i - 2], 17) ^ rightRotate(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+                    w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+                }
+                const ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
+                const maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+                const temp1 = (hash[7] + (rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25)) + ch + k[i] + (w[i] !== undefined ? w[i] : wItem)) | 0;
+                const temp2 = ((rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22)) + maj) | 0;
+                hash = [(temp1 + temp2) | 0].concat(hash);
+                hash[4] = (hash[4] + temp1) | 0;
+                hash.length = 8;
+            }
+            for (i = 0; i < 8; i++) {
+                hash[i] = (hash[i] + oldHash[i]) | 0;
+            }
+        }
+        for (i = 0; i < 8; i++) {
+            for (j = 3; j + 1; j--) {
+                const b = (hash[i] >> (j * 8)) & 255;
+                result += (b < 16 ? '0' : '') + b.toString(16);
+            }
+        }
+        return result;
+    }
+
+    static isDevKey(key: string): boolean {
+        if (!key) return false;
+        return this.sha256(key.trim()) === this.DEV_HASH;
+    }
+
     constructor() {
         this.skins = new Map();
         this.activeSkin = 'default';
@@ -67,7 +138,7 @@ export class SkinManager {
         const ignoreDev = game.settings?.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
         let keys = game.settings?.get('storyteller-cinema', 'premiumKeys') as string[] || [];
         if (ignoreDev) {
-            keys = keys.filter(k => !(k.startsWith('sammore-dev-') && k.endsWith('5633')));
+            keys = keys.filter(k => !SkinManager.isDevKey(k));
         }
 
         try {
@@ -80,7 +151,7 @@ export class SkinManager {
                 const normalizedKey = key.toLowerCase();
                 if (!normalizedKey || normalizedKey === 'classics') continue;
 
-                const isDev = !ignoreDev && key.startsWith('sammore-dev-') && key.endsWith('5633');
+                const isDev = !ignoreDev && SkinManager.isDevKey(key);
                 let allowedPacks = [];
                 let allowedSkins = [];
 
@@ -340,7 +411,7 @@ export class SkinManager {
                 let matchingKey = 'classics';
                 if (!isClassicsAsset) {
                     // Find the key that owns this pack (using a quick devKey bypass or fallback to the first key in the list)
-                    matchingKey = keys.find(k => k.startsWith('sammore-dev-') && k.endsWith('5633')) || keys[0] || 'classics';
+                    matchingKey = keys.find(k => SkinManager.isDevKey(k)) || keys[0] || 'classics';
                 }
                 return `${this.proxyUrl}/fetch/${relativePath}?key=${encodeURIComponent(matchingKey)}&v=${skinVersion}`;
             };
