@@ -417,17 +417,9 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
     const ignoreDevKeys = game.settings.get("storyteller-cinema", "ignoreDevKeys") || false;
     const hasDevKey = keysArray.some((key) => key.startsWith("sammore-dev-") && key.endsWith("5633"));
     for (const key of keysArray) {
-      const isDev = !ignoreDevKeys && key.startsWith("sammore-dev-") && key.endsWith("5633");
       let tier = "Avulsa/Promocional";
       let typeClass = "promo";
-      if (isDev) {
-        tier = "Desenvolvedor";
-        typeClass = "dev";
-        unlockedPacks.add("the-umbra");
-        unlockedPacks.add("cyberpunk-neon");
-        unlockedPacks.add("eldritch-abyss");
-        unlockedPacks.add("steampunk-gears");
-      } else if (key.toLowerCase() === "classics") {
+      if (key.toLowerCase() === "classics") {
         tier = "Gratuito";
         typeClass = "free";
       } else {
@@ -436,7 +428,10 @@ class KeyManager extends HandlebarsApplicationMixin(ApplicationV2) {
           if (res.ok) {
             const data = await res.json();
             (data.packs || []).forEach((p) => unlockedPacks.add(p));
-            if ((_a = data.packs) == null ? void 0 : _a.includes("cyberpunk-neon")) {
+            if (data.tier === "Developer") {
+              tier = "Desenvolvedor";
+              typeClass = "dev";
+            } else if ((_a = data.packs) == null ? void 0 : _a.includes("cyberpunk-neon")) {
               tier = "Patreon Silver";
               typeClass = "patreon";
             } else if (((_b = data.packs) == null ? void 0 : _b.includes("the-umbra")) && ((_c = data.packs) == null ? void 0 : _c.length) > 2) {

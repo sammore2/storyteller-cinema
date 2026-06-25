@@ -48,30 +48,17 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
     }
 
     async _prepareContext(_options: any): Promise<any> {
-        // Puxar chaves configuradas (armazenadas como array)
         const keysArray = game.settings.get('storyteller-cinema', 'premiumKeys') as string[] || [];
-
-        // Validar e detalhar as chaves ativas a partir do que o SkinManager carregou
         const activeKeysList = [];
         const unlockedPacks = new Set<string>(['classics']);
-
         const ignoreDevKeys = game.settings.get('storyteller-cinema', 'ignoreDevKeys') as boolean || false;
         const hasDevKey = keysArray.some(key => key.startsWith('sammore-dev-') && key.endsWith('5633'));
-        
+
         for (const key of keysArray) {
-            // Se ignoreDevKeys for verdadeiro, a chave de dev é tratada como chave comum (não ativará isDev)
-            const isDev = !ignoreDevKeys && key.startsWith('sammore-dev-') && key.endsWith('5633');
             let tier = "Avulsa/Promocional";
             let typeClass = "promo";
 
-            if (isDev) {
-                tier = "Desenvolvedor";
-                typeClass = "dev";
-                unlockedPacks.add('the-umbra');
-                unlockedPacks.add('cyberpunk-neon');
-                unlockedPacks.add('eldritch-abyss');
-                unlockedPacks.add('steampunk-gears');
-            } else if (key.toLowerCase() === 'classics') {
+            if (key.toLowerCase() === 'classics') {
                 tier = "Gratuito";
                 typeClass = "free";
             } else {
@@ -83,7 +70,10 @@ export class KeyManager extends (HandlebarsApplicationMixin(ApplicationV2) as an
                         (data.packs || []).forEach((p: string) => unlockedPacks.add(p));
                         
                         // Inferir o tier baseado nos pacotes
-                        if (data.packs?.includes('cyberpunk-neon')) {
+                        if (data.tier === 'Developer') {
+                            tier = "Desenvolvedor";
+                            typeClass = "dev";
+                        } else if (data.packs?.includes('cyberpunk-neon')) {
                             tier = "Patreon Silver";
                             typeClass = "patreon";
                         } else if (data.packs?.includes('the-umbra') && data.packs?.length > 2) {
