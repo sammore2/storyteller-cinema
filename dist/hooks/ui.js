@@ -14,6 +14,74 @@ function registerUIHooks() {
     root.style.setProperty("--tray-idle-opacity", game.settings.get("storyteller-cinema", "trayOpacity"));
     if ((_a = game.user) == null ? void 0 : _a.isGM) {
       window.StorytellerCinema.cinemaTray.render(true);
+      const setupSimpleRequestsHook = () => {
+        var _a2, _b;
+        if (!((_b = (_a2 = game.modules) == null ? void 0 : _a2.get("simple-requests")) == null ? void 0 : _b.active)) return;
+        const sp = window.SimplePrompts;
+        if (sp && typeof sp.gm_callout_top_request === "function") {
+          const originalCallout = sp.gm_callout_top_request;
+          sp.gm_callout_top_request = async function(...args) {
+            var _a3, _b2, _c, _d, _e;
+            const queue = ((_a3 = CONFIG.SMP_REQUESTS) == null ? void 0 : _a3.queue) || [];
+            const topRequest = queue[0];
+            await originalCallout.apply(this, args);
+            if (topRequest && topRequest.userId) {
+              console.log("Storyteller Cinema | Simple Requests Integration: GM served request for user", topRequest.userId);
+              const user = (_b2 = game.users) == null ? void 0 : _b2.get(topRequest.userId);
+              const actorId = (_c = user == null ? void 0 : user.character) == null ? void 0 : _c.id;
+              if (actorId) {
+                const cast = game.settings.get("storyteller-cinema", "sceneCast") || [];
+                if (!cast.includes(actorId)) {
+                  const newCast = [...cast, actorId];
+                  await game.settings.set("storyteller-cinema", "sceneCast", newCast);
+                }
+                const activePortraits = game.settings.get("storyteller-cinema", "activePortraits") || [];
+                if (!activePortraits.includes(actorId)) {
+                  const newActive = [...activePortraits, actorId];
+                  await game.settings.set("storyteller-cinema", "activePortraits", newActive);
+                }
+                (_d = window.StorytellerCinema.cinemaTray) == null ? void 0 : _d.render(true);
+                (_e = ui.notifications) == null ? void 0 : _e.info(game.i18n.format("STORYTELLER_CINEMA.Notification.ActorAdded", { name: user.character.name }));
+              }
+            }
+          };
+          const originalTargetedCallout = sp.gmSendTargetedPlayerCallout;
+          if (typeof originalTargetedCallout === "function") {
+            sp.gmSendTargetedPlayerCallout = function(payload, ...args) {
+              var _a3, _b2;
+              originalTargetedCallout.call(this, payload, ...args);
+              if (payload && payload.userId) {
+                console.log("Storyteller Cinema | Simple Requests Integration: GM targeted user", payload.userId);
+                const user = (_a3 = game.users) == null ? void 0 : _a3.get(payload.userId);
+                const actorId = (_b2 = user == null ? void 0 : user.character) == null ? void 0 : _b2.id;
+                if (actorId) {
+                  const cast = game.settings.get("storyteller-cinema", "sceneCast") || [];
+                  const activePortraits = game.settings.get("storyteller-cinema", "activePortraits") || [];
+                  const updatePromises = [];
+                  if (!cast.includes(actorId)) {
+                    const newCast = [...cast, actorId];
+                    updatePromises.push(game.settings.set("storyteller-cinema", "sceneCast", newCast));
+                  }
+                  if (!activePortraits.includes(actorId)) {
+                    const newActive = [...activePortraits, actorId];
+                    updatePromises.push(game.settings.set("storyteller-cinema", "activePortraits", newActive));
+                  }
+                  if (updatePromises.length > 0) {
+                    Promise.all(updatePromises).then(() => {
+                      var _a4;
+                      (_a4 = window.StorytellerCinema.cinemaTray) == null ? void 0 : _a4.render(true);
+                    });
+                  }
+                }
+              }
+            };
+          }
+          console.log("Storyteller Cinema | Simple Requests Integration Initialized");
+        } else {
+          setTimeout(setupSimpleRequestsHook, 500);
+        }
+      };
+      setupSimpleRequestsHook();
     }
   });
   Hooks.on("getSceneControlButtons", (controls) => {
